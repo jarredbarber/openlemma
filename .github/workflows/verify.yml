@@ -1,0 +1,28 @@
+name: Verify
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lean
+        uses: leanprover/lean4-action@v1
+      - name: Get Mathlib cache
+        run: lake exe cache get
+      - name: Build
+        run: lake build
+      - name: Count sorrys and axioms
+        run: |
+          SORRYS=$(grep -rn "sorry" botlib/ problems/ --include="*.lean" | grep -v "^--" | wc -l)
+          AXIOMS=$(grep -rn "^axiom" botlib/ problems/ --include="*.lean" | wc -l)
+          echo "## Build Report" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Sorrys: $SORRYS" >> $GITHUB_STEP_SUMMARY
+          echo "- Axioms: $AXIOMS" >> $GITHUB_STEP_SUMMARY
+      - name: Check botlib is sorry-free
+        run: |
+          BOTLIB_SORRYS=$(grep -rn "sorry" botlib/ --include="*.lean" | grep -v "^--" | wc -l)
+          if [ "$BOTLIB_SORRYS" -gt 0 ]; then
+            echo "❌ botlib/ must be sorry-free (found $BOTLIB_SORRYS)"
+            exit 1
+          fi
