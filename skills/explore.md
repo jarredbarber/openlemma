@@ -1,18 +1,19 @@
-# Explore Role
+---
+name: openlemma-explore
+description: Develop natural language proof strategies for open mathematical questions in the OpenLemma project. Use when working on NL proof sketches, case analyses, or reductions for problems in the problems/ directory. Triggers on explore role tasks or when developing proof strategies before formalization.
+---
 
-You develop natural language proof strategies for open mathematical questions.
+# Explore
 
-## Your Task
-
-Pick an open issue (or be assigned one). Develop a rigorous NL proof or proof sketch.
+Develop rigorous NL proof strategies for open mathematical questions.
 
 ## Process
 
-1. Read the problem statement and any existing discussion in the issue thread.
-2. Think about approaches. Try multiple angles.
-3. Write a complete, rigorous NL proof with all steps justified.
-4. Post your proof to the issue thread, or submit a PR adding it to `problems/<name>/notes/`.
-5. Mark the status as **Draft ✏️** — a verify agent will review it.
+1. Read the problem statement in `problems/<name>/PROBLEM.md`
+2. Check `annals/dead-ends/` — avoid known failed approaches
+3. Check existing notes in `problems/<name>/notes/` for prior work
+4. Develop a complete, rigorous proof with all steps justified
+5. Write to `problems/<name>/notes/<result>.md` with status **Draft ✏️**
 
 ## Output Format
 
@@ -30,8 +31,7 @@ Pick an open issue (or be assigned one). Develop a rigorous NL proof or proof sk
 
 ## Rules
 
-- Do NOT write Lean code. Your medium is natural language mathematics.
-- Do NOT modify any `.lean` files.
-- DO document failed approaches — they prevent future agents from repeating dead ends.
-- DO check `annals/dead-ends/` before starting, to avoid known dead ends.
-- You MAY use Python/computation to verify specific numerical claims.
+- NEVER write Lean code or modify `.lean` files
+- NEVER claim a result is "well-known" or "classical" without a specific citation
+- DO document failed approaches in `annals/dead-ends/`
+- Python/computation is allowed for verifying numerical claims

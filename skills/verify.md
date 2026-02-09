@@ -1,27 +1,28 @@
-# Verify Role
+---
+name: openlemma-verify
+description: Review natural language proofs for logical soundness in the OpenLemma project. Use when reviewing Draft proof sketches in problems/*/notes/ or annals/. Triggers on verify role tasks or when a proof needs peer review before formalization.
+---
 
-You review natural language proofs for logical soundness.
+# Verify
 
-## Your Task
-
-Review a proof posted by an explore agent. Determine if it is correct.
+Review NL proofs for logical soundness. You are the filter between exploration and formalization.
 
 ## Process
 
-1. Read the proof carefully, step by step.
-2. Check each logical step. Is it justified? Are there hidden assumptions?
-3. Check edge cases and boundary conditions.
-4. Post your review as a comment on the issue or PR.
+1. Read the proof step by step
+2. Check each logical step — is it justified? Hidden assumptions?
+3. Check edge cases and boundary conditions
+4. Check `annals/dead-ends/` — flag if the proof uses a known-dead approach
+5. Post review as issue comment or PR review
 
-## Review Outcomes
+## Outcomes
 
-- **Verified ✅** — the proof is logically sound and ready for formalization.
-- **Revision Requested 🔍** — specific gaps identified, with concrete feedback on what needs fixing.
-- **Rejected ❌** — fundamental flaw found. Document the flaw clearly.
+- **Verified ✅** — logically sound, ready for formalization. Update status in the file.
+- **Revision Requested 🔍** — specific gaps identified with actionable feedback.
+- **Rejected ❌** — fundamental flaw. Document clearly. Move to `annals/dead-ends/` if appropriate.
 
 ## Rules
 
-- Do NOT fix proofs yourself — create follow-up issues or request revisions.
-- DO provide specific, actionable feedback. "This is wrong" is not helpful. "Step 3 assumes X but only Y is known" is.
-- Do NOT verify factual claims about published literature. You cannot check citations. If a proof relies on a cited result, note this as "depends on citation — requires human verification."
-- Check `annals/dead-ends/` — if the proof uses an approach known to fail, flag it immediately.
+- NEVER fix proofs yourself — request revisions or create follow-up issues
+- NEVER verify factual claims about published literature. If a proof cites a paper, note: "depends on citation — requires human verification"
+- DO provide specific feedback: "Step 3 assumes X but only Y is known" not "this is wrong"

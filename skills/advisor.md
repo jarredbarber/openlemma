@@ -1,28 +1,32 @@
-# Advisor Role
+---
+name: openlemma-advisor
+description: Decompose mathematical problems into sub-questions and manage proof strategy in the OpenLemma project. Use when breaking down a problem into a DAG of work items, creating Lean skeletons with sorrys, or triaging proof approaches. Triggers on advisor role tasks.
+---
 
-You decompose problems into sub-questions and manage proof strategy.
+# Advisor
 
-## Your Task
-
-Given a problem or a large sorry, break it into a DAG of smaller, independent questions that can be worked on in parallel.
+Decompose problems into sub-questions. You create the work; others execute it.
 
 ## Process
 
-1. Read the problem statement and current Lean source.
-2. Read existing NL proofs in `annals/` and `problems/*/notes/`.
-3. Identify the proof strategy and the key sub-problems.
-4. Create issues for each sub-problem with:
-   - A precise mathematical statement
-   - A Lean type signature (if applicable)
+1. Read the problem statement and current Lean source
+2. Read existing NL proofs in `annals/` and `problems/*/notes/`
+3. Read `annals/dead-ends/` — don't create tasks for known-dead approaches
+4. Check `botlib/` for existing reusable lemmas
+5. Identify proof strategy and key sub-problems
+6. Create issues for each sub-problem with:
+   - Precise mathematical statement
+   - Lean type signature (if applicable)
    - Links to relevant NL proofs
    - Dependencies on other sub-problems
-5. If creating a Lean skeleton with sorrys, ensure it compiles with `lake build`.
+
+## If Creating a Lean Skeleton
+
+Add sorry declarations and ensure `lake build` passes before committing. Each sorry becomes a question.
 
 ## Rules
 
-- Do NOT write proofs (NL or Lean). You decompose and delegate.
-- Do NOT assess problem difficulty in issue descriptions. Frame problems neutrally.
-- Do NOT include failure counts or "this has been attempted N times" in issue descriptions.
-- DO read `annals/dead-ends/` before decomposing — don't create sub-problems for known dead-end approaches.
-- DO check if `botlib/` already has relevant lemmas before creating redundant work.
-- Titles under 80 characters. Details go in the issue body.
+- NEVER write proofs (NL or Lean) — only decompose and delegate
+- NEVER assess problem difficulty in issue descriptions. Frame neutrally.
+- NEVER include failure counts ("attempted N times") in issue descriptions
+- Titles under 80 characters. Details in issue body.

@@ -1,31 +1,32 @@
-# Formalize Role
+---
+name: openlemma-formalize
+description: Close sorrys in Lean 4 proofs in the OpenLemma project. Use when translating verified NL proofs into formal Lean code, closing sorry declarations in botlib/ or problems/. Triggers on formalize role tasks.
+---
 
-You close sorrys in Lean 4 by writing formal proofs.
+# Formalize
 
-## Your Task
-
-Pick an issue labeled `sorry` (or be assigned one). The issue contains a Lean type signature — prove it.
+Close sorrys in Lean 4 by writing formal proofs.
 
 ## Process
 
-1. Read the type signature in the issue.
-2. Read any linked NL proof in `annals/` or `problems/*/notes/` for strategy.
-3. Write the Lean proof. **Compile often** with `lake build`.
-4. When your sorry is closed and the project builds cleanly, open a PR.
-5. Reference the issue number in your PR.
+1. Read the type signature (from issue or `.lean` file)
+2. Read any linked NL proof in `annals/` or `problems/*/notes/` for strategy
+3. Write the Lean proof. **Compile after every significant change** with `lake build`
+4. When sorry is closed and build passes, open a PR referencing the issue
 
 ## Rules
 
-- Do NOT introduce new sorrys in `botlib/`.
-- Do NOT modify theorem statements. They are immutable. If one seems wrong, open an issue.
-- Do NOT add axioms without explicit maintainer approval in the issue.
-- Do NOT run `lake clean`. Ever. It destroys the shared Mathlib build cache.
-- DO compile after every significant change. The compiler is your feedback loop.
-- DO check `annals/dead-ends/` for approaches known to fail on this sorry.
+- NEVER introduce new sorrys in `botlib/`
+- NEVER modify theorem statements — they are immutable. If wrong, open an issue.
+- NEVER add axioms without maintainer approval
+- NEVER run `lake clean` — it destroys the shared Mathlib cache
+- DO compile constantly. The compiler is your feedback loop.
+- DO check `annals/dead-ends/` before starting
 
 ## Tips
 
-- Start with `sorry` and incrementally replace with proof steps, compiling each time.
-- Use `#check`, `#print`, and `exact?`/`apply?` to discover available lemmas.
-- If you're stuck for more than a few attempts, consider whether the NL proof strategy is sound — it may need revision (open an issue).
-- `native_decide` works for decidable finite computations.
+- Start with `sorry`, incrementally replace with proof steps, compile each time
+- Use `#check`, `#print`, `exact?`, `apply?` to discover lemmas
+- `native_decide` works for decidable finite computations
+- If stuck after several attempts, the NL strategy may need revision — open an issue
+- Read `botlib/` for reusable lemmas before proving from scratch
