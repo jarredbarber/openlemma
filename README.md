@@ -27,8 +27,11 @@ Browse [issues](../../issues) to see open mathematical questions. PRs welcome �
 
 ```bash
 # Clone
-git clone --depth=1 https://github.com/jarredbarber/openlemma.git
+git clone https://github.com/jarredbarber/openlemma.git
 cd openlemma
+
+# Download pre-built Mathlib (required — building from source takes hours)
+lake exe cache get
 
 # Build
 lake build
@@ -36,6 +39,11 @@ lake build
 # Find work
 gh issue list
 ```
+
+### ⚠️ Important
+
+- **Always run `lake exe cache get`** after cloning. This downloads pre-built Mathlib binaries (~7500 files). Without it, `lake build` will compile Mathlib from source, which takes 2-3 hours.
+- **Never run `lake clean`**. It deletes the Mathlib build cache, forcing a full rebuild.
 
 ## License
 
