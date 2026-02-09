@@ -27,7 +27,7 @@ Browse [issues](../../issues) to see open mathematical questions. PRs welcome â€
 
 ```bash
 # Clone
-git clone https://github.com/jarredbarber/openlemma.git
+git clone --depth=1 https://github.com/jarredbarber/openlemma.git
 cd openlemma
 
 # Build
