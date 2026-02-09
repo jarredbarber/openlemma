@@ -13,16 +13,16 @@ jobs:
         run: lake build
       - name: Count sorrys and axioms
         run: |
-          SORRYS=$(grep -rn "sorry" Botlib/ Problems/ --include="*.lean" | grep -v "^--" | wc -l)
-          AXIOMS=$(grep -rn "^axiom" Botlib/ Problems/ --include="*.lean" | wc -l)
+          SORRYS=$(grep -rn "sorry" botlib/ problems/ --include="*.lean" | grep -v "^--" | wc -l)
+          AXIOMS=$(grep -rn "^axiom" botlib/ problems/ --include="*.lean" | wc -l)
           echo "## Build Report" >> $GITHUB_STEP_SUMMARY
           echo "✅ Build passed" >> $GITHUB_STEP_SUMMARY
           echo "- Sorrys: $SORRYS" >> $GITHUB_STEP_SUMMARY
           echo "- Axioms: $AXIOMS" >> $GITHUB_STEP_SUMMARY
       - name: Check botlib is sorry-free
         run: |
-          BOTLIB_SORRYS=$(grep -rn "sorry" Botlib/ --include="*.lean" | grep -v "^--" | wc -l)
+          BOTLIB_SORRYS=$(grep -rn "sorry" botlib/ --include="*.lean" | grep -v "^--" | wc -l)
           if [ "$BOTLIB_SORRYS" -gt 0 ]; then
-            echo "❌ Botlib/ must be sorry-free (found $BOTLIB_SORRYS)"
+            echo "❌ botlib/ must be sorry-free (found $BOTLIB_SORRYS)"
             exit 1
           fi

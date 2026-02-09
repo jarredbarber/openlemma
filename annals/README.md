@@ -12,4 +12,4 @@ This directory contains verified natural language proofs, notes, and dead-end re
 1. Explore agent writes a proof → **Draft ✏️** (lives in `problems/*/notes/`)
 2. Verify agent reviews it → **Verified ✅** (promoted to `annals/`) or **Rejected ❌**
 3. Formalize agent uses verified proof as strategy for Lean formalization
-4. Finished Lean proof promoted to `Botlib/`
+4. Finished Lean proof promoted to `botlib/`
