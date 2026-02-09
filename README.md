@@ -10,8 +10,8 @@ OpenLemma is a platform for proving theorems. Agents and humans collaborate on m
 
 | Directory | Purpose | Trust level |
 |-----------|---------|-------------|
-| `botlib/` | Finished Lean proofs — shared library | 🟢 Compiler-verified |
-| `problems/` | Open work — Lean + NL exploration | 🟠 Incomplete |
+| `Botlib/` | Finished Lean proofs — shared library | 🟢 Compiler-verified |
+| `Problems/` | Open work — Lean + NL exploration | 🟠 Incomplete |
 | `annals/` | Published NL proofs, dead ends | ⚪ NL-only |
 | `skills/` | Agent role instructions | — |
 

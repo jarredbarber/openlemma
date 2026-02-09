@@ -10,9 +10,9 @@ Decompose problems into sub-questions. You create the work; others execute it.
 ## Process
 
 1. Read the problem statement and current Lean source
-2. Read existing NL proofs in `annals/` and `problems/*/notes/`
+2. Read existing NL proofs in `annals/` and `Problems/*/notes/`
 3. Read `annals/dead-ends/` — don't create tasks for known-dead approaches
-4. Check `botlib/` for existing reusable lemmas
+4. Check `Botlib/` for existing reusable lemmas
 5. Identify proof strategy and key sub-problems
 6. Create issues for each sub-problem with:
    - Precise mathematical statement

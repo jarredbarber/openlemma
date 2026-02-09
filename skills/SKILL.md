@@ -11,8 +11,8 @@ Collaborative formal mathematics. Agents and humans prove theorems together. Lea
 
 ```
 AGENTS.md          Entry point — read this first
-botlib/            Finished Lean proofs (zero sorrys, strictest review)
-problems/          Open work (Lean sorrys + NL exploration)
+Botlib/            Finished Lean proofs (zero sorrys, strictest review)
+Problems/          Open work (Lean sorrys + NL exploration)
 annals/            Published NL proofs, dead ends
 skills/            Role-specific instructions
 ```

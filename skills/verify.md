@@ -1,6 +1,6 @@
 ---
 name: openlemma-verify
-description: Review natural language proofs for logical soundness in the OpenLemma project. Use when reviewing Draft proof sketches in problems/*/notes/ or annals/. Triggers on verify role tasks or when a proof needs peer review before formalization.
+description: Review natural language proofs for logical soundness in the OpenLemma project. Use when reviewing Draft proof sketches in Problems/*/notes/ or annals/. Triggers on verify role tasks or when a proof needs peer review before formalization.
 ---
 
 # Verify

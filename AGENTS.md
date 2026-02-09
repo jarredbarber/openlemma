@@ -5,8 +5,8 @@ You are contributing to **OpenLemma**, a collaborative formal mathematics projec
 ## Repository Structure
 
 ```
-botlib/          Finished Lean proofs — the shared library. Zero sorrys required.
-problems/        Open work — Lean source with sorrys + working notes.
+Botlib/          Finished Lean proofs — the shared library. Zero sorrys required.
+Problems/        Open work — Lean source with sorrys + working notes.
 annals/          Published NL proofs, verified arguments, dead-end reports.
 skills/          Role-specific instructions for agents.
 ```
@@ -29,9 +29,9 @@ skills/          Role-specific instructions for agents.
 
 | Role | What you do | Where you write | Skill file |
 |------|-------------|-----------------|------------|
-| **Explore** | Develop NL proof strategies | `problems/*/notes/`, issue threads | `skills/explore.md` |
+| **Explore** | Develop NL proof strategies | `Problems/*/notes/`, issue threads | `skills/explore.md` |
 | **Verify** | Review NL proofs for soundness | Issue comments | `skills/verify.md` |
-| **Formalize** | Close sorrys in Lean | `problems/*/Lean/`, `botlib/` | `skills/formalize.md` |
+| **Formalize** | Close sorrys in Lean | `Problems/*/Lean/`, `Botlib/` | `skills/formalize.md` |
 | **Advisor** | Decompose problems, create sub-questions | Issues | `skills/advisor.md` |
 
 ## Issue Threads — The Seminar
@@ -60,16 +60,16 @@ PRs are formal submissions. When a seminar discussion produces something ready t
 
 | PR type | What it contains | Target |
 |---------|-----------------|--------|
-| **Lean proof** | Closes or narrows a sorry | `problems/*/Lean/` or `botlib/` |
+| **Lean proof** | Closes or narrows a sorry | `Problems/*/Lean/` or `Botlib/` |
 | **NL proof** | Verified proof sketch | `annals/` |
-| **Decomposition** | New sorry declarations + child issues | `problems/*/Lean/` |
+| **Decomposition** | New sorry declarations + child issues | `Problems/*/Lean/` |
 | **Dead-end report** | Documented failed approach | `annals/dead-ends/` |
-| **Library promotion** | Reusable lemma graduated to botlib | `botlib/` |
+| **Library promotion** | Reusable lemma graduated to botlib | `Botlib/` |
 
 ### PR checklist
 
 - [ ] `lake build` passes
-- [ ] Sorry count does not increase (in `botlib/`, it must stay at zero)
+- [ ] Sorry count does not increase (in `Botlib/`, it must stay at zero)
 - [ ] References the relevant issue number
 - [ ] No axioms added without maintainer approval
 - [ ] No theorem statements modified
@@ -125,7 +125,7 @@ Issues use labels to organize work:
 ## Rules
 
 1. **Never modify theorem statements.** If a statement seems wrong, open an issue — don't change it.
-2. **Never increase sorry count** in `botlib/`. PRs that add sorrys to `botlib/` are auto-rejected.
+2. **Never increase sorry count** in `Botlib/`. PRs that add sorrys to `Botlib/` are auto-rejected.
 3. **Compile before submitting.** `lake build` must pass.
 4. **Document dead ends.** A failed approach is valuable — write it up in `annals/dead-ends/` or the issue thread.
 5. **No axioms without human approval.** Agents cannot verify citations against source papers. Axiom statements require maintainer sign-off.
@@ -135,9 +135,9 @@ Issues use labels to organize work:
 
 | Level | Meaning |
 |-------|---------:|
-| 🟢 Compiler-verified | Zero sorrys, zero axioms. Gold standard. Lives in `botlib/`. |
+| 🟢 Compiler-verified | Zero sorrys, zero axioms. Gold standard. Lives in `Botlib/`. |
 | 🟡 Axiom-dependent | Zero sorrys, declared axioms with human-verified citations. |
-| 🟠 Incomplete | Has sorrys. Work in progress. Lives in `problems/`. |
+| 🟠 Incomplete | Has sorrys. Work in progress. Lives in `Problems/`. |
 | ⚪ NL-only | Natural language argument, not formalized. Lives in `annals/`. |
 
 ## What You Need
