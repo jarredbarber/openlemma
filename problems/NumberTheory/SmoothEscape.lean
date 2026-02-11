@@ -57,7 +57,7 @@ open ArithmeticFunction Filter Nat Finset
 -- § Helpers: σ₁ growth bounds and orbit divergence
 -- ============================================================================
 
-namespace problems.NumberTheory.SmoothEscape.Helpers
+namespace OpenLemma.SmoothEscape.Helpers
 
 /-- For n ≥ 2, σ₁(n) ≥ n + 1 (since 1 and n are always divisors). -/
 lemma sigma_one_ge (n : ℕ) (hn : 2 ≤ n) : n + 1 ≤ sigma 1 n := by
@@ -94,13 +94,13 @@ lemma sigma_one_iterate_tendsto_atTop (n : ℕ) (hn : 2 ≤ n) :
   have := iterate_sigma_one_ge n hn a
   omega
 
-end problems.NumberTheory.SmoothEscape.Helpers
+end OpenLemma.SmoothEscape.Helpers
 
 -- ============================================================================
 -- § Smooth Escape
 -- ============================================================================
 
-namespace problems.NumberTheory.SmoothEscape
+namespace OpenLemma.SmoothEscape
 
 /-- A natural number n is S-smooth if every prime factor of n lies in S. -/
 def IsSmooth (S : Finset ℕ) (n : ℕ) : Prop :=
@@ -176,7 +176,7 @@ lemma iterate_ge_two (n : ℕ) (hn : 2 ≤ n) (k : ℕ) : 2 ≤ (sigma 1)^[k] n 
   | zero => simp only [Function.iterate_zero, id_eq]; exact hn
   | succ k ih =>
     rw [Function.iterate_succ_apply']
-    have := problems.NumberTheory.SmoothEscape.Helpers.sigma_one_ge ((sigma 1)^[k] n) ih
+    have := OpenLemma.SmoothEscape.Helpers.sigma_one_ge ((sigma 1)^[k] n) ih
     omega
 
 lemma iterate_ne_zero (n : ℕ) (hn : 2 ≤ n) (k : ℕ) : (sigma 1)^[k] n ≠ 0 := by
@@ -226,7 +226,7 @@ lemma exponent_growth (n : ℕ) (hn : 2 ≤ n) (S : Finset ℕ) (K : ℕ)
     have hne := iterate_ne_zero n hn k
     have hsmooth := (isSmooth_iff hne).mp (hK k hk)
     exact smooth_bounded S _ hne E hSprimes hsmooth (fun p hp => hE p hp k hk)
-  have hdiv := problems.NumberTheory.SmoothEscape.Helpers.sigma_one_iterate_tendsto_atTop n hn
+  have hdiv := OpenLemma.SmoothEscape.Helpers.sigma_one_iterate_tendsto_atTop n hn
   rw [tendsto_atTop_atTop] at hdiv
   obtain ⟨N, hN⟩ := hdiv (B + 1)
   have hle := hbound (max K N) (le_max_left K N)
@@ -293,4 +293,4 @@ theorem orbit_not_eventually_smooth (n : ℕ) (hn : 2 ≤ n) (S : Finset ℕ)
     have ⟨p, hp, hpdvd⟩ := Nat.exists_prime_and_dvd (iterate_ne_one n hn K)
     exact absurd (hsmooth p hp hpdvd) (by simp)
 
-end problems.NumberTheory.SmoothEscape
+end OpenLemma.SmoothEscape

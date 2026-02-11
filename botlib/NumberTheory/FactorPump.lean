@@ -26,7 +26,7 @@ Erdős Problem 410, with zero human mathematical input.
 open Nat ArithmeticFunction Finset
 open scoped Classical
 
-namespace botlib.NumberTheory.FactorPump
+namespace OpenLemma.FactorPump
 
 /-- omega_odd(n) is the number of prime factors of n that appear with an odd exponent. -/
 def omegaOdd (n : ℕ) : ℕ :=
@@ -268,4 +268,4 @@ theorem v2_sigma_ge_omegaOdd_oddPart (n : ℕ) (hn : n ≠ 0) :
     rw [if_neg h_e_odd]
     rw [h_lem]
 
-end botlib.NumberTheory.FactorPump
+end OpenLemma.FactorPump
