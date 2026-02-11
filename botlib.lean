@@ -6,4 +6,9 @@ import botlib.NumberTheory.Kummer
 import botlib.NumberTheory.LargePrimeDvdChoose
 import botlib.NumberTheory.CarryInfra
 import botlib.NumberTheory.BinomialDivisibility
+import botlib.NumberTheory.HighDigitCarry
 import botlib.NumberTheory.FactorPump
+
+-- Combinatorics / Probability
+import botlib.Combinatorics.DigitSpace
+import botlib.Combinatorics.ChernoffDigits
