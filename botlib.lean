@@ -8,6 +8,7 @@ import botlib.NumberTheory.CarryInfra
 import botlib.NumberTheory.BinomialDivisibility
 import botlib.NumberTheory.HighDigitCarry
 import botlib.NumberTheory.FactorPump
+import botlib.NumberTheory.Zsygmondy
 
 -- Combinatorics / Probability
 import botlib.Combinatorics.DigitSpace

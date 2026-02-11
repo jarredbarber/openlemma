@@ -4,6 +4,7 @@ import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Order.Filter.AtTopBot.Defs
 import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Order.Filter.Tendsto
+import botlib.NumberTheory.Zsygmondy
 
 /-!
 # Smooth Escape Lemma (Erdős Problem 410)
@@ -111,16 +112,9 @@ def IsSmooth (S : Finset ℕ) (n : ℕ) : Prop :=
 def EventuallySmooth (S : Finset ℕ) (n : ℕ) : Prop :=
   ∃ K, ∀ k, K ≤ k → IsSmooth S ((sigma 1)^[k] n)
 
--- ============================================================================
--- § Zsygmondy's theorem (citation axiom — the open problem)
---
--- Proving this from first principles would eliminate the only axiom in this
--- file, promoting the smooth escape lemma from 🟡 axiom-dependent to
--- 🟢 compiler-verified.
--- ============================================================================
-
-axiom zsygmondy_prime_pow (p m : ℕ) (hp : p.Prime) (hm : 7 ≤ m) :
-    ∃ q, q.Prime ∧ q ∣ p ^ m - 1 ∧ (∀ i, 1 ≤ i → i < m → ¬(q ∣ p ^ i - 1)) ∧ m + 1 ≤ q
+-- Zsygmondy's theorem imported from botlib.NumberTheory.Zsygmondy
+-- Proving it from Mathlib primitives would promote SmoothEscape to 🟢 axiom-free.
+open OpenLemma.Zsygmondy
 
 -- ============================================================================
 -- § Number theory helpers
