@@ -1,6 +1,7 @@
 # Cook-Levin Theorem: Correctness Proof
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Prove that for any language $L \in NP$, the tableau construction $w \mapsto \phi_w$ is correct, i.e., $w \in L \iff \phi_w \in \text{SAT}$.
 
 ## 1. The NP Characterization Bridge
