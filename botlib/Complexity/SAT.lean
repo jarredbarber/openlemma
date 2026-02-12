@@ -53,6 +53,59 @@ def Satisfiable (φ : CNF) : Prop :=
 /-- The SAT language: the set of satisfiable CNF formulas. -/
 def SAT_Language : CNF → Prop := Satisfiable
 
+/-! ## Encodings -/
+
+open Computability
+
+/-- Helper: split a list of options by `none`. -/
+private def splitByNone {Γ : Type} : List (Option Γ) → List (List Γ)
+  | [] => []
+  | some g :: rest =>
+    match splitByNone rest with
+    | [] => [[g]]
+    | x :: xs => (g :: x) :: xs
+  | none :: rest => [] :: splitByNone rest
+
+private theorem splitByNone_encode {Γ : Type} (l : List Γ) (rest : List (Option Γ)) :
+    splitByNone (l.map some ++ none :: rest) =
+    l :: splitByNone rest := by
+  induction l with
+  | nil => rfl
+  | cons g gs ih => simp [splitByNone, ih]
+
+/-- Generic encoding for lists given an encoding for elements. -/
+def listEncoding {α : Type} (ea : FinEncoding α) : FinEncoding (List α) where
+  Γ := Option ea.Γ
+  encode l := l.flatMap (fun a => (ea.encode a).map some ++ [none])
+  decode l := (splitByNone l).mapM ea.decode
+  decode_encode l := by
+    induction l with
+    | nil => rfl
+    | cons a as ih =>
+      simp [List.flatMap, splitByNone_encode, ea.decode_encode]
+      erw [ih]
+      rfl
+  ΓFin := inferInstance
+
+/-- FinEncoding for literals. -/
+def literalFinEncoding : FinEncoding Literal where
+  Γ := Γ'
+  encode l := match l with
+    | .pos n => Γ'.bit true :: encodingNatΓ'.encode n
+    | .neg n => Γ'.bit false :: encodingNatΓ'.encode n
+  decode l := match l with
+    | Γ'.bit b :: l' => (encodingNatΓ'.decode l').map (if b then Literal.pos else Literal.neg)
+    | _ => none
+  decode_encode l := by
+    cases l <;> simp [encodingNatΓ'.decode_encode]
+  ΓFin := inferInstance
+
+/-- FinEncoding for clauses. -/
+def clauseFinEncoding : FinEncoding Clause := listEncoding literalFinEncoding
+
+/-- FinEncoding for CNF formulas. -/
+def cnfFinEncoding : FinEncoding CNF := listEncoding clauseFinEncoding
+
 /-! ## 3-SAT
 
 A restricted version where every clause has exactly 3 literals.
