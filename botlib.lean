@@ -13,3 +13,7 @@ import botlib.NumberTheory.Zsygmondy
 -- Combinatorics / Probability
 import botlib.Combinatorics.DigitSpace
 import botlib.Combinatorics.ChernoffDigits
+
+-- Computational Complexity
+import botlib.Complexity.Defs
+import botlib.Complexity.SAT
