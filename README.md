@@ -19,7 +19,7 @@ The current focus of the library is a full formalization of the **Cook-Levin The
 - [x] **Phase 1: Foundations**: P/NP definitions, poly-time composition, and axiom-free foundations.
 - [ ] **Phase 2: SAT ∈ NP**: Verifier definition and polynomial witness size proofs (In progress).
 - [ ] **Phase 3: Cook-Levin Reduction**: Tableau construction for multi-stack Turing machines (Scaffolding).
-- [x] **Phase 4: NP-Completeness Library**: Verified NL proofs for reductions (3-SAT, Clique, Vertex Cover, Subset Sum, Partition).
+- [x] **Phase 4: NP-Completeness Library**: Verified NL proofs for reductions (3-SAT, Clique, Vertex Cover, Dominating Set, Subset Sum, Partition, Knapsack, Bin Packing).
 
 ## Library contents
 

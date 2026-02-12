@@ -23,9 +23,22 @@ import botlib.Complexity.SAT
 
 namespace CookLevinTableau
 
-open Turing Computability SAT Complexity
+open Computability
 
--- Re-export Turing names that get shadowed by the OpenLemma.Complexity namespace
+/-! ## Local SAT type definitions
+
+These mirror `OpenLemma.Complexity.SAT.{Literal, Clause, CNF}`.
+Once SAT.lean builds, replace with `import botlib.Complexity.SAT` and
+`open OpenLemma.Complexity.SAT`. -/
+namespace SAT
+  inductive Literal : Type where
+    | pos : ℕ → Literal
+    | neg : ℕ → Literal
+    deriving DecidableEq
+
+  abbrev Clause := List Literal
+  abbrev CNF := List Clause
+end SAT
 
 /-! ## Statement Analysis
 
@@ -76,7 +89,7 @@ end StmtAnalysis
 
 /-- Maximum read depth across all labels of a Turing.FinTM2 machine on stack `k`. -/
 noncomputable def maxReadDepth (V : Turing.FinTM2) (k : V.K) : ℕ :=
-  @Finset.sup V.Λ ℕ _ Finset.univ (fun l => stmtReadDepth k (V.m l))
+  (Finset.univ (α := V.Λ)).fold max 0 (fun l => stmtReadDepth k (V.m l))
 
 /-! ## Abstract Step Input/Output
 
@@ -187,36 +200,36 @@ private def TableauVar.equiv (V : Turing.FinTM2) : TableauVar V ≃ TableauVarSu
 noncomputable instance {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] :
     Encodable (TableauVar V) :=
-  Encodable.ofEquiv _ (TableauVar.equiv V).symm
+  Encodable.ofEquiv _ (TableauVar.equiv V)
 
 /-! ## Literal and Clause Construction -/
 
 /-- Encode a TableauVar and polarity into a SAT Literal.
     `pos` = the variable is true; `neg` = the variable is false. -/
-noncomputable def tLit [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable def tLit {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] (v : TableauVar V) (b : Bool) : SAT.Literal :=
   if b then SAT.Literal.pos (Encodable.encode v) else SAT.Literal.neg (Encodable.encode v)
 
 /-- Unit clause fixing a variable to a value. -/
-noncomputable def fixClause [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable def fixClause {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] (v : TableauVar V) (b : Bool) : SAT.Clause :=
   [tLit v b]
 
 /-- "At least one" clause: at least one variable in the list is true. -/
-noncomputable def atLeastOne [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable def atLeastOne {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] (vars : List (TableauVar V)) : SAT.Clause :=
   vars.map (fun v => tLit v true)
 
 /-- "At most one" clauses: for every pair, at most one is true.
     Implemented as pairwise mutual exclusion clauses. -/
-noncomputable def atMostOne [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable def atMostOne {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] (vars : List (TableauVar V)) : SAT.CNF :=
   vars.tails.flatMap fun
     | [] => []
     | v :: rest => rest.map (fun w => [tLit v false, tLit w false])
 
 /-- "Exactly one" constraints: at least one and at most one. -/
-noncomputable def exactlyOne [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable def exactlyOne {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] (vars : List (TableauVar V)) : SAT.CNF :=
   atLeastOne vars :: atMostOne vars
 
