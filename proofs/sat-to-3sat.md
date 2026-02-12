@@ -97,13 +97,13 @@ So $\phi$ is satisfied.
 
 ## Conclusion
 
-We have established:
-1.  **3-SAT $\in$ NP:** The language 3-SAT is a subset of SAT (restricted by clause length). The polynomial-time verifier for SAT also works for 3-SAT.
-2.  **NP-Hardness:**
-    -   SAT is NP-hard (by the Cook-Levin theorem).
-    -   SAT $\le_p$ 3-SAT (by the reduction above).
-    -   By transitivity of polynomial-time reductions, if $L \in NP$, then $L \le_p \text{SAT} \le_p \text{3-SAT}$, so $L \le_p \text{3-SAT}$.
-    -   Thus, 3-SAT is NP-hard.
+We have shown SAT $\le_p$ 3-SAT: there exists a polynomial-time computable function $f$ such that $\phi$ is satisfiable if and only if $f(\phi)$ is satisfiable and $f(\phi)$ is in 3-CNF.
 
-Since 3-SAT is in NP and is NP-hard, **3-SAT is NP-complete**.
+**3-SAT is NP-complete:**
+
+1. **3-SAT is NP-hard:** SAT is NP-hard (Cook-Levin theorem, proved separately). Since SAT $\le_p$ 3-SAT (this proof), by reduction transitivity, for any language $L \in NP$: $L \le_p \text{SAT} \le_p \text{3-SAT}$. Therefore every NP language reduces to 3-SAT, i.e., 3-SAT is NP-hard.
+
+2. **3-SAT $\in$ NP:** Every 3-CNF formula is a valid CNF formula. The polynomial-time verifier for SAT (which checks any CNF formula against an assignment) therefore also serves as a verifier for 3-SAT with the same certificate type and polynomial bound. Thus 3-SAT $\in$ NP.
+
+3. **NP-hard $\land$ NP $\implies$ NP-complete.** ∎
 
