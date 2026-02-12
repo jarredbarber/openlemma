@@ -1,7 +1,8 @@
 # Proof: 3-SAT reduces to SUBSET SUM
 
 **Statement:** 3-SAT $\le_p$ SUBSET SUM.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any 3-CNF formula $\phi$ to an instance $(S, t)$ of SUBSET SUM such that $\phi$ is satisfiable if and only if there exists a subset of $S$ that sums to $t$.
 
 ## 1. Definitions

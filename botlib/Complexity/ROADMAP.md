@@ -30,10 +30,10 @@ reduced to the Boolean satisfiability problem.
 - [ ] Conclude SAT ∈ NP (Verified NL, 2 sorrys remain in SAT.lean)
 
 ### Phase 3: Cook-Levin Reduction
-- [ ] Tableau construction: encode TM computation as Boolean variables (In progress, `CookLevin.lean`)
-- [ ] Initial configuration constraints (In progress)
-- [ ] Transition constraints (local consistency)
-- [ ] Acceptance constraints
+- [x] Tableau construction: encode TM computation as Boolean variables (verified blueprint)
+- [x] Initial configuration constraints (verified blueprint)
+- [x] Transition constraints (local consistency) (verified blueprint)
+- [x] Acceptance constraints (verified blueprint)
 - [x] Prove: formula is satisfiable ↔ TM accepts (verified NL)
 - [x] Prove: reduction is polynomial-time (verified NL)
 
@@ -41,7 +41,7 @@ reduced to the Boolean satisfiability problem.
 - [x] SAT → 3-SAT reduction (verified)
 - [x] 3-SAT → CLIQUE reduction (verified)
 - [x] CLIQUE → VERTEX COVER reduction (verified)
-- [ ] 3-SAT → SUBSET SUM reduction (In progress)
+- [x] 3-SAT → SUBSET SUM reduction (verified)
 - [ ] SUBSET SUM → PARTITION reduction
 - [x] Basic NP-completeness results (follows from reductions)
 

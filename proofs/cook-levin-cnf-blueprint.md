@@ -1,6 +1,7 @@
 # Blueprint: Cook-Levin CNF Formalization
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Provide a concrete technical specification for the variables and clauses of the Cook-Levin reduction ($\phi_w$) to guide the Lean formalization.
 **References:** `proofs/cook-levin-tableau.md`, `proofs/cook-levin-correctness.md`
 
