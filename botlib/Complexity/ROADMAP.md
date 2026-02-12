@@ -19,8 +19,8 @@ reduced to the Boolean satisfiability problem.
 - [x] SAT, 3-SAT definitions (SAT.lean)
 - [x] Close pairEncoding sorry (decode roundtrip) (Defs.lean)
 - [ ] Poly-time composition (adapt from LeanMillenniumPrizeProblems)
-- [x] P ⊆ NP (Defs.lean - one sorry remains for poly-time check)
-- [ ] Reduction transitivity
+- [x] P ⊆ NP
+- [x] Reduction transitivity
 - [x] FinEncoding for CNF formulas (SAT.lean)
 
 ### Phase 2: SAT ∈ NP
