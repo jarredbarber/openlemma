@@ -18,24 +18,24 @@ reduced to the Boolean satisfiability problem.
 - [x] P, NP, NP-complete definitions (Defs.lean)
 - [x] SAT, 3-SAT definitions (SAT.lean)
 - [x] Close pairEncoding sorry (decode roundtrip)
-- [x] Poly-time composition (verified NL, using axiom `PolyTimeComp` in Lean)
-- [x] P ⊆ NP (Formalized in `Defs.lean`, depends on `PolyTimeComp` axiom)
+- [x] Poly-time composition (Ported 1431 lines to `TM2PolyTimeComp.lean`)
+- [x] P ⊆ NP (Fully formalized in `Defs.lean` without axioms)
 - [x] Reduction transitivity (verified NL)
 - [x] FinEncoding for CNF formulas (Implemented in `SAT.lean`)
 
 ### Phase 2: SAT ∈ NP
 - [x] Define a verifier for SAT (given formula + assignment, check in poly-time) (SAT.lean)
-- [x] Prove the verifier runs in polynomial time (verified NL, one formal sorry remains)
-- [x] Prove variable-relevance lemmas for SAT assignments (Formalized in `SAT.lean`)
-- [x] Conclude SAT ∈ NP (Structure formalized in `SAT.lean`, logical equivalence proven)
+- [ ] Prove the verifier runs in polynomial time (Formalizing PolyTimeFst)
+- [x] Prove variable-relevance lemmas for SAT assignments (Fully formalized in `SAT.lean`)
+- [ ] Conclude SAT ∈ NP (Verified NL, 2 sorrys remain in SAT.lean)
 
 ### Phase 3: Cook-Levin Reduction
-- [x] Tableau construction: encode TM computation as Boolean variables (verified)
-- [x] Initial configuration constraints (verified)
-- [x] Transition constraints (local consistency) (verified)
-- [x] Acceptance constraints (verified)
-- [x] Prove: formula is satisfiable ↔ TM accepts (verified)
-- [x] Prove: reduction is polynomial-time (verified with linear listEncoding)
+- [ ] Tableau construction: encode TM computation as Boolean variables (In progress, `CookLevin.lean`)
+- [ ] Initial configuration constraints (In progress)
+- [ ] Transition constraints (local consistency)
+- [ ] Acceptance constraints
+- [x] Prove: formula is satisfiable ↔ TM accepts (verified NL)
+- [x] Prove: reduction is polynomial-time (verified NL)
 
 ### Phase 4: Extensions
 - [x] SAT → 3-SAT reduction (verified)
