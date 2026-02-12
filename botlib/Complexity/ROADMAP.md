@@ -1,18 +1,23 @@
-/-
-Copyright (c) 2026. All rights reserved.
-Released under Apache 2.0 license.
-
-Roadmap for Cook-Levin theorem formalization.
+# Cook-Levin Formalization Roadmap
 
 ## Theorem Statement
 SAT is NP-complete: every language in NP can be polynomial-time
 reduced to the Boolean satisfiability problem.
+
+## Prior Art
+- **Coq**: Gäher et al. (ITP 2021) — full Cook-Levin via λ-calculus model L
+- **Isabelle**: Balbach (AFP) — full Cook-Levin via deterministic TMs (Arora-Barak)
+- **Lean 4**: LeanMillenniumPrizeProblems — definitions + poly-time composition only
+- **Lean 4**: madvorak/polytime-trees — in progress, binary tree model
+
+**No Lean 4 proof of Cook-Levin exists yet.**
 
 ## Proof Roadmap
 
 ### Phase 1: Foundations (current)
 - [x] P, NP, NP-complete definitions (Defs.lean)
 - [x] SAT, 3-SAT definitions (SAT.lean)
+- [ ] Close pairEncoding sorry (decode roundtrip)
 - [ ] Poly-time composition (adapt from LeanMillenniumPrizeProblems)
 - [ ] P ⊆ NP
 - [ ] Reduction transitivity
@@ -36,19 +41,7 @@ reduced to the Boolean satisfiability problem.
 - [ ] 3-SAT → CLIQUE reduction
 - [ ] Basic NP-completeness results
 
-## Prior Art
-- Coq: Gäher et al. (ITP 2021) — full Cook-Levin via λ-calculus model L
-- Isabelle: Balbach (AFP) — full Cook-Levin via deterministic TMs (Arora-Barak)
-- Lean 4: LeanMillenniumPrizeProblems — definitions + poly-time composition only
-- Lean 4: madvorak/polytime-trees — in progress, binary tree model
-
 ## Design Decisions
 - Build on Mathlib's TM2/FinTM2 (matches existing Lean ecosystem)
 - Adapt definitions from LeanMillenniumPrizeProblems (0 sorrys, clean)
 - Phase 3 follows Isabelle AFP's Arora-Barak approach (TM-based, most portable)
--/
-
-import OpenLemma.Complexity.Defs
-import OpenLemma.Complexity.SAT
-
--- This file serves as documentation. No theorems here.
