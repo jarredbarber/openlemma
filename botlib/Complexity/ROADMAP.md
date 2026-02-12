@@ -35,9 +35,9 @@ reduced to the Boolean satisfiability problem.
 - [x] Initial configuration constraints (Implemented)
 - [x] Transition constraints (Forbidden windows implemented)
 - [x] Acceptance constraints (Implemented)
-- [x] Correctness: formula satisfiable ↔ TM accepts (Fully proven in `Correctness.lean`)
-- [ ] Polynomial-time bound on the reduction (`CookLevin/PolyTime.lean`)
-- [x] Prove: formula is satisfiable ↔ TM accepts (verified NL)
+- [x] Correctness: formula satisfiable ↔ TM accepts (Axiomatized lemmas in `Correctness.lean`)
+- [x] Polynomial-time bound on the reduction (Axiomatized citation in `PolyTime.lean`)
+- [ ] Prove: formula is satisfiable ↔ TM accepts (Skeleton in `Soundness.lean` and `Completeness.lean`)
 - [x] Prove: reduction is polynomial-time (verified NL)
 
 ### Phase 4: Extensions
