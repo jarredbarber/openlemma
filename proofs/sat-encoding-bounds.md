@@ -1,6 +1,7 @@
 # Proof: SAT Encoding Bounds
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Prove that for any CNF formula $\phi$, there exists a certificate $y$ (representing a satisfying assignment) such that $|encode(y)| \le |encode(\phi)|^2$ (or a similar polynomial bound).
 
 This document provides a rigorous algebraic derivation of the bit-length of the encodings used in `botlib/Complexity/SAT.lean`.
