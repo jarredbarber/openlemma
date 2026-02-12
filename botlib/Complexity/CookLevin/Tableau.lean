@@ -21,7 +21,7 @@ import Mathlib.Data.Fintype.Basic
 import botlib.Complexity.Defs
 import botlib.Complexity.SAT
 
-namespace OpenLemma.Complexity.CookLevin
+namespace CookLevinTableau
 
 open Turing Computability SAT Complexity
 
@@ -446,4 +446,4 @@ noncomputable def tableauFormula [DecidableEq V.K]
   framePreservation V params ++
   acceptanceConstraints V params
 
-end OpenLemma.Complexity.CookLevin
+end CookLevinTableau

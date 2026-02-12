@@ -272,9 +272,9 @@ private theorem List.Sublist.sum_le_nat {l1 l2 : List ℕ} (h : l1.Sublist l2) :
   induction h with
   | slnil => simp
   | cons x h ih =>
-    simp; exact Nat.le_trans ih (Nat.le_add_left _ _)
+    simp; omega
   | cons₂ x h ih =>
-    simp; exact Nat.add_le_add_left ih _
+    simp; omega
 
 /-- The number of distinct variables in a CNF formula is at most the formula encoding length. -/
 private theorem vars_dedup_length_le_encoding (φ : CNF) :
@@ -358,7 +358,7 @@ private theorem cert_encoding_le_cube (φ : CNF) (σ : Assignment) :
     | nil => simp
     | cons p ps ih => 
       simp [ih, pairEncoding, finEncodingBoolBool, encodeBool]
-      cases p; rfl
+      cases p; simp [encodeBool]; rfl
   have h_len_y_unfold : (finEncodingSATCertificate.encode y).length = 
       (φ.vars.dedup.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum := by
     rw [h_len_y, List.map_map]; rfl
@@ -368,7 +368,7 @@ private theorem cert_encoding_le_cube (φ : CNF) (σ : Assignment) :
     | nil => simp
     | cons x xs ih => 
       simp [ih]
-      ring
+      omega
   calc (finEncodingSATCertificate.encode y).length
     _ = (φ.vars.dedup.map (fun v => (finEncodingNatBool.encode v).length)).sum + 2 * φ.vars.dedup.length := by
         rw [h_len_y_unfold, h_split]
