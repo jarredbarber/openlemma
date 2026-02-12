@@ -17,11 +17,11 @@ reduced to the Boolean satisfiability problem.
 ### Phase 1: Foundations (current)
 - [x] P, NP, NP-complete definitions (Defs.lean)
 - [x] SAT, 3-SAT definitions (SAT.lean)
-- [ ] Close pairEncoding sorry (decode roundtrip)
+- [x] Close pairEncoding sorry (decode roundtrip)
 - [ ] Poly-time composition (adapt from LeanMillenniumPrizeProblems)
 - [ ] P ⊆ NP
 - [ ] Reduction transitivity
-- [ ] FinEncoding for CNF formulas
+- [x] FinEncoding for CNF formulas
 
 ### Phase 2: SAT ∈ NP
 - [ ] Define a verifier for SAT (given formula + assignment, check in poly-time)
