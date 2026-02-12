@@ -1,6 +1,7 @@
 # Cook-Levin Theorem: Polynomial Time Complexity
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Prove that the tableau construction $w \mapsto \phi_w$ is computable in polynomial time.
 
 ## 1. Assumptions

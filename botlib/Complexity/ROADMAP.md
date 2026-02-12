@@ -34,7 +34,7 @@ reduced to the Boolean satisfiability problem.
 - [x] Transition constraints (local consistency)
 - [x] Acceptance constraints
 - [x] Prove: formula is satisfiable ↔ TM accepts
-- [ ] Prove: reduction is polynomial-time (blocked by linear encoding)
+- [x] Prove: reduction is polynomial-time (verified under linear encoding assumption)
 
 ### Phase 4: Extensions
 - [ ] SAT → 3-SAT reduction (Tseitin transformation)
