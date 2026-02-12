@@ -95,16 +95,57 @@ Specifically, if the head moves from $j$ to $j+1$, the window at $j$ says "head 
 If the transition logic were flawed (e.g., allowing the head to duplicate), it would contradict the "exactly one" constraint in $\phi_{\text{cell}}$, making the formula unsatisfiable (Soundness).
 If the transition logic is correct, exactly one $H_{i+1, j'}$ will be true (Completeness).
 
-## 4. Size Analysis
+## 4. Complexity Analysis
 
-*   **Variables:** $O(p(n)^2)$.
-*   **Clauses:** All constraints ($\phi_{\text{cell}}, \phi_{\text{start}}, \phi_{\text{accept}}, \phi_{\text{move}}$) generate a number of clauses that is constant per cell/time step, or linear in $p(n)$. 
-Total size is $O(p(n)^2)$, which is polynomial in $n$.
+**Variables:** The number of variables is $O(p(n)^2)$.
+- $C_{i,j,s}$: $(p(n)+1)(p(n)+1)|\Gamma|$
+- $H_{i,j}$: $(p(n)+1)(p(n)+1)$
+- $S_{i,q}$: $(p(n)+1)|Q|$
 
-## 5. Correctness
+**Clauses:** The number of clauses is also $O(p(n)^2)$.
+- Each $2 \times 3$ window generates a constant number of clauses (depending only on $|\Gamma|$ and $|Q|$).
 
-*   **Completeness:** An accepting computation path of $M$ on $w$ provides a valid assignment to all variables that satisfies all clauses by construction.
-*   **Soundness:** A satisfying assignment defines a sequence of configurations where each follows from the previous via a legal transition (or inertia), starts correctly, and ends in an accepting state.
+**Bit-length Note:**
+The actual bit-length of the encoded formula depends on the encoding scheme used for variable indices.
+Currently, `finEncodingOfEncodable` in `Defs.lean` may produce encodings where the bit-length is not strictly polynomial for all list types.
+However, assuming a standard binary encoding of indices (which is possible), the total bit-length of $\phi_w$ is $O(p(n)^2 \log(p(n)))$.
+We defer the formal proof of the polynomial bit-length bound until the encoding definitions are optimized.
+
+## 5. Correctness Proof
+
+We must show $M$ accepts $w \iff \phi_w$ is satisfiable.
+
+### 5.1 Completeness ($\implies$)
+**Hypothesis:** $M$ accepts $w$ in $k \le p(n)$ steps.
+**Goal:** $\phi_w$ is satisfiable.
+
+1.  **Trace:** Since $M$ accepts $w$, there exists a sequence of configurations $c_0, c_1, \dots, c_k$. We can extend this to $p(n)$ steps by repeating the final accepting configuration (or transitioning to a sink accepting state). Let the sequence be $c_0, \dots, c_{p(n)}$.
+2.  **Assignment:** Construct an assignment $\sigma$ as follows:
+    - Set $C_{i,j,s} = \text{true}$ iff cell $j$ in $c_i$ contains $s$.
+    - Set $H_{i,j} = \text{true}$ iff the head in $c_i$ is at $j$.
+    - Set $S_{i,q} = \text{true}$ iff the state in $c_i$ is $q$.
+    - Set all other variables to $\text{false}$.
+3.  **Satisfaction:**
+    - **$\phi_{\text{cell}}$**: By definition of a configuration, exactly one symbol, head position, and state exist at each step.
+    - **$\phi_{\text{start}}$**: $c_0$ is the initial configuration for input $w$.
+    - **$\phi_{\text{accept}}$**: The sequence ends in an accepting state, so $S_{p(n), q_{accept}}$ (or some earlier step) is true.
+    - **$\phi_{\text{move}}$**: Since $c_{i+1}$ follows from $c_i$ via $\delta$, every local window is legal. Thus all transition implications hold.
+4.  **Conclusion:** $\sigma$ satisfies $\phi_w$.
+
+### 5.2 Soundness ($\impliedby$)
+**Hypothesis:** $\phi_w$ is satisfiable.
+**Goal:** $M$ accepts $w$.
+
+1.  **Extract Sequence:** Let $\sigma$ be a satisfying assignment.
+    Since $\phi_{\text{cell}}$ is satisfied, for each time $i$, $\sigma$ defines a unique valid configuration $c_i$ (unique tape content, unique head position, unique state).
+2.  **Start:** Since $\phi_{\text{start}}$ is satisfied, $c_0$ corresponds to the initial configuration of $M$ on input $w$.
+3.  **Transitions:** Since $\phi_{\text{move}}$ is satisfied, for every $i$ and every cell $j$, the window centered at $(i, j)$ is legal.
+    - If the head is near $j$, the change is consistent with $\delta$.
+    - If the head is far from $j$, the cell content is unchanged.
+    - The "Head Uniqueness" consistency ensures that the head moves coherently (doesn't disappear or multiply).
+    - Therefore, $c_{i+1}$ is a valid successor of $c_i$ according to $\delta$.
+4.  **Acceptance:** Since $\phi_{\text{accept}}$ is satisfied, there exists some $i$ such that $S_{i, q_{accept}}$ is true. Thus $c_i$ is an accepting configuration.
+5.  **Conclusion:** The sequence $c_0, \dots, c_{p(n)}$ represents a valid accepting computation path of $M$ on $w$.
 
 ## Conclusion
 
