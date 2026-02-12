@@ -185,11 +185,40 @@ private def scanPhase [Nonempty ea.Γ]
     (hrest : ∀ x ∈ rest.head?, ∃ b, x = Sum.inr b) :
     EvalsToInTime (fstTM ea eb).step
       (mkCfg ea eb (some FstL.scan) s (as.map Sum.inl ++ rest) buf out)
-      (some (mkCfg ea eb (some FstL.drain) none rest (as.reverse ++ buf) out))
+      (some (mkCfg ea eb (some FstL.drain) none rest.tail (as.reverse ++ buf) out))
       (as.length + 1) := by
   induction as generalizing buf s with
-  | nil => sorry  -- case split on rest: nil → scan_nil, cons (inr b) → scan_inr
-  | cons a as ih => sorry  -- compose scan_inl with ih via trans + bumpTime
+  | nil =>
+    induction rest with
+    | nil => exact oneStep ea eb (scan_nil ea eb buf out s)
+    | cons x xs _ =>
+      have hx := hrest x (by rfl)
+      rw [hx.choose_spec]
+      exact oneStep ea eb (scan_inr ea eb hx.choose xs buf out s)
+  | cons a as ih =>
+    -- ih : ∀ buf s, EvalsToInTime step (mkCfg scan s (as.map inl ++ rest) buf out)
+    --                                    (mkCfg drain none rest (as.reverse ++ buf) out) (as.length + 1)
+    -- We need to produce:
+    -- EvalsToInTime step (mkCfg scan s ((a::as).map inl ++ rest) buf out)
+    --                     (mkCfg drain none rest ((a::as).reverse ++ buf) out) ((a::as).length + 1)
+    -- Strategy: one step of scan_inl takes us from ((a::as).map inl ++ rest) to (as.map inl ++ rest)
+    --   with buffer becoming (a :: buf). Then ih gives us the rest.
+    -- But the types use (a::as).map, (a::as).reverse, (a::as).length which aren't directly
+    --   Sum.inl a :: ..., as.reverse ++ [a], as.length + 1.
+    -- We need simp_rw or convert.
+    have h1 := oneStep ea eb (scan_inl ea eb a (as.map Sum.inl ++ rest) buf out s)
+    have h2 := ih (a :: buf) (some a)
+    -- h1 : EvalsToInTime step (mkCfg scan s (inl a :: as.map inl ++ rest) buf out)
+    --                          (mkCfg scan (some a) (as.map inl ++ rest) (a :: buf) out) 1
+    -- h2 : EvalsToInTime step (mkCfg scan (some a) (as.map inl ++ rest) (a :: buf) out)
+    --                          (mkCfg drain none rest (as.reverse ++ (a :: buf)) out) (as.length + 1)
+    have h12 := EvalsToInTime.trans (fstTM ea eb).step 1 (as.length + 1) _ _ _ h1 h2
+    -- h12 : EvalsToInTime step (mkCfg scan s (inl a :: as.map inl ++ rest) buf out)
+    --                           (mkCfg drain none rest (as.reverse ++ (a :: buf)) out)
+    --                           ((as.length + 1) + 1)
+    -- We need to convert this to use (a::as).map, (a::as).reverse, (a::as).length
+    convert bumpTime ea eb h12 (le_refl _) using 2
+    · simp [List.map_cons, List.cons_append]
 
 /-! ## Full correctness -/
 
@@ -198,7 +227,29 @@ private def fstEval [Nonempty ea.Γ] (as : List ea.Γ) (bs : List eb.Γ) :
       (mkCfg ea eb (some FstL.scan) none (as.map Sum.inl ++ bs.map Sum.inr) [] [])
       (some (mkCfg ea eb none none [] [] as))
       (2 * as.length + bs.length + 3) := by
-  sorry
+  have hrest : ∀ x ∈ (bs.map Sum.inr : List (Sum ea.Γ eb.Γ)).head?, ∃ b, x = Sum.inr b := by
+    intro x hx
+    cases bs with
+    | nil => simp [List.head?] at hx
+    | cons b _ => simp [List.map_cons, List.head?] at hx; exact ⟨b, hx.symm⟩
+  -- Phase 1: scan
+  have h1 := scanPhase ea eb as (bs.map Sum.inr) [] [] none hrest
+  simp only [List.append_nil] at h1
+  -- h1 : ... (as.map inl ++ bs.map inr) [] []  →  ... (bs.map inr).tail (as.reverse) []
+  -- Phase 2: drain
+  have h2 := drainPhase ea eb (bs.map Sum.inr).tail as.reverse [] none
+  -- h2 : ... drain (bs.map inr).tail as.reverse []  →  ... copy [] as.reverse []
+  -- Phase 3: copy
+  have h3 := copyPhase ea eb as.reverse [] none
+  -- h3 : ... copy [] as.reverse []  →  ... none [] [] (as.reverse.reverse)
+  -- Compose
+  have h12 := EvalsToInTime.trans _ _ _ _ _ _ h1 h2
+  have h123 := EvalsToInTime.trans _ _ _ _ _ _ h12 h3
+  convert bumpTime ea eb h123 ?_ using 2
+  · simp [List.reverse_reverse]
+  · -- Time bound: (as.length + 1) + ((bs.map inr).tail.length + 1) + (as.reverse.length + 1) ≤ ...
+    simp only [List.length_reverse, List.length_tail, List.length_map]
+    omega
 
 /-! ## Package as TM2ComputableInPolyTime -/
 
@@ -207,12 +258,19 @@ private theorem initCfg_eq [Nonempty ea.Γ] (a : α) (b : β) :
     initList (fstTM ea eb) (List.map (Equiv.refl _).invFun
       ((OpenLemma.Complexity.pairEncoding ea eb).encode (a, b))) =
     mkCfg ea eb (some FstL.scan) none ((ea.encode a).map Sum.inl ++ (eb.encode b).map Sum.inr) [] [] := by
-  sorry
+  simp only [initList, fstTM, mkCfg, OpenLemma.Complexity.pairEncoding, Equiv.refl, Equiv.coe_fn_mk,
+             List.map_id]
+  congr 1
+  funext k
+  cases k <;> simp [Function.update, dite]
 
 private theorem haltCfg_eq [Nonempty ea.Γ] (a : α) :
     Option.map (haltList (fstTM ea eb)) (some (List.map (Equiv.refl _).invFun (ea.encode a))) =
     some (mkCfg ea eb none none [] [] (ea.encode a)) := by
-  sorry
+  simp only [Option.map, haltList, fstTM, mkCfg, Equiv.refl, Equiv.coe_fn_mk, List.map_id]
+  congr 1
+  exact (Cfg.mk.injEq _ _ _ _ _ _).mpr
+    ⟨rfl, rfl, funext fun k => by cases k <;> simp [dite]⟩
 
 /-- Prod.fst is poly-time computable on pair-encoded inputs. -/
 def polyTimeFst [Nonempty ea.Γ] :
@@ -222,7 +280,22 @@ def polyTimeFst [Nonempty ea.Γ] :
   outputAlphabet := Equiv.refl _
   time := 2 * Polynomial.X + Polynomial.X + 3  -- overestimate: 2|a| + |b| + 3 ≤ 3n + 3
   outputsFun := fun ⟨a, b⟩ => by
-    sorry
+    -- Need: TM2OutputsInTime (fstTM ea eb)
+    --   (List.map id ((pairEncoding ea eb).encode (a, b)))
+    --   (some (List.map id (ea.encode a)))
+    --   (time.eval ...)
+    show TM2OutputsInTime (fstTM ea eb)
+      (List.map (Equiv.refl _).invFun ((OpenLemma.Complexity.pairEncoding ea eb).encode (a, b)))
+      (some (List.map (Equiv.refl _).invFun (ea.encode a)))
+      _
+    unfold TM2OutputsInTime
+    rw [initCfg_eq ea eb a b, haltCfg_eq ea eb a]
+    have h := fstEval ea eb (ea.encode a) (eb.encode b)
+    exact bumpTime ea eb h (by
+      simp only [OpenLemma.Complexity.pairEncoding, List.length_append, List.length_map,
+                 Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_ofNat, Polynomial.eval_X,
+                 Polynomial.eval_natCast]
+      omega)
 
 end
 
