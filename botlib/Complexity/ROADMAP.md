@@ -29,7 +29,7 @@ reduced to the Boolean satisfiability problem.
 - [x] Conclude SAT ∈ NP (SAT.lean - one sorry remains for certificate equivalence)
 
 ### Phase 3: Cook-Levin Reduction
-- [ ] Tableau construction: encode TM computation as Boolean variables
+- [x] Tableau construction: encode TM computation as Boolean variables
 - [ ] Initial configuration constraints
 - [ ] Transition constraints (local consistency)
 - [ ] Acceptance constraints
