@@ -4,14 +4,15 @@
 **Reviewed by:** verify
 **Goal:** Prove that the tableau construction $w \mapsto \phi_w$ is computable in polynomial time.
 
-## 1. Assumptions
+## 1. Complexity of Encodings
 
-**Assumption:** We assume a linear encoding for CNF formulas: $|encode(\phi)| = \Theta(N)$ where $N$ is the total number of symbol occurrences in $\phi$. This is provided by `finEncodingList` (pending implementation).
+The bit-length of the generated formula $\phi_w$ depends on the encoding scheme.
+We use the linear encoding scheme `listEncoding` implemented in `botlib/Complexity/SAT.lean`.
 
-Specific properties assumed:
-1.  **List Encoding:** Encoding a list $[x_1, \dots, x_k]$ takes size $O(\sum |encode(x_i)|)$.
-2.  **Nat Encoding:** Encoding a natural number $n$ takes $O(\log n)$ bits.
-3.  **CNF Structure:** A formula is a list of clauses; a clause is a list of literals; a literal is a tagged natural number.
+**Properties of `listEncoding`:**
+1.  **Linear List Size:** The length of the encoded bitstring for a list $[x_1, \dots, x_k]$ is $O(\sum |encode(x_i)|)$.
+2.  **Binary Nat Encoding:** Variable indices (natural numbers) are encoded using `finEncodingNatBool`, which takes $O(\log n)$ bits.
+3.  **Linear Formula Size:** A CNF formula (nested list of literals) has an encoded length proportional to the total number of literal occurrences times the log-length of the variable indices.
 
 ## 2. Input Size
 
