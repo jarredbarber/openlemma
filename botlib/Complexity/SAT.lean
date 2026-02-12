@@ -11,10 +11,11 @@ import Mathlib.Computability.Encoding
 import Mathlib.Logic.Encodable.Basic
 import Mathlib.Logic.Equiv.List
 import Mathlib.Tactic.DeriveEncodable
+import botlib.Complexity.Defs
 
 namespace OpenLemma.Complexity.SAT
 
-open Computability
+open Computability Complexity
 
 /-! ## Boolean Formulas
 
@@ -64,15 +65,6 @@ We define standard finite encodings for SAT-related types.
 These use a binary encoding of the natural numbers via `Encodable`.
 -/
 
-/-- Generic FinEncoding for any Encodable type using binary encoding of its index. -/
-def finEncodingOfEncodable (α : Type) [Encodable α] : FinEncoding α where
-  Γ := Bool
-  encode x := finEncodingNatBool.encode (Encodable.encode x)
-  decode l := (finEncodingNatBool.decode l).bind Encodable.decode
-  decode_encode x := by
-    simp [finEncodingNatBool.decode_encode, Encodable.encodek]
-  ΓFin := Bool.fintype
-
 /-- FinEncoding for Literals. -/
 def finEncodingLiteral : FinEncoding Literal := finEncodingOfEncodable Literal
 
@@ -100,6 +92,17 @@ def SAT_Verifier (φ : CNF) (y : SAT_Certificate) : Prop :=
 /-- The Boolean version of the SAT verifier for use in P/NP definitions. -/
 def SAT_Verifier_Bool (p : CNF × SAT_Certificate) : Bool :=
   evalCNF (assignmentOfCertificate p.2) p.1
+
+/-- SAT is in NP. -/
+theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
+  /- Use SAT_Certificate as the witness type. -/
+  refine ⟨SAT_Certificate, finEncodingSATCertificate, SAT_Verifier, 2, ?_, ?_⟩
+  · /- The verifier runs in polynomial time. -/
+    /- We need to show that (fun p => SAT_Verifier p.1 p.2) is in P. -/
+    sorry
+  · /- φ ∈ SAT ↔ ∃ y, |y| ≤ |φ|^2 ∧ SAT_Verifier φ y -/
+    /- This is the completeness/soundness of the finite certificate. -/
+    sorry
 
 /-! ## 3-SAT
 

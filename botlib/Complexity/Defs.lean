@@ -12,6 +12,7 @@ Trust level: 🟡 Definitions only — no theorems yet.
 -/
 import Mathlib.Computability.TMComputable
 import Mathlib.Computability.Encoding
+import Mathlib.Logic.Encodable.Basic
 
 namespace OpenLemma.Complexity
 
@@ -21,6 +22,17 @@ open Turing Computability
 
 /-- A language (decision problem) is a predicate on an input type. -/
 def Language (α : Type) := α → Prop
+
+/-! ## Encodings -/
+
+/-- Generic FinEncoding for any Encodable type using binary encoding of its index. -/
+def finEncodingOfEncodable (α : Type) [Encodable α] : FinEncoding α where
+  Γ := Bool
+  encode x := finEncodingNatBool.encode (Encodable.encode x)
+  decode l := (finEncodingNatBool.decode l).bind Encodable.decode
+  decode_encode x := by
+    simp [finEncodingNatBool.decode_encode, Encodable.encodek]
+  ΓFin := Bool.fintype
 
 /-! ## The Class P -/
 
@@ -114,5 +126,27 @@ def NPHard {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
 theorem npComplete_iff_np_and_hard {α : Type} (ea : FinEncoding α) (L : Language α) :
     NPComplete ea L ↔ InNP ea L ∧ NPHard ea L :=
   Iff.rfl
+
+/-- P ⊆ NP. -/
+theorem P_subset_NP {α : Type} (ea : FinEncoding α) (L : Language α) :
+    InP ea L → InNP ea L := by
+  intro hP
+  rcases hP with ⟨f, hf, hL⟩
+  /- Use PUnit as the certificate type. -/
+  refine ⟨PUnit, finEncodingOfEncodable PUnit, fun a _ => f a = true, 1, ?_, ?_⟩
+  · /- The checking relation R(a, b) = (f a = true) is in P. -/
+    /- This requires showing that (fun p => f p.1) is poly-time. -/
+    sorry
+  · /- x ∈ L ↔ ∃ y, |y| ≤ |x|^1 ∧ R(x, y) -/
+    intro a
+    rw [hL]
+    constructor
+    · intro ha
+      refine ⟨PUnit.unit, ?_, ha⟩
+      /- |encode PUnit.unit| = 0.
+         0 ≤ |encode a|^1 is true since it's a Nat. -/
+      simp [finEncodingOfEncodable, Encodable.encode_star, finEncodingNatBool, encodingNatBool, encodeNat, encodeNum]
+    · rintro ⟨b, _, hb⟩
+      exact hb
 
 end OpenLemma.Complexity

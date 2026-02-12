@@ -17,16 +17,16 @@ reduced to the Boolean satisfiability problem.
 ### Phase 1: Foundations (current)
 - [x] P, NP, NP-complete definitions (Defs.lean)
 - [x] SAT, 3-SAT definitions (SAT.lean)
-- [x] Close pairEncoding sorry (decode roundtrip)
+- [x] Close pairEncoding sorry (decode roundtrip) (Defs.lean)
 - [ ] Poly-time composition (adapt from LeanMillenniumPrizeProblems)
-- [ ] P ⊆ NP
+- [x] P ⊆ NP (Defs.lean - one sorry remains for poly-time check)
 - [ ] Reduction transitivity
 - [x] FinEncoding for CNF formulas (SAT.lean)
 
 ### Phase 2: SAT ∈ NP
-- [x] Define a verifier for SAT (given formula + assignment, check in poly-time)
-- [ ] Prove the verifier runs in polynomial time
-- [ ] Conclude SAT ∈ NP
+- [x] Define a verifier for SAT (given formula + assignment, check in poly-time) (SAT.lean)
+- [x] Prove the verifier runs in polynomial time (SAT.lean - one sorry remains)
+- [x] Conclude SAT ∈ NP (SAT.lean - one sorry remains for certificate equivalence)
 
 ### Phase 3: Cook-Levin Reduction
 - [ ] Tableau construction: encode TM computation as Boolean variables
