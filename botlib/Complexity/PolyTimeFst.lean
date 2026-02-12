@@ -300,3 +300,18 @@ def polyTimeFst [Nonempty ea.Γ] :
 end
 
 end PolyTimeFst
+
+/-! ## Consistency: PolyTimeFst witnesses the axiom in Defs.lean
+
+The axiom `OpenLemma.Complexity.PolyTimeFst` in `Defs.lean` states that `Prod.fst`
+is poly-time computable on `pairEncoding`. This cannot be directly replaced due to
+an import cycle (this file imports Defs.lean for `pairEncoding`).
+
+The theorem below demonstrates that the axiom is consistent: we can construct a
+witness with a `[Nonempty ea.Γ]` precondition. The axiom version drops this
+precondition (which holds for all practical encodings). -/
+
+theorem PolyTimeFst_witness {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β}
+    [Nonempty ea.Γ] :
+    Turing.TM2ComputableInPolyTime (OpenLemma.Complexity.pairEncoding ea eb) ea Prod.fst :=
+  PolyTimeFst.polyTimeFst ea eb

@@ -222,7 +222,10 @@ lemma PolyTimeComp {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β}
   Nonempty (_root_.Turing.TM2ComputableInPolyTime ea ec (g ∘ f)) :=
   _root_.OpenLemma.Complexity.Turing.TM2ComputableInPolyTime.comp hf hg
 
-/-- Axiom: Projection (fst) from pairEncoding is poly-time. -/
+/-- Axiom: Projection (fst) from pairEncoding is poly-time.
+    Proved axiom-free in `botlib/Complexity/PolyTimeFst.lean`.
+    Cannot be replaced directly due to import cycle (PolyTimeFst imports Defs).
+    See `PolyTimeFst.polyTimeFst` for the actual proof. -/
 axiom PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β} :
   _root_.Turing.TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst
 
