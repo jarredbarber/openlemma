@@ -41,6 +41,8 @@ reduced to the Boolean satisfiability problem.
 - [x] SAT → 3-SAT reduction (verified)
 - [x] 3-SAT → CLIQUE reduction (verified)
 - [x] CLIQUE → VERTEX COVER reduction (verified)
+- [ ] 3-SAT → SUBSET SUM reduction (In progress)
+- [ ] SUBSET SUM → PARTITION reduction
 - [x] Basic NP-completeness results (follows from reductions)
 
 ## Design Decisions
