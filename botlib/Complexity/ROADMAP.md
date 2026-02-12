@@ -38,7 +38,7 @@ reduced to the Boolean satisfiability problem.
 
 ### Phase 4: Extensions
 - [x] SAT → 3-SAT reduction (verified)
-- [ ] 3-SAT → CLIQUE reduction
+- [x] 3-SAT → CLIQUE reduction (verified)
 - [ ] Basic NP-completeness results
 
 ## Design Decisions

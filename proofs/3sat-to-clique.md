@@ -1,7 +1,8 @@
 # Proof: 3-SAT reduces to CLIQUE
 
 **Statement:** 3-SAT $\le_p$ CLIQUE.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any 3-CNF formula $\phi$ to a pair $(G, K)$ such that $\phi$ is satisfiable if and only if the graph $G$ contains a clique of size $K$.
 
 ## 1. Definitions
