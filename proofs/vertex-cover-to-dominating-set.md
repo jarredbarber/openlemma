@@ -1,7 +1,8 @@
 # Proof: VERTEX COVER reduces to DOMINATING SET
 
 **Statement:** VERTEX COVER $\le_p$ DOMINATING SET.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any instance $(G, k)$ of VERTEX COVER to an instance $(G', k')$ of DOMINATING SET such that $G$ has a vertex cover of size $k$ if and only if $G'$ has a dominating set of size $k'$.
 
 ## 1. Definitions
