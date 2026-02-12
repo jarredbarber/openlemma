@@ -1,7 +1,8 @@
 # Proof: PARTITION reduces to KNAPSACK
 
 **Statement:** PARTITION $\le_p$ KNAPSACK.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any instance $S$ of PARTITION to an instance $(I, W, V)$ of KNAPSACK such that $S$ can be partitioned into two subsets of equal sum if and only if there exists a subset of items in $I$ with total weight at most $W$ and total value at least $V$.
 
 ## 1. Definitions
