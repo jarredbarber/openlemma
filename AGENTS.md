@@ -1,53 +1,41 @@
-# OpenLemma Social — Agent Coordination Guide
+# OpenLemma Social — Shared Workspace
 
-You are an agent working on the OpenLemma project. You coordinate with other agents via direct messages and share work through git.
+You are an agent working on the OpenLemma project. All agents share **this single directory**. There are no separate clones.
 
 ## How This Works
 
-There is no task tracker, no ticket system, no backlog. You coordinate by **talking to each other** and **committing to git**.
-
-- **Your role** is described in `ROLE.md` in your working directory
-- **Project context** is in `PREAMBLE.md`  
-- **The codebase** is the repo you're in — read it to understand the current state
+- **Your role** is in `roles/<your-name>.md` — your name matches your agent name (check `echo $PI_AGENT_NAME` or the name others use to DM you)
+- **The codebase** is the repo you're in — read it to understand current state
 - **Other agents** are discoverable via `list_remote_agents`
 - **Communication** is via `remote_prompt` (direct messages to named agents)
+- **Read `roles/<your-name>.md` first** to understand your responsibilities
 
-## Git Workflow
+## File Ownership
 
-**This is critical.** Git is how your work becomes real. Uncommitted work doesn't exist.
+Since we all share one directory, **announce before editing**. Respect these ownership zones:
 
-### Before starting work
-```bash
-git pull origin social          # Get latest from everyone
-```
+| Role | Owns | May read |
+|------|------|----------|
+| **explore** | `proofs/*.md` | everything |
+| **formalize** | `botlib/Complexity/*.lean` | proofs/, ROADMAP.md |
+| **verify** | (reviews, no owned files) | everything |
+| **planner** | `botlib/Complexity/ROADMAP.md`, tm tasks | everything |
+| **advisor** | strategic guidance (no owned files) | everything |
+| **librarian** | `artifacts/*.md` | everything |
 
-### While working
-```bash
-git add -A
-git commit -m "short description of what you did"
-```
-Commit early and often. Small commits > large commits.
+**Rules:**
+- DM the owner before editing their files
+- If you need a change in someone else's file, ask them to make it
+- The only exception: fixing a typo or obvious build error — commit with a clear message
 
-### When done with a unit of work
-```bash
-git pull origin social --rebase  # Rebase on others' work
-git push origin social           # Share your work
-```
+## Git
 
-### If there are merge conflicts
-```bash
-git pull origin social --rebase  # This may show conflicts
-# Fix conflicts in the affected files
-git add <fixed files>
-git rebase --continue
-git push origin social
-```
+**Only the planner handles git.** Everyone else: just edit files directly.
 
-### Rules
-- **Always pull before pushing.** Other agents are committing too.
-- **Never force push.** You will destroy others' work.
-- **Commit messages should be descriptive.** Other agents read them to understand what changed.
-- **Don't commit `.lake/` or build artifacts.** They're symlinked and gitignored.
+- **planner** periodically does `git add -A && git commit && git push`
+- If you finished something, DM the planner: "I updated X, ready to commit"
+- **Never run git commands yourself** (add, commit, push, pull, rebase). The planner handles all of it.
+- **Never run `lake update` or `lake clean`.** The `.lake` directory is a shared cache symlink.
 
 ## Communication
 
@@ -56,33 +44,30 @@ Use `list_remote_agents` to see who's online.
 
 ### Sending messages
 Use `remote_prompt` to DM another agent:
-- Ask the **advisor** for strategic guidance ("what should I work on?", "is this approach viable?")
-- Ask the **librarian** to verify citations or search literature
-- Ask the **planner** to decompose a problem into subtasks
-- Ask a **verifier** to review your natural language proof
-- Tell others what you're working on to avoid conflicts
+- **advisor** — strategic guidance, proof strategy
+- **librarian** — verify citations, search literature
+- **planner** — decompose problems, coordinate work, git operations
+- **verify** — review your natural language proof
+- **explore/formalize** — collaborate on proof ↔ Lean translation
 
 ### Coordination norms
-- **Announce what file you're touching** before editing — DM relevant agents to avoid conflicts
-- **Ask before you assume** — if you need a fact, DM the librarian instead of making it up
-- **Report results** — when you finish something, DM the advisor/planner so they know
-- **Flag blockers** — if you're stuck, say so. Another agent may be able to help
+- **Announce what file you're touching** — DM relevant agents
+- **Ask before you assume** — need a fact? DM the librarian
+- **Report results** — DM the planner when you finish something
+- **Flag blockers** — if you're stuck, say so
 
 ## Project: Computational Complexity in Lean 4
 
-Current goal: formalize computational complexity foundations and work toward a Lean 4 proof of the Cook-Levin theorem (SAT is NP-complete).
+Goal: formalize complexity foundations and prove Cook-Levin (SAT is NP-complete) in Lean 4.
 
 ### Current state
-- `botlib/Complexity/Defs.lean` — P, NP, NP-complete, poly-time reductions (1 sorry)
-- `botlib/Complexity/SAT.lean` — CNF formulas, SAT/3-SAT languages (0 sorrys)
-- `botlib/Complexity/ROADMAP.md` — full formalization roadmap
-
-### What needs doing (read ROADMAP.md for details)
-1. Close the `pairEncoding` sorry in Defs.lean
-2. Prove P ⊆ NP
-3. Prove SAT ∈ NP (define verifier, prove poly-time)
-4. Poly-time composition (adapt from LeanMillenniumPrizeProblems)
-5. Cook-Levin reduction (the big one)
+See `botlib/Complexity/ROADMAP.md` for full status. Key files:
+- `botlib/Complexity/Defs.lean` — P, NP, NP-complete, poly-time reductions
+- `botlib/Complexity/SAT.lean` — CNF formulas, SAT/3-SAT
+- `botlib/Complexity/CookLevin.lean` — Tableau-based reduction (WIP)
+- `botlib/Complexity/PolyTimeFst.lean` — Poly-time projection (complete)
+- `botlib/Complexity/TM2PolyTimeComp.lean` — Poly-time composition (ported)
+- `proofs/*.md` — Natural language proofs
 
 ### Building
 ```bash
@@ -90,19 +75,8 @@ lake build                           # Full build
 lake build botlib.Complexity.Defs    # Single file
 ```
 
-## Role Summary
-
-| Role | Purpose | Model guidance |
-|------|---------|---------------|
-| **advisor** | Strategic direction, proof strategy, what to work on | Accumulates project knowledge |
-| **planner** | Decomposes problems into concrete steps | Tactical, creates work items |
-| **explore** | Writes natural language proofs | Creative, tries approaches |
-| **verify** | Reviews NL proofs for correctness | Critical, finds gaps |
-| **formalize** | Translates NL proofs to Lean 4 | Precise, builds and tests |
-| **librarian** | Literature search, citation verification | Has web search access |
-
 ## Axiom Policy
 
-- **Citation axioms** (citing known results): Allowed, but MUST be verified by the librarian first. DM the librarian before committing any axiom that cites a paper.
-- **Crux axioms** (axiom whose conclusion matches the theorem): NOT allowed. If you need one, the proof strategy is wrong — DM the advisor.
-- **Sorry**: Temporary only. Must be accompanied by a comment explaining what's needed. Commit sorrys to unblock others, but flag them.
+- **Citation axioms** (citing known results): Allowed, but MUST be verified by librarian first
+- **Crux axioms** (conclusion matches the theorem): NOT allowed — DM the advisor
+- **Sorry**: Temporary only. Comment explaining what's needed. Flag to planner
