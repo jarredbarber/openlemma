@@ -11,6 +11,16 @@ The library is organized into two parts:
 - **`botlib/`** — Compiler-verified lemmas (0 sorrys, 0 axioms). Safe to import as dependencies.
 - **`problems/`** — Problem-specific results that may contain citation axioms for well-known theorems not yet in Mathlib (e.g., Zsygmondy's theorem).
 
+## Current Project: Cook-Levin Theorem
+
+The current focus of the library is a full formalization of the **Cook-Levin Theorem** (SAT is NP-complete) in Lean 4. 
+
+**Progress:**
+- [x] **Phase 1: Foundations**: P/NP definitions, poly-time composition, and axiom-free foundations.
+- [ ] **Phase 2: SAT ∈ NP**: Verifier definition and polynomial witness size proofs (In progress).
+- [ ] **Phase 3: Cook-Levin Reduction**: Tableau construction for multi-stack Turing machines (Scaffolding).
+- [x] **Phase 4: NP-Completeness Library**: Verified NL proofs for reductions (3-SAT, Clique, Vertex Cover, Subset Sum, Partition).
+
 ## Library contents
 
 ### botlib/NumberTheory/
@@ -31,6 +41,17 @@ The library is organized into two parts:
 |------|-------|-------------|--------|
 | `DigitSpace.lean` | ~30 | `Fin D → Fin p` type, high digit predicate, counting definitions | Erdős 728 |
 | `ChernoffDigits.lean` | ~330 | Hoeffding/Chernoff bounds over uniform digit spaces | Erdős 728 |
+
+### botlib/Complexity/
+
+| File | Lines | Description | Status |
+|------|-------|-------------|--------|
+| `Defs.lean` | ~140 | P, NP, NP-complete definitions, poly-time reductions | 🟡 1 axiom |
+| `Encodings.lean` | ~130 | Efficient linear-time encodings for lists, sums, and pairs | ✅ |
+| `TM2PolyTimeComp.lean` | ~1430 | Closure of polynomial-time functions under composition | ✅ |
+| `PolyTimeFst.lean` | ~320 | Proof that first projection of a pair is poly-time | ✅ |
+| `SAT.lean` | ~370 | CNF SAT/3-SAT definitions, SAT ∈ NP (verifier + cert bounds) | 🟡 WIP |
+| `CookLevin.lean` | ~120 | Tableau-based reduction from NP languages to SAT | 🔴 Scaffolding |
 
 ### problems/NumberTheory/
 
@@ -63,6 +84,13 @@ This is the question we're interested in. Not "can AI solve problems" (tree sear
 The Factor Pump and Smooth Escape Lemma (from Erdős 410) are the most interesting cases — they emerged when agents *couldn't* solve the target problem and explored laterally instead. Whether these represent novel mathematics or recombination of training data is a question we lack the expertise to answer; a number theorist's evaluation would be needed.
 
 See the [friction report](https://gist.github.com/jarredbarber/c541d6d7f35582d97fffc227b2dde692) for analysis of agent failure modes when working with Lean/Mathlib.
+
+### Note on Cook-Levin Formalization
+
+The Cook-Levin effort builds on Mathlib's `TM2` multi-stack Turing Machine model. Significant technical challenges addressed include:
+- Establishing the closure of polynomial-time functions under composition (ported from `LeanMillenniumPrizeProblems`).
+- Designing linear-time separator-based encodings for lists to ensure polynomial witness sizes (avoiding the exponential overhead of standard Cantor pairing).
+- Formalizing a "forbidden windows" transition consistency check for the multi-stack tableau.
 
 ## Building
 
