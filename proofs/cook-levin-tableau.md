@@ -54,6 +54,13 @@ $$ \bigvee_{i=0}^{p(n)} S_{i, q_{accept}} $$
 ### 3.4 Transitions ($\phi_{\text{move}}$)
 Ensures the state at time $i+1$ follows from the state at time $i$ according to the transition function $\delta$.
 
+#### Local Consistency (Windows)
+For each cell $j$ and time $i$, the content $C_{i+1, j, s}$, $H_{i+1, j}$, and $S_{i+1, q}$ are determined by the $2 \times 3$ window centered at $(i, j)$.
+
+#### Head Movement and State Change
+If $H_{i,j}$ and $S_{i,q}$ and $C_{i,j,s}$ are true, then the state $S_{i+1, q'}$, head position $H_{i+1, j \pm 1}$, and new symbol $C_{i+1, j, s'}$ must satisfy $(q', s', \text{Dir}) \in \delta(q, s)$. 
+Since $\delta$ is non-deterministic, the constraint is a disjunction over all legal transitions in $\delta$.
+
 #### Local Consistency Logic
 
 The state of cell $j$ at time $i+1$ ($C_{i+1, j, \cdot}$), and whether the head is at $j$ at time $i+1$ ($H_{i+1, j}$), is fully determined by the configuration of cells $j-1, j, j+1$ at time $i$.
@@ -69,7 +76,7 @@ Let $\delta(q, s) = \{(q', s', D)\}$ be the set of possible transitions.
 3.  **Head leaving ($j \to j \pm 1$):**
     If $H_{i, j} \wedge S_{i, q} \wedge C_{i, j, s}$ and the machine transitions, then $H_{i+1, j}$ must be false (unless the head stays, if allowed). The symbol $C_{i+1, j, s'}$ becomes the new symbol $s'$.
 
-4.  **No Head Interaction:**
+4.  **No Head Interaction (Inertia):**
     If the head is not at $j-1, j, j+1$ at time $i$, then the cell must not change:
     $$ \neg H_{i, j-1} \wedge \neg H_{i, j} \wedge \neg H_{i, j+1} \implies (C_{i+1, j, s} \iff C_{i, j, s}) $$
     Also, the head cannot appear at $j$ from nowhere:
