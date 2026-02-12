@@ -1,6 +1,7 @@
 # P is a subset of NP
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** openlemma-yyr5
 **Statement:** Let $P$ be the class of languages decidable by a deterministic Turing machine in polynomial time, and $NP$ be the class of languages decidable by a non-deterministic Turing machine in polynomial time. Then $P \subseteq NP$.
 **Dependencies:** None
 **Confidence:** Certain
