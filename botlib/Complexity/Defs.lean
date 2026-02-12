@@ -54,11 +54,17 @@ def pairEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) :
       | _, _ => none
     decode_encode := by
       rintro ⟨a, b⟩
-      simp only [List.filterMap_append]
-      -- filterMap sumInl? on (map Sum.inl ...) = original list
-      -- filterMap sumInl? on (map Sum.inr ...) = []
-      -- and vice versa
-      sorry -- TODO: prove decode roundtrip
+      simp only [List.filterMap_append, List.filterMap_map]
+      have h1 : List.filterMap (sumInl? (β := eb.Γ) ∘ Sum.inl (β := eb.Γ)) (ea.encode a) = ea.encode a := by
+        induction ea.encode a <;> simp [sumInl?, *]
+      have h2 : List.filterMap (sumInl? (α := ea.Γ) ∘ Sum.inr (α := ea.Γ)) (eb.encode b) = [] := by
+        induction eb.encode b <;> simp [sumInl?, *]
+      have h3 : List.filterMap (sumInr? (β := eb.Γ) ∘ Sum.inl (β := eb.Γ)) (ea.encode a) = [] := by
+        induction ea.encode a <;> simp [sumInr?, *]
+      have h4 : List.filterMap (sumInr? (α := ea.Γ) ∘ Sum.inr (α := ea.Γ)) (eb.encode b) = eb.encode b := by
+        induction eb.encode b <;> simp [sumInr?, *]
+      rw [h1, h2, h3, h4]
+      simp [ea.decode_encode, eb.decode_encode]
     ΓFin := inferInstance }
 
 /-! ## The Class NP -/
