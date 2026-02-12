@@ -53,6 +53,32 @@ def evalClause (σ : Assignment) (c : Clause) : Bool :=
 def evalCNF (σ : Assignment) (φ : CNF) : Bool :=
   φ.all (evalClause σ)
 
+/-- The set of variable indices appearing in a literal. -/
+@[simp]
+def Literal.var : Literal → ℕ
+  | pos v => v
+  | neg v => v
+
+/-- The set of variable indices appearing in a clause. -/
+def Clause.vars (c : Clause) : List ℕ :=
+  c.map Literal.var
+
+/-- The set of variable indices appearing in a CNF formula. -/
+def CNF.vars (φ : CNF) : List ℕ :=
+  φ.flatMap Clause.vars
+
+theorem evalLiteral_eq_of_vars_eq {σ1 σ2 : Assignment} {l : Literal}
+    (h : σ1 l.var = σ2 l.var) : evalLiteral σ1 l = evalLiteral σ2 l := by
+  cases l <;> simp [evalLiteral] <;> exact h
+
+theorem evalClause_eq_of_vars_eq {σ1 σ2 : Assignment} {c : Clause}
+    (h : ∀ v ∈ c.vars, σ1 v = σ2 v) : evalClause σ1 c = evalClause σ2 c := by
+  sorry
+
+theorem evalCNF_eq_of_vars_eq {σ1 σ2 : Assignment} {φ : CNF}
+    (h : ∀ v ∈ φ.vars, σ1 v = σ2 v) : evalCNF σ1 φ = evalCNF σ2 φ := by
+  sorry
+
 /-- A CNF formula is satisfiable if some assignment satisfies it. -/
 def Satisfiable (φ : CNF) : Prop :=
   ∃ σ : Assignment, evalCNF σ φ = true
