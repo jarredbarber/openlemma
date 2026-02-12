@@ -209,6 +209,10 @@ def finEncodingSATCertificate : FinEncoding SAT_Certificate :=
 def assignmentOfCertificate (y : SAT_Certificate) : Assignment :=
   fun v => (y.find? (fun p => p.1 = v)).map (fun p => p.2) |>.getD false
 
+theorem assignmentOfCertificate_eq_of_mem {σ : Assignment} {φ : CNF} {v : ℕ}
+    (hv : v ∈ φ.vars) : assignmentOfCertificate ((φ.vars.eraseDups).map (fun v => (v, σ v))) v = σ v := by
+  sorry
+
 /-- The SAT verifier relation: R(φ, y) iff y represents a satisfying assignment for φ. -/
 def SAT_Verifier (φ : CNF) (y : SAT_Certificate) : Prop :=
   evalCNF (assignmentOfCertificate y) φ = true
@@ -222,11 +226,26 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
   /- Use SAT_Certificate as the witness type. -/
   refine ⟨SAT_Certificate, finEncodingSATCertificate, SAT_Verifier, 2, ?_, ?_⟩
   · /- The verifier runs in polynomial time. -/
-    /- We need to show that (fun p => SAT_Verifier p.1 p.2) is in P. -/
     sorry
   · /- φ ∈ SAT ↔ ∃ y, |y| ≤ |φ|^2 ∧ SAT_Verifier φ y -/
-    /- This is the completeness/soundness of the finite certificate. -/
-    sorry
+    intro φ
+    unfold SAT_Language Satisfiable SAT_Verifier
+    constructor
+    · /- Forward: SAT -> finite certificate -/
+      intro hsat
+      rcases hsat with ⟨σ, hσ⟩
+      let y := (φ.vars.eraseDups).map (fun v => (v, σ v))
+      refine ⟨y, ?_, ?_⟩
+      · /- Bound: |y| ≤ |φ|^2 -/
+        sorry
+      · /- SAT_Verifier φ y -/
+        rw [← hσ]
+        apply evalCNF_eq_of_vars_eq
+        intro v hv
+        apply assignmentOfCertificate_eq_of_mem hv
+    · /- Backward: finite certificate -> SAT -/
+      rintro ⟨y, _, hy⟩
+      exact ⟨assignmentOfCertificate y, hy⟩
 
 /-! ## 3-SAT
 
