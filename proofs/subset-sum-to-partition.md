@@ -28,7 +28,7 @@ Let $\sigma = \sum_{x \in S} x$ be the total sum of elements in $S$.
 ### 2.1 Construction of $S'$
 **Case $t > \sigma$:**
 If the target sum $t$ exceeds the total sum $\sigma$, the SUBSET SUM instance is trivially unsatisfiable (since elements are non-negative).
-In this case, we output a fixed unsatisfiable PARTITION instance, e.g., $S' = \{1\}$.
+In this case, we output a fixed unsatisfiable PARTITION instance, e.g., $S' = \{1, 2\}$ (odd sum 3, cannot be partitioned).
 This correctly maps "no" instance to "no" instance.
 
 **Case $t \le \sigma$:**
@@ -98,9 +98,9 @@ We have constructed a polynomial-time reduction from SUBSET SUM to PARTITION.
 Since SUBSET SUM is NP-hard, PARTITION is NP-hard.
 
 **PARTITION $\in$ NP:**
-A witness for PARTITION is the subset $A' \subseteq S'$.
-A verifier takes $(S', A')$ and checks if $\sum_{y \in A'} y = \sum_{y \in S' \setminus A'} y$.
-Computing these sums requires iterating over the input once, which takes polynomial time (linear in the bit-size of $S'$).
-Since a polynomial-time verifier exists, PARTITION is in NP.
+A witness for PARTITION is a subset indicator bit-vector $c$ (where $c_i = 1 \iff y_i \in A'$).
+A verifier takes $(S', c)$, computes the sum of elements where $c_i = 1$ and the sum where $c_i = 0$, and checks if they are equal.
+These sums can be computed in a single linear pass over the input.
+Since a linear-time (hence polynomial-time) verifier exists, PARTITION is in NP.
 
 Thus, **PARTITION is NP-complete**.
