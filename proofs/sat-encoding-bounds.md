@@ -107,6 +107,7 @@ $$ |encode(y)| \le |encode(\phi)| + 2|encode(\phi)| $$
 $$ |encode(y)| \le 3 |encode(\phi)| $$
 
 ### 4.3 Conclusion
+
 We have derived a **linear** bound: $|encode(y)| \le 3 |encode(\phi)|$.
 This is much stronger than the required quadratic bound $|encode(y)| \le |encode(\phi)|^2$.
 
