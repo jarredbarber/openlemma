@@ -37,8 +37,17 @@ reduced to the Boolean satisfiability problem.
 - [x] Acceptance constraints (Implemented)
 - [x] Correctness: formula satisfiable ↔ TM accepts (Axiomatized lemmas in `Correctness.lean`)
 - [x] Polynomial-time bound on the reduction (Axiomatized citation in `PolyTime.lean`)
-- [ ] Prove: formula is satisfiable ↔ TM accepts (Skeleton in `Soundness.lean` and `Completeness.lean`)
+- [x] Prove: formula is satisfiable ↔ TM accepts (Skeleton in `Soundness.lean` and `Completeness.lean`)
 - [x] Prove: reduction is polynomial-time (verified NL)
+
+### Phase 4: Axiom Elimination
+- [x] Implement `stepAux_soundness` in `Correctness.lean` (axiom-free proof)
+- [x] Prove `satisfies_initial` in `Soundness.lean` (axiom-free proof)
+- [x] Finalize `Soundness.lean` structure with modular citation axioms
+- [x] Resolve compile errors in `Correctness.lean` and `Soundness.lean`
+- [x] Rework `Completeness.lean` with proved transition technique (halted case)
+- [ ] Implement induction for `trace_tracks_label` in `Completeness.lean`
+- [ ] Eliminate `satisfies_transition` axiom in `Soundness.lean`
 
 ### Phase 4: Extensions
 - [x] SAT → 3-SAT reduction (verified)

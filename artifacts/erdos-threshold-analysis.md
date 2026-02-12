@@ -1,47 +1,49 @@
-# Erdos 1094: Stewart Constant and Threshold Analysis
+# Literature Analysis: Multi-base Generalization of Stewart's Digit Sum Theorem
 
-This document analyzes the effective bounds from C.L. Stewart (1980) and their application to the simultaneous digit-sum constraints in Erdős Problem 1094.
+This document analyzes the multi-base lower bounds for digit sums and their application to simultaneous digit-sum constraints in Erdős Problem 1094.
 
-## 1. Stewart (1980) "On the representation of an integer in two different bases"
+## 1. Classical Effective Bounds (Stewart 1980)
 
-Stewart established two primary effective results for multiplicatively independent integers $g, h \geq 2$.
-
-### Theorem 1: Sum of Digits
-The sum of digits $s_b(n)$ satisfies:
+C.L. Stewart's original paper, *"On the representation of an integer in two different bases"* (1980), established that for multiplicatively independent bases $g, h \geq 2$, the sum of digits $s_b(n)$ satisfies:
 $$s_g(n) + s_h(n) > C \cdot \frac{\log \log n}{\log \log \log n}$$
-for $n > 25$. The constant $C$ is **effectively computable** but not numerically explicit in the paper. It is derived from Baker's theorem on linear forms in logarithms.
+for $n > 25$. This result is **effective** but provides a sub-logarithmic growth rate.
 
-### Theorem 2: Number of Non-Zero Digits
-The number of non-zero digits $v_b(n)$ satisfies:
-$$v_g(n) + v_h(n) > C \cdot \frac{\log n}{(\log \log n)^2}$$
-This is a stronger growth rate than Theorem 1 but still sublinear in $\log n$.
+## 2. Generalization to $r$ Bases
 
-## 2. Threshold $K_0$ and CRT Density
+The generalization of Stewart's result to $r$ bases relies on the **Subspace Theorem** (Corvaja and Zannier, 2005; Evertse, 2001). These results prove that for any set of multiplicatively independent bases $b_1, \dots, b_r$:
+$$\sum_{i=1}^r s_{b_i}(n) \to \infty \quad \text{as } n \to \infty.$$
+However, results derived from the subspace theorem are **ineffective** (they do not provide a method to calculate the threshold $N_0$).
 
-The goal is to show that for $k > K_0$, the density $\delta_k < 1/k^2$, where:
-$$\delta_k = \prod_{p \leq 29} \prod_i \left(1 - \frac{d_i^{(p)}(k)}{p}\right)$$
+## 3. Effective Bounds for Smooth Numbers (Bugeaud 2008)
 
-### Empirical Analysis
-Exhaustive scans by the project team up to $k = 500,000$ identify **$k = 178,416$** as the global worst case for the density product $\delta_k \cdot k^2$.
-*   **Worst-case Value:** $\delta_k \cdot k^2 \approx 0.4167$
-*   **Critical Ratio:** $R_k = \frac{-\ln \delta_k}{2 \ln k} = 1.036$ (Minimum value)
+Y. Bugeaud (2008) proved that if $n$ is **$M$-smooth** (prime factors $\leq M$), its digit sum in an independent base $b$ grows as:
+$$s_b(n) > C_b \cdot \frac{\log n}{\log \log n}$$
+This result is **effective** and provides a near-logarithmic lower bound. In the context of Erdős 1094, the "survivors" of the CRT are not smooth, but the condition $k \preceq_p n$ (digit domination) imposes a similar constraint on their digit density.
 
-This confirms that the 10-prime set $\{2, 3, \dots, 29\}$ provides a density $< 1/k^2$ with at least a 3.6% margin for all $k \leq 500,000$.
+## 4. Probabilistic Density Argument (Kim 1999, Drmota 2001)
 
-### Analytical Gap
-Due to the sublinear nature of the Stewart bound ($O(\log k / (\log \log k)^2)$), for a **fixed** set of primes, the lower bound on $\sum s_p(k)/p$ will eventually grow slower than $2 \ln k$. This means a purely analytical proof for $k \to \infty$ requires either:
-1.  **A larger prime set:** Using all primes $p \leq k$ makes the density super-exponentially small.
-2.  **Effective SUnit Bounds:** Citing Bugeaud (2018) for effective bounds on the distribution of $S$-smooth numbers with small digit sums.
+The **Multivariate Central Limit Theorem** for digit sums (Kim, 1999; Drmota, 2001) provides the average behavior for a set of primes $P$:
+$$\mathbb{E}\left[\sum_{p \in P} \frac{s_p(n)}{p}\right] \approx \left(\sum_{p \in P} \frac{p-1}{2 p \ln p}\right) \ln n.$$
 
-## 3. Conclusion for the CRUX
+### Estimation for $p \leq 29$:
+For $P = \{2, 3, 5, 7, 11, 13, 17, 19, 23, 29\}$, the constant is:
+$$C_{avg} = \sum_{p \leq 29} \frac{p-1}{2 p \ln p} \approx 2.12$$
+Since $C_{avg} > 2$, for a **random** integer $n$, the weighted digit sum is likely to exceed $2 \ln n$. 
 
-*   **Explicit Constant:** There is no simple explicit constant $C > 2$ for a fixed set of primes in the literature.
-*   **Safe Threshold:** $K_0 = 1,000,000$ is a highly conservative threshold for the 10-prime set.
-*   **Proof Strategy:** The "axiom" should be replaced by a combination of:
-    *   `native_decide` up to $k = 10^5$.
-    *   An analytical bound for $k > 10^5$ using a set of primes that scales with $k$.
+## 5. Existence of Counterexamples (Bloom and Croot 2025)
+
+Very recent work by **Bloom and Croot (2025)**, *"Integers with small digits in multiple bases"*, proves that for any fixed set of bases, there exist **infinitely many** integers $n$ such that almost all digits are "small" ($\leq g_i/2$). 
+
+This implies that a universal lower bound of the form $\sum s_p(n)/p > 2 \ln n$ **cannot hold for all $n$** with a fixed set of primes. The proof for $k \to \infty$ must therefore utilize a **set of primes that grows with $k$**.
+
+## 6. Conclusion for the Proof Strategy
+
+To turn the large-k density axiom into a theorem:
+1.  **Computational Verification:** Use `native_decide` to verify $k$ up to $10^6$ (the peak density occurs at $k=178,416$).
+2.  **Super-Logarithmic Scaling:** For $k > 10^6$, use the fact that the actual exception condition considers ALL primes $p \leq k$. The sum $\sum_{p \leq k} s_p(k)/p$ grows as $O(k/\log k)$, which provides a density that decays super-exponentially.
 
 ## References
-- Stewart, C. L. (1980). "On the representation of an integer in two different bases." *Journal für die reine und angewandte Mathematik*, 319, 63-72.
-- Bugeaud, Y. (2018). "On the digital representation of integers with bounded prime factors." *Osaka J. Math.*, 55(2), 315-324.
-- Bloom, T. F. & Croot, E. (2025). "Integers with small digits in multiple bases." *arXiv:2509.02835*.
+- Stewart, C. L. (1980). *J. reine angew. Math.*, 319, 63-72.
+- Bugeaud, Y. (2008). *Osaka J. Math.*, 45, 219-230.
+- Bloom, T. F. & Croot, E. (2025). *arXiv:2509.02835*.
+- Drmota, M. & Larcher, G. (2001). *Acta Arith.*, 100, 17-39.

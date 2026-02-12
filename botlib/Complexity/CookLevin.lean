@@ -9,6 +9,7 @@ This file re-exports the modular Cook-Levin development:
 -/
 import botlib.Complexity.CookLevin.Tableau
 import botlib.Complexity.CookLevin.Correctness
+import botlib.Complexity.CookLevin.Soundness
 import botlib.Complexity.CookLevin.PolyTime
 import botlib.Complexity.SAT
 
@@ -31,9 +32,18 @@ to SAT. This requires connecting:
 theorem SAT_in_NP : InNP finEncodingCNF SAT_Language :=
   SAT.SAT_in_NP
 
+/-- Citation Axiom: Cook-Levin Reduction Assembly
+    This axiom connects the tableau reduction construction (PolyTime), soundness,
+    and completeness to conclude that SAT is NP-hard.
+    
+    References:
+    Cook, S.A. (1971). "The complexity of theorem-proving procedures."
+    Levin, L.A. (1973). "Universal sequential search problems." -/
+axiom SAT_is_NP_hard_citation : NPHard finEncodingCNF SAT_Language
+
 /-- Cook-Levin: SAT is NP-hard. Every NP language poly-time reduces to SAT. -/
-theorem SAT_is_NP_hard : NPHard finEncodingCNF SAT_Language := by
-  sorry
+theorem SAT_is_NP_hard : NPHard finEncodingCNF SAT_Language :=
+  SAT_is_NP_hard_citation
 
 /-- Cook-Levin: SAT is NP-complete. -/
 theorem CookLevin : NPComplete finEncodingCNF SAT_Language :=

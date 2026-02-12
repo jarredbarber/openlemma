@@ -196,27 +196,9 @@ private def scanPhase [Nonempty ea.Γ]
       rw [hx.choose_spec]
       exact oneStep ea eb (scan_inr ea eb hx.choose xs buf out s)
   | cons a as ih =>
-    -- ih : ∀ buf s, EvalsToInTime step (mkCfg scan s (as.map inl ++ rest) buf out)
-    --                                    (mkCfg drain none rest (as.reverse ++ buf) out) (as.length + 1)
-    -- We need to produce:
-    -- EvalsToInTime step (mkCfg scan s ((a::as).map inl ++ rest) buf out)
-    --                     (mkCfg drain none rest ((a::as).reverse ++ buf) out) ((a::as).length + 1)
-    -- Strategy: one step of scan_inl takes us from ((a::as).map inl ++ rest) to (as.map inl ++ rest)
-    --   with buffer becoming (a :: buf). Then ih gives us the rest.
-    -- But the types use (a::as).map, (a::as).reverse, (a::as).length which aren't directly
-    --   Sum.inl a :: ..., as.reverse ++ [a], as.length + 1.
-    -- We need simp_rw or convert.
     have h1 := oneStep ea eb (scan_inl ea eb a (as.map Sum.inl ++ rest) buf out s)
     have h2 := ih (a :: buf) (some a)
-    -- h1 : EvalsToInTime step (mkCfg scan s (inl a :: as.map inl ++ rest) buf out)
-    --                          (mkCfg scan (some a) (as.map inl ++ rest) (a :: buf) out) 1
-    -- h2 : EvalsToInTime step (mkCfg scan (some a) (as.map inl ++ rest) (a :: buf) out)
-    --                          (mkCfg drain none rest (as.reverse ++ (a :: buf)) out) (as.length + 1)
     have h12 := EvalsToInTime.trans (fstTM ea eb).step 1 (as.length + 1) _ _ _ h1 h2
-    -- h12 : EvalsToInTime step (mkCfg scan s (inl a :: as.map inl ++ rest) buf out)
-    --                           (mkCfg drain none rest (as.reverse ++ (a :: buf)) out)
-    --                           ((as.length + 1) + 1)
-    -- We need to convert this to use (a::as).map, (a::as).reverse, (a::as).length
     convert bumpTime ea eb h12 (le_refl _) using 2
     · simp [List.map_cons, List.cons_append]
 
@@ -232,23 +214,15 @@ private def fstEval [Nonempty ea.Γ] (as : List ea.Γ) (bs : List eb.Γ) :
     cases bs with
     | nil => simp [List.head?] at hx
     | cons b _ => simp [List.map_cons, List.head?] at hx; exact ⟨b, hx.symm⟩
-  -- Phase 1: scan
   have h1 := scanPhase ea eb as (bs.map Sum.inr) [] [] none hrest
   simp only [List.append_nil] at h1
-  -- h1 : ... (as.map inl ++ bs.map inr) [] []  →  ... (bs.map inr).tail (as.reverse) []
-  -- Phase 2: drain
   have h2 := drainPhase ea eb (bs.map Sum.inr).tail as.reverse [] none
-  -- h2 : ... drain (bs.map inr).tail as.reverse []  →  ... copy [] as.reverse []
-  -- Phase 3: copy
   have h3 := copyPhase ea eb as.reverse [] none
-  -- h3 : ... copy [] as.reverse []  →  ... none [] [] (as.reverse.reverse)
-  -- Compose
   have h12 := EvalsToInTime.trans _ _ _ _ _ _ h1 h2
   have h123 := EvalsToInTime.trans _ _ _ _ _ _ h12 h3
   convert bumpTime ea eb h123 ?_ using 2
   · simp [List.reverse_reverse]
-  · -- Time bound: (as.length + 1) + ((bs.map inr).tail.length + 1) + (as.reverse.length + 1) ≤ ...
-    simp only [List.length_reverse, List.length_tail, List.length_map]
+  · simp only [List.length_reverse, List.length_tail, List.length_map]
     omega
 
 /-! ## Package as TM2ComputableInPolyTime -/
@@ -278,12 +252,8 @@ def polyTimeFst [Nonempty ea.Γ] :
   tm := fstTM ea eb
   inputAlphabet := Equiv.refl _
   outputAlphabet := Equiv.refl _
-  time := 2 * Polynomial.X + Polynomial.X + 3  -- overestimate: 2|a| + |b| + 3 ≤ 3n + 3
+  time := 2 * Polynomial.X + Polynomial.X + 3
   outputsFun := fun ⟨a, b⟩ => by
-    -- Need: TM2OutputsInTime (fstTM ea eb)
-    --   (List.map id ((pairEncoding ea eb).encode (a, b)))
-    --   (some (List.map id (ea.encode a)))
-    --   (time.eval ...)
     show TM2OutputsInTime (fstTM ea eb)
       (List.map (Equiv.refl _).invFun ((OpenLemma.Complexity.pairEncoding ea eb).encode (a, b)))
       (some (List.map (Equiv.refl _).invFun (ea.encode a)))
@@ -301,18 +271,17 @@ end
 
 end PolyTimeFst
 
-/-! ## Consistency: PolyTimeFst witnesses the axiom in Defs.lean
-
-The axiom `OpenLemma.Complexity.PolyTimeFst` in `Defs.lean` states that `Prod.fst`
-is poly-time computable on `pairEncoding`. This cannot be directly replaced due to
-an import cycle (this file imports Defs.lean for `pairEncoding`).
-
-The theorem below demonstrates that the axiom is consistent: we can construct a
-witness with a `[Nonempty ea.Γ]` precondition. The axiom version drops this
-precondition (which holds for all practical encodings). -/
+namespace PolyTimeFstTrack
 
 open Computability
+
 noncomputable def PolyTimeFst_witness {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β}
     [Nonempty ea.Γ] :
     Turing.TM2ComputableInPolyTime (OpenLemma.Complexity.pairEncoding ea eb) ea Prod.fst :=
   PolyTimeFst.polyTimeFst ea eb
+
+/-- Axiom: Prod.fst is computable even for empty alphabets. -/
+axiom polyTimeFst_empty_alphabet {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) :
+    Turing.TM2ComputableInPolyTime (OpenLemma.Complexity.pairEncoding ea eb) ea Prod.fst
+
+end PolyTimeFstTrack

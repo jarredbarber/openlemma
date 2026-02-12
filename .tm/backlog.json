@@ -177,7 +177,7 @@
     "dependencies": ["workspace-1uq"],
     "createdAt": "2026-02-12T19:20:00.000Z",
     "updatedAt": "2026-02-12T19:20:00.000Z",
-    "summary": "Formalize has constructed the traceAssignment and proved consistency for labels, states, and initial conditions. Working on transition logic (2 sorrys left)."
+    "summary": "Formalize has constructed the traceAssignment and proved consistency for labels, states, and initial conditions. Working on transition logic (2 major sorrys left)."
   },
   {
     "id": "workspace-cmp",
@@ -206,13 +206,14 @@
   {
     "id": "erdos-002",
     "description": "Research explicit thresholds for simultaneous digit sum bounds\nIdentify explicit constants for Stewart (1980) or Bugeaud (2018) bounds to justify large k density axioms.",
-    "state": "open",
+    "state": "closed",
     "role": "librarian",
     "priority": 1,
     "isSystem": false,
     "dependencies": [],
     "createdAt": "2026-02-12T20:00:00.000Z",
-    "updatedAt": "2026-02-12T20:00:00.000Z"
+    "updatedAt": "2026-02-12T20:00:00.000Z",
+    "summary": "Librarian analyzed Stewart's effective bounds and identified k = 178,416 as the global worst-case density."
   },
   {
     "id": "erdos-006",

@@ -1,10 +1,16 @@
 # Independent Moduli Intersection Lemma
 
-**Status:** Draft ✏️ (Task `erdos-008`)
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Statement:** Let $m_1, m_2, \dots, m_r$ be pairwise coprime integers, and let $M = \prod_{i=1}^r m_i$. For any sequence of residues $r_1, \dots, r_r$ (where $0 \le r_i < m_i$), let $N(A, L)$ be the number of integers $n \in [A, A+L)$ such that $n \equiv r_i \pmod{m_i}$ for all $i=1, \dots, r$. Then:
 1. If $L$ is a multiple of $M$, $N(A, L) / L = 1/M$.
 2. In general, $|N(A, L) - L/M| < 1$.
 3. The joint density of multiple modular constraints is the product of their individual densities.
+
+## Review Notes
+- **CRT Independence**: The document correctly uses the Chinese Remainder Theorem to prove that the joint density is the product of marginal densities for coprime moduli.
+- **Discrepancy Rigor**: The proof that discrepancy is bounded by 1 for any interval $L$ is rigorous and provides the necessary bridge between "expected count" and "absolute count" for small intervals.
+- **Analytical Context**: The inclusion of the Erdős-Turán inequality provides a solid analytical foundation for the local distribution of residues when $L < M$.
 
 ---
 

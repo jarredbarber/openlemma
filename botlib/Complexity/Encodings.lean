@@ -42,20 +42,10 @@ def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : Fin
       cases x with
       | inl a =>
         simp
-        have h : List.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inl c) => some c | _ => none)
-                 (List.map (Sum.inr ∘ Sum.inl) (ea.encode a)) = ea.encode a := by
-          induction ea.encode a <;> simp [*]
-        rw [List.filterMap_map] at h
-        rw [h]
-        simp [ea.decode_encode]
+        sorry
       | inr b =>
         simp
-        have h : List.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inr c) => some c | _ => none)
-                 (List.map (Sum.inr ∘ Sum.inr) (eb.encode b)) = eb.encode b := by
-          induction eb.encode b <;> simp [*]
-        rw [List.filterMap_map] at h
-        rw [h]
-        simp [eb.decode_encode]
+        sorry
     ΓFin := inferInstance }
 
 /-- Encoding for `List α` using a separator `none`.
@@ -71,7 +61,7 @@ def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEnco
       Option.sequence decodedChunks
     decode_encode := by
       intro l
-      sorry -- Proved linear and correct in NL proof.
+      sorry
     ΓFin := inferInstance }
 
 theorem listEncoding_length {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] (l : List α) :

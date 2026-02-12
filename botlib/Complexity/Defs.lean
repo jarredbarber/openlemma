@@ -95,8 +95,8 @@ lemma PolyTimeComp {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β}
 noncomputable def PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β} :
     _root_.Turing.TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst := by
   by_cases h : Nonempty ea.Γ
-  · exact PolyTimeFst.polyTimeFst ea eb
-  · sorry
+  · exact _root_.PolyTimeFstTrack.PolyTimeFst_witness
+  · exact _root_.PolyTimeFstTrack.polyTimeFst_empty_alphabet ea eb
 
 end Assumptions
 

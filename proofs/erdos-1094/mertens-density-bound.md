@@ -1,8 +1,15 @@
 # Erdos 1094: Mertens Density Bound
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Statement:** For $k > 1000$, the density of integers $n$ satisfying the large prime constraints is bounded by:
 $$ \delta_{large} = \prod_{k < p \le 2k} \left(1 - \frac{k}{p}\right) < \frac{1}{k^2} $$
+
+## Review Notes
+- **Exponential Approximation**: The use of $1-x \le e^{-x}$ is a standard and safe upper bound.
+- **Mertens Application**: The application of Mertens' Second Theorem to estimate the reciprocal sum of primes in $(k, 2k]$ is correct.
+- **Error Bounds**: The inclusion of explicit error terms $R(x) \le 1/2\ln^2 x$ confirms that the result holds for all $k > 1000$ with a substantial margin.
+- **Goal Alignment**: The bound $\delta_{large} < 1/k^2$ is sufficient to show that the expected number of exceptional pairs in a size-$k$ interval is $\ll 1/k$, which is the core requirement for the large-$n$ case.
 **Dependencies:** Mertens' Second Theorem.
 
 ## 1. The Density Formula
