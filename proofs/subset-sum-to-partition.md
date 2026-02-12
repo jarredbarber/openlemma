@@ -27,8 +27,8 @@ Let $\sigma = \sum_{x \in S} x$ be the total sum of elements in $S$.
 
 ### 2.1 Construction of $S'$
 **Case $t > \sigma$:**
-If the target sum $t$ exceeds the total sum $\sigma$, the SUBSET SUM instance is trivially unsatisfiable (since elements are non-negative).
-In this case, we output a fixed unsatisfiable PARTITION instance, e.g., $S' = \{1, 2\}$ (odd sum 3, cannot be partitioned).
+If the target sum $t$ exceeds the total sum $\sigma$, the SUBSET SUM instance is trivially unsatisfiable.
+In this case, we return a fixed unsatisfiable PARTITION instance, e.g., $S' = \{1, 2\}$ (odd sum 3, cannot be partitioned).
 This correctly maps "no" instance to "no" instance.
 
 **Case $t \le \sigma$:**
