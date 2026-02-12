@@ -42,6 +42,26 @@ Let $N$ be the length of the encoding of $\phi$.
 - Therefore, there exists a certificate containing all variables in $\phi$ with size $O(N^2)$.
 - We can choose $k=2$ (or sufficiently large) to satisfy $|y| \le |x|^k$.
 
+### Finite Witness Equivalence
+
+We must formally bridge the gap between the infinite assignment `ℕ → Bool` (used in `Satisfiable`) and the finite witness `List (ℕ × Bool)`.
+
+**Lemma:** `Satisfiable φ` ↔ `∃ y : List (ℕ × Bool), evalCNF (σ_y) φ = true`
+
+**Proof Sketch:**
+1.  **Forward (→):**
+    Assume `Satisfiable φ`. Then there exists an infinite assignment `σ` such that `evalCNF σ φ = true`.
+    Construct a finite list `y` by filtering `σ` to only the variables present in `φ` (or any finite subset containing them).
+    The reconstructed assignment `σ_y` (which defaults to false for missing keys) agrees with `σ` on all variables in `y`.
+    Since `evalCNF` only depends on the values of variables in `φ`, `evalCNF σ_y φ = true`.
+    Thus, a valid finite witness exists.
+
+2.  **Backward (←):**
+    Assume there exists `y` such that `evalCNF σ_y φ = true`.
+    By definition, `σ_y` is a function `ℕ → Bool` (it defaults to `false` for missing keys).
+    Therefore, `σ_y` itself is a valid infinite assignment that satisfies `φ`.
+    This directly implies `∃ σ, evalCNF σ φ = true`, so `Satisfiable φ` holds.
+
 ### 2. The Verifier (Relation R)
 
 We define the relation $R(\phi, y)$ as follows:
