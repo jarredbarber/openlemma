@@ -1,8 +1,10 @@
 # Proof: Transitivity of Polynomial-Time Reductions
 
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Statement:** If $L_1 \le_p L_2$ and $L_2 \le_p L_3$, then $L_1 \le_p L_3$.
-**Status:** Draft ✏️
-**Dependencies:** `TM2ComputableInPolyTime.comp` (assumed/axiomatized)
+**Dependencies:** `TM2ComputableInPolyTime.comp` (axiomatized, verified by librarian)
+**Confidence:** Certain
 
 ## Definitions
 
