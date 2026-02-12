@@ -250,8 +250,6 @@ axiom SAT_Verifier_polytime :
 
 /-! ## Bound Lemmas -/
 
-/-- The number of distinct variables in a CNF formula is at most the formula encoding length. -/
-
 /-- Encoding length lemmas (sorried pending Mathlib API fixes). -/
 private theorem length_encodeLiteral (l : Literal) :
     (finEncodingLiteral.encode l).length = l.var.size + 1 := by sorry
