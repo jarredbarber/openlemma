@@ -1,7 +1,8 @@
 # Proof: CLIQUE reduces to VERTEX COVER
 
 **Statement:** CLIQUE $\le_p$ VERTEX COVER.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps an instance $(G, K)$ of CLIQUE to an instance $(G', K')$ of VERTEX COVER such that $G$ has a clique of size $K$ if and only if $G'$ has a vertex cover of size $K'$.
 
 ## 1. Definitions
