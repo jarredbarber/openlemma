@@ -312,7 +312,7 @@ noncomputable def initialStack (k : V.K) (contents : List (V.Γ k)) : SAT.CNF :=
   -- Fix length
   [fixClause (TableauVar.stkLen 0 k contents.length) true] ++
   -- Fix each position
-  contents.enum.map fun ⟨j, γ⟩ =>
+  contents.zipIdx.map fun ⟨γ, j⟩ =>
     fixClause (TableauVar.stkElem 0 k j γ) true
 
 /-- Fix non-input stacks to be empty at time 0. -/
@@ -409,7 +409,7 @@ noncomputable def transitionClausesAt (i : ℕ) : SAT.CNF :=
           Finset.univ (α := V.K).toList.flatMap fun k =>
             let newStk := result.stk k
             [antecedent ++ [tLit (TableauVar.stkLen (i+1) k newStk.length) true]] ++
-            newStk.enum.map fun ⟨j, γ⟩ =>
+            newStk.zipIdx.map fun ⟨γ, j⟩ =>
               antecedent ++ [tLit (TableauVar.stkElem (i+1) k j γ) true]
 
 where
