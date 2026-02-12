@@ -4,7 +4,7 @@ Time: O(n) where n = input length.
 -/
 import Mathlib.Computability.TMComputable
 import Mathlib.Computability.Encoding
-import botlib.Complexity.Defs
+import botlib.Complexity.Encodings
 
 noncomputable section
 
@@ -311,7 +311,8 @@ The theorem below demonstrates that the axiom is consistent: we can construct a
 witness with a `[Nonempty ea.Γ]` precondition. The axiom version drops this
 precondition (which holds for all practical encodings). -/
 
-theorem PolyTimeFst_witness {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β}
+open Computability
+noncomputable def PolyTimeFst_witness {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β}
     [Nonempty ea.Γ] :
     Turing.TM2ComputableInPolyTime (OpenLemma.Complexity.pairEncoding ea eb) ea Prod.fst :=
   PolyTimeFst.polyTimeFst ea eb

@@ -13,6 +13,7 @@ import Mathlib.Logic.Equiv.List
 import Mathlib.Tactic.DeriveEncodable
 import Mathlib.Data.Bool.AllAny
 import Mathlib.Data.List.Dedup
+import Mathlib.Data.Nat.Size
 import Batteries.Data.List.Basic
 import botlib.Complexity.Defs
 
@@ -236,6 +237,35 @@ def SAT_Verifier (φ : CNF) (y : SAT_Certificate) : Prop :=
 def SAT_Verifier_Bool (p : CNF × SAT_Certificate) : Bool :=
   evalCNF (assignmentOfCertificate p.2) p.1
 
+/-! ## Bound Lemmas -/
+
+lemma h_sum_dedup (l : List ℕ) (f : ℕ → ℕ) : (l.dedup.map f).sum ≤ (l.map f).sum := by
+  induction l with
+  | nil => simp
+  | cons x xs ih =>
+    by_cases h : x ∈ xs
+    · rw [List.dedup_cons_of_mem h]
+      simp
+      exact Nat.le_trans ih (Nat.le_add_left _ _)
+    · rw [List.dedup_cons_of_notMem h]
+      simp [ih]
+
+lemma h_sum_flatMap {α β : Type} (l : List α) (f : α → List β) (g : β → ℕ) :
+    ((l.flatMap f).map g).sum = (l.map (fun x => ((f x).map g).sum)).sum := by
+  induction l with
+  | nil => simp
+  | cons x xs ih => simp [List.flatMap_cons, ih]
+
+lemma h_sum_le {α : Type} (l : List α) (f g : α → ℕ) (h : ∀ x ∈ l, f x ≤ g x) :
+    (l.map f).sum ≤ (l.map g).sum := by
+  induction l with
+  | nil => simp
+  | cons x xs ih =>
+    simp
+    apply Nat.add_le_add
+    · apply h; simp
+    · apply ih; intro y hy; apply h; simp [hy]
+
 /-- SAT is in NP. -/
 theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
   /- Use SAT_Certificate as the witness type. -/
@@ -251,14 +281,56 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
       rcases hsat with ⟨σ, hσ⟩
       let y := (φ.vars.dedup).map (fun v => (v, σ v))
       refine ⟨y, ?_, ?_⟩
-      · /- Bound: |encode y| ≤ |encode φ|^2
-            The certificate y = φ.vars.dedup.map (v ↦ (v, σ v)) has:
-            - |y| = |φ.vars.dedup| ≤ total_literals(φ) ≤ |encode φ|
-            - Each entry (v, b) encodes to |encode_nat v| + O(1) symbols
-            - Variable v appears in φ, so |encode_nat v| ≤ |encode φ|
-            - Therefore |encode y| ≤ |encode φ| · (|encode φ| + O(1)) ≤ |encode φ|²
-            Needs: listEncoding_length, pairEncoding_length, variable index bound. -/
-        sorry
+      · /- Bound: |encode y| ≤ |encode φ|^2 -/
+        have h_len_cnf : (finEncodingCNF.encode φ).length = (φ.map (fun c => (finEncodingClause.encode c).length + 1)).sum := 
+          listEncoding_length finEncodingClause φ
+        have h_len_clause (c : Clause) : (finEncodingClause.encode c).length = (c.map (fun l => (finEncodingLiteral.encode l).length + 1)).sum := 
+          listEncoding_length finEncodingLiteral c
+        
+        have h_len_y : (finEncodingSATCertificate.encode y).length = (y.map (fun p => (finEncodingNatBool.encode p.1).length + 2)).sum := by
+          rw [finEncodingSATCertificate, listEncoding_length (pairEncoding finEncodingNatBool finEncodingBoolBool) y]
+          induction y with
+          | nil => simp
+          | cons p ps ih =>
+            simp [ih, pairEncoding, finEncodingBoolBool, encodeBool]
+            cases p; rfl
+
+        have h1 : (finEncodingSATCertificate.encode y).length = (φ.vars.dedup.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum := by
+          rw [h_len_y, List.map_map]
+          rfl
+        
+        have h2 : (φ.vars.dedup.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum ≤ (φ.vars.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum := 
+          h_sum_dedup _ _
+
+        have h3 : (φ.vars.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum = (φ.map (fun c => (c.vars.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum)).sum := by
+          unfold CNF.vars
+          apply h_sum_flatMap
+
+        have h4 : (φ.map (fun c => (c.vars.map (fun v => (finEncodingNatBool.encode v).length + 2)).sum)).sum = (φ.map (fun c => (finEncodingClause.encode c).length)).sum := by
+          congr; funext c
+          rw [h_len_clause]
+          induction c with
+          | nil => simp; rfl
+          | cons l ls ihc =>
+            simp [ihc, Clause.vars]
+            cases l <;> simp [finEncodingLiteral, sumEncoding, finEncodingNatBool] <;> omega
+
+        have h_m_le_n : (finEncodingSATCertificate.encode y).length ≤ (finEncodingCNF.encode φ).length := by
+          rw [h1]
+          apply Nat.le_trans h2
+          rw [h3, h4]
+          apply h_sum_le; intro c _; omega
+          
+        calc (finEncodingSATCertificate.encode y).length
+          _ ≤ (finEncodingCNF.encode φ).length := h_m_le_n
+          _ ≤ (finEncodingCNF.encode φ).length ^ 2 := by
+            let n := (finEncodingCNF.encode φ).length
+            cases n with
+            | zero => simp
+            | succ n' => 
+              rw [pow_two]
+              apply Nat.le_mul_self
+
       · /- SAT_Verifier φ y -/
         rw [← hσ]
         apply evalCNF_eq_of_vars_eq
