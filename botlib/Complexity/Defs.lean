@@ -79,8 +79,7 @@ def NPHard {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
     InNP eb L' → PolyTimeReducible eb ea L' L
 
 section Assumptions
--- Temporary axioms pending formalization of poly-time composition.
--- Tracking task: jarred-5hc
+-- Temporary assumptions pending full formalization.
 
 /-- Poly-time functions are closed under composition.
     Proved in `botlib/Complexity/TM2PolyTimeComp.lean`. -/
@@ -97,11 +96,7 @@ noncomputable def PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEnco
     _root_.Turing.TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst := by
   by_cases h : Nonempty ea.Γ
   · exact PolyTimeFst.polyTimeFst ea eb
-  · -- If ea.Γ is empty, then α is empty (since ea is an encoding), so the function is trivial.
-    -- However, TM2ComputableInPolyTime requires constructing a TM.
-    -- Practically all encodings have non-empty alphabets.
-    -- For now, we sorry this edge case or assume ea.Γ is non-empty.
-    sorry
+  · sorry
 
 end Assumptions
 
@@ -122,6 +117,23 @@ theorem npComplete_iff_np_and_hard {α : Type} (ea : FinEncoding α) (L : Langua
     NPComplete ea L ↔ InNP ea L ∧ NPHard ea L :=
   Iff.rfl
 
+/-- If L₁ is NP-hard and L₁ ≤ₚ L₂, then L₂ is NP-hard. -/
+theorem NPHard.reducible {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β}
+    {L₁ : Language α} {L₂ : Language β} :
+    NPHard ea L₁ → PolyTimeReducible ea eb L₁ L₂ → NPHard eb L₂ := by
+  intro h_hard h_red γ ec L' h_np
+  have h1 : PolyTimeReducible ec ea L' L₁ := h_hard ec L' h_np
+  exact PolyTimeReducible.trans h1 h_red
+
+/-- If L₁ is NP-complete and L₁ ≤ₚ L₂, and L₂ ∈ NP, then L₂ is NP-complete. -/
+theorem NPComplete.reducible {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β}
+    {L₁ : Language α} {L₂ : Language β} :
+    NPComplete ea L₁ → PolyTimeReducible ea eb L₁ L₂ → InNP eb L₂ → NPComplete eb L₂ := by
+  intro h_comp h_red h_np
+  constructor
+  · exact h_np
+  · exact NPHard.reducible h_comp.2 h_red
+
 /-! ## P ⊆ NP -/
 
 /-- P is a subset of NP. -/
@@ -135,9 +147,6 @@ theorem P_subset_NP {α : Type} (ea : FinEncoding α) (L : Language α) :
   use R, 0
   constructor
   · -- R is poly-time checking
-    -- R(p) = f(p.1) = true. This is deciding the language of R.
-    -- We need to show InP (pairEncoding ea finEncodingUnit) (fun p => f p.1 = true)
-    -- This is equivalent to f ∘ fst being poly-time computable (to bool).
     unfold PolyTimeCheckingRelation InP
     rcases PolyTimeComp PolyTimeFst hf with ⟨h_comp⟩
     exact ⟨fun p => f p.1, h_comp, fun ⟨a, u⟩ => by simp [R]⟩

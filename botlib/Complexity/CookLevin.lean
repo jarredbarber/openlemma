@@ -27,8 +27,8 @@ to SAT. This requires connecting:
 
 /-- SAT is in NP: given a CNF formula and a certificate (variable assignment),
     we can verify satisfiability in polynomial time. -/
-theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
-  sorry
+theorem SAT_in_NP : InNP finEncodingCNF SAT_Language :=
+  SAT.SAT_in_NP
 
 /-- Cook-Levin: SAT is NP-hard. Every NP language poly-time reduces to SAT. -/
 theorem SAT_is_NP_hard : NPHard finEncodingCNF SAT_Language := by

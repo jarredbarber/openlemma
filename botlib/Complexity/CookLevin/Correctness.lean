@@ -3,11 +3,15 @@ Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license.
 
 Correctness of the Cook-Levin tableau reduction.
-This file proves that the generated CNF formula is satisfiable if and only if
-there exists a computation of the TM2 verifier that halts in an accepting state.
+This file proves key correctness lemmas connecting the abstract tableau
+encoding to concrete TM2 computation:
 
-Key Lemma: Read-Depth Soundness.
-The transition logic of a TM2 statement only depends on a finite prefix of the stacks.
+1. **Read-Depth Soundness**: `stepAux` output (label, state) depends only on
+   the top `stmtReadDepth k q` elements of each stack.
+2. **Stack Preservation**: Elements below the read depth are unchanged by `stepAux`.
+
+These justify the "forbidden windows" approach in the tableau, where only a
+bounded window of each stack is tracked in propositional variables.
 -/
 import botlib.Complexity.CookLevin.Tableau
 import Mathlib.Computability.TMComputable
@@ -52,31 +56,33 @@ private theorem tail_take_of_take {α : Type*} {n : ℕ} {l1 l2 : List α}
 
 /-- Prepending the same element preserves take equality. -/
 private theorem take_cons_eq {α : Type*} {d : ℕ} {x : α} {l1 l2 : List α}
-    (h : l1.take d = l2.take d) : (x :: l1).take d = (x :: l2).take d := by
-  cases d with
-  | zero => simp
-  | succ n =>
-    simp only [take_succ_cons]
-    exact congrArg (x :: ·) (take_mono (Nat.le_succ n) h)
+    (h : l1.take d = l2.take d) : (x :: l1).take (d + 1) = (x :: l2).take (d + 1) := by
+  simp [take_succ_cons, h]
+
+/-! ## Helper lemmas for reverse indexing -/
+
+/-- Indexing into `(x :: l).reverse` at position `j < l.length` ignores `x`. -/
+private theorem head?_drop_reverse_cons {α : Type*} (x : α) (l : List α) (j : ℕ)
+    (hj : j < l.length) :
+    ((x :: l).reverse.drop j).head? = (l.reverse.drop j).head? := by
+  simp [reverse_cons, drop_append, hj]
+
+/-- Indexing into `l.tail.reverse` at position `j < l.length - 1` equals `l.reverse.drop j |>.head?`. -/
+private theorem head?_drop_reverse_tail {α : Type*} (l : List α) (j : ℕ)
+    (hj : j < l.length - 1) :
+    (l.tail.reverse.drop j).head? = (l.reverse.drop j).head? := by
+  cases l with
+  | nil => simp at hj
+  | cons x xs =>
+    simp only [tail_cons, reverse_cons, drop_append]
+    have hxs : j < xs.length := by omega
+    simp [hxs]
 
 /-! ## Read-Depth Soundness -/
 
 /-- **Read-Depth Soundness Lemma**:
     The result of `stepAux` (label and internal state) only depends on the
-    top `stmtReadDepth k q` elements of each stack.
-
-    This is the key correctness lemma for the Cook-Levin tableau encoding:
-    it justifies the "forbidden windows" approach where only a bounded
-    window of each stack is tracked in the propositional variables.
-
-    Proof: by structural induction on the TM2 statement `q`.
-    - `push`: doesn't read the stack; pushed element is the same (from `s`),
-      so the take-equality is preserved via `take_cons_eq`.
-    - `peek`/`pop`: reads `head?`, which agrees by `head?_of_take`;
-      for pop, the tail's take is preserved by `tail_take_of_take`.
-    - `load`: doesn't touch stacks.
-    - `branch`: takes the max of both branches; monotonicity gives the IH.
-    - `goto`/`halt`: terminal, no recursion. -/
+    top `stmtReadDepth k q` elements of each stack. -/
 theorem stepAux_soundness (q : TM2.Stmt Γ Λ σ) (s : σ) (S1 S2 : ∀ k, List (Γ k))
     (h_agree : ∀ k, (S1 k).take (stmtReadDepth k q) = (S2 k).take (stmtReadDepth k q)) :
     (TM2.stepAux q s S1).l = (TM2.stepAux q s S2).l ∧
@@ -108,7 +114,7 @@ theorem stepAux_soundness (q : TM2.Stmt Γ Λ σ) (s : σ) (S1 S2 : ∀ k, List 
     have h := h_agree k'; simp only [stmtReadDepth] at h ⊢
     by_cases hk : k = k'
     · subst hk; simp only [Function.update_self, ite_true] at h ⊢
-      exact tail_take_of_take (by rwa [show stmtReadDepth k q + 1 = 1 + stmtReadDepth k q from by omega])
+      exact tail_take_of_take h
     · simp only [hk, ite_false, Nat.zero_add] at h
       have hk' : ¬k' = k := fun h => hk (h ▸ rfl)
       simp only [Function.update, hk', dite_false]; exact h
@@ -126,19 +132,61 @@ theorem stepAux_soundness (q : TM2.Stmt Γ Λ σ) (s : σ) (S1 S2 : ∀ k, List 
   | goto l => simp [TM2.stepAux]
   | halt => simp [TM2.stepAux]
 
-/-- **Stack Preservation Lemma**:
-    Any elements deep in the stack (below the read depth) are preserved by `stepAux`.
-    Counting from the bottom of the stack (using reverse then drop), position `j`
-    is unchanged if `j < (S k).length - stmtReadDepth k q`.
+/-! ## Stack Preservation -/
 
-    This justifies the frame preservation constraints in the tableau:
-    stack elements below the read depth window need not be constrained by
-    transition clauses. -/
+/-- **Stack Preservation Lemma**:
+    Any elements deep in the stack (below the read depth) are preserved by `stepAux`. -/
 theorem stepAux_preservation (q : TM2.Stmt Γ Λ σ) (s : σ) (S : ∀ k, List (Γ k)) (k : K) (j : ℕ)
     (h_depth : j < (S k).length - stmtReadDepth k q) :
     ((reverse ((TM2.stepAux q s S).stk k)).drop j).head? = ((reverse (S k)).drop j).head? := by
-  -- Proof by induction on q, tracking how push/pop/peek affect the bottom of the stack.
-  -- Each case shows that operations on the top of the stack leave the bottom unchanged.
-  sorry
+  induction q generalizing s S with
+  | push k' γ q ih =>
+    simp only [TM2.stepAux]
+    let S' := Function.update S k' (γ s :: S k')
+    have h_depth' : j < (S' k).length - stmtReadDepth k q := by
+      simp only [stmtReadDepth] at h_depth
+      by_cases hk : k = k'
+      · subst hk; simp only [S', Function.update_self, length_cons]; omega
+      · simp only [S', Function.update, hk, dite_false]; exact h_depth
+    rw [ih s S' h_depth']
+    by_cases hk : k = k'
+    · subst hk; simp only [S', Function.update_self]
+      apply head?_drop_reverse_cons
+      simp only [stmtReadDepth] at h_depth; omega
+    · simp only [S', Function.update, hk, dite_false]
+  | peek k' f q ih =>
+    simp only [TM2.stepAux]
+    apply ih
+    simp only [stmtReadDepth] at h_depth
+    by_cases hk : k = k'
+    · subst hk; simp only [ite_true] at h_depth; omega
+    · simp only [hk, ite_false, Nat.zero_add] at h_depth; exact h_depth
+  | pop k' f q ih =>
+    simp only [TM2.stepAux]
+    let S' := Function.update S k' (S k').tail
+    have h_depth' : j < (S' k).length - stmtReadDepth k q := by
+      simp only [stmtReadDepth] at h_depth
+      by_cases hk : k = k'
+      · subst hk; simp only [S', Function.update_self]
+        cases hS : S k with
+        | nil => simp [hS] at h_depth; omega
+        | cons x xs => simp only [hS, tail_cons, length_cons] at h_depth ⊢; omega
+      · simp only [S', Function.update, hk, dite_false]
+        simp only [show ¬(k' = k) from Ne.symm hk, ite_false, Nat.zero_add] at h_depth; exact h_depth
+    rw [ih (f s (S k').head?) S' h_depth']
+    by_cases hk : k = k'
+    · subst hk; simp only [S', Function.update_self]
+      apply head?_drop_reverse_tail
+      simp only [stmtReadDepth] at h_depth; split at h_depth <;> omega
+    · simp only [S', Function.update, hk, dite_false]
+  | load f q ih =>
+    simp only [TM2.stepAux]; apply ih; exact h_depth
+  | branch p q1 q2 ih1 ih2 =>
+    simp only [TM2.stepAux, stmtReadDepth] at h_depth ⊢
+    by_cases hp : p s
+    · simp [hp]; apply ih1; have := le_max_left (stmtReadDepth k q1) (stmtReadDepth k q2); omega
+    · simp [hp]; apply ih2; have := le_max_right (stmtReadDepth k q1) (stmtReadDepth k q2); omega
+  | goto l => simp [TM2.stepAux]
+  | halt => simp [TM2.stepAux]
 
 end CookLevinTableau
