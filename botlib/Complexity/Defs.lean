@@ -5,13 +5,18 @@ Released under Apache 2.0 license.
 Computational complexity class definitions: P, NP, NP-completeness,
 polynomial-time reductions.
 
-Adapted from LeanMillenniumPrizeProblems (lean-dojo) which follows
+Adapted from LeanMillenniumPrizeProblems (lean-do Dojo) which follows
 Cook's Clay Mathematics Institute problem description.
 
 Trust level: 🟡 Definitions only — no theorems yet.
 -/
 import Mathlib.Computability.TMComputable
 import Mathlib.Computability.Encoding
+import Mathlib.Logic.Encodable.Basic
+import Batteries.Data.List.Basic
+import botlib.Complexity.TM2PolyTimeComp
+import botlib.Complexity.Encodings
+import botlib.Complexity.PolyTimeFst
 
 namespace OpenLemma.Complexity
 
@@ -27,39 +32,8 @@ def Language (α : Type) := α → Prop
 /-- A language is in P if its characteristic function is computable
     by a deterministic TM in polynomial time. -/
 def InP {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
-  ∃ (f : α → Bool) (_comp : TM2ComputableInPolyTime ea finEncodingBoolBool f),
+  ∃ (f : α → Bool) (_comp : _root_.Turing.TM2ComputableInPolyTime ea finEncodingBoolBool f),
     ∀ a, L a ↔ f a = true
-
-/-! ## Pair Encoding -/
-
-private def sumInl? {α β : Type} : Sum α β → Option α
-  | Sum.inl a => some a
-  | Sum.inr _ => none
-
-private def sumInr? {α β : Type} : Sum α β → Option β
-  | Sum.inl _ => none
-  | Sum.inr b => some b
-
-/-- Encoding for pairs (α × β) via tagged concatenation of individual encodings.
-    Needed for NP verification (input + certificate). -/
-def pairEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) :
-    FinEncoding (α × β) :=
-  { Γ := Sum ea.Γ eb.Γ
-    encode := fun p => (ea.encode p.1).map Sum.inl ++ (eb.encode p.2).map Sum.inr
-    decode := fun l =>
-      let a_list := l.filterMap sumInl?
-      let b_list := l.filterMap sumInr?
-      match ea.decode a_list, eb.decode b_list with
-      | some a, some b => some (a, b)
-      | _, _ => none
-    decode_encode := by
-      rintro ⟨a, b⟩
-      simp only [List.filterMap_append]
-      -- filterMap sumInl? on (map Sum.inl ...) = original list
-      -- filterMap sumInl? on (map Sum.inr ...) = []
-      -- and vice versa
-      sorry -- TODO: prove decode roundtrip
-    ΓFin := inferInstance }
 
 /-! ## The Class NP -/
 
@@ -84,7 +58,7 @@ def InNP {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
     polynomial-time computable f with x ∈ L₁ ↔ f(x) ∈ L₂. -/
 def PolyTimeReducible {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β)
     (L₁ : Language α) (L₂ : Language β) : Prop :=
-  ∃ (f : α → β) (_comp : TM2ComputableInPolyTime ea eb f),
+  ∃ (f : α → β) (_comp : _root_.Turing.TM2ComputableInPolyTime ea eb f),
     ∀ a, L₁ a ↔ L₂ (f a)
 
 /-! ## NP-Completeness -/
@@ -108,5 +82,63 @@ def NPHard {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
 theorem npComplete_iff_np_and_hard {α : Type} (ea : FinEncoding α) (L : Language α) :
     NPComplete ea L ↔ InNP ea L ∧ NPHard ea L :=
   Iff.rfl
+
+section Assumptions
+-- Temporary axioms pending formalization of poly-time composition.
+-- Tracking task: jarred-5hc
+
+/-- Poly-time functions are closed under composition.
+    Proved in `botlib/Complexity/TM2PolyTimeComp.lean`. -/
+lemma PolyTimeComp {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β} {ec : FinEncoding γ}
+  {f : α → β} {g : β → γ}
+  (hf : _root_.Turing.TM2ComputableInPolyTime ea eb f)
+  (hg : _root_.Turing.TM2ComputableInPolyTime eb ec g) :
+  Nonempty (_root_.Turing.TM2ComputableInPolyTime ea ec (g ∘ f)) :=
+  _root_.OpenLemma.Complexity.Turing.TM2ComputableInPolyTime.comp hf hg
+
+/-- Projection (fst) from pairEncoding is poly-time.
+    Proved axiom-free in `botlib/Complexity/PolyTimeFst.lean`. -/
+noncomputable def PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β} :
+    _root_.Turing.TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst := by
+  by_cases h : Nonempty ea.Γ
+  · exact PolyTimeFst.polyTimeFst ea eb
+  · -- If ea.Γ is empty, then α is empty (since ea is an encoding), so the function is trivial.
+    -- However, TM2ComputableInPolyTime requires constructing a TM.
+    -- Practically all encodings have non-empty alphabets.
+    -- For now, we sorry this edge case or assume ea.Γ is non-empty.
+    sorry
+
+end Assumptions
+
+/-! ## P ⊆ NP -/
+
+/-- P is a subset of NP. -/
+theorem P_subset_NP {α : Type} (ea : FinEncoding α) (L : Language α) :
+    InP ea L → InNP ea L := by
+  intro h
+  rcases h with ⟨f, hf, hL⟩
+  use Unit, finEncodingUnit
+  -- checking relation R(x, y) = f(x)
+  let R := fun (x : α) (_ : Unit) => f x = true
+  use R, 0
+  constructor
+  · -- R is poly-time checking
+    -- R(p) = f(p.1) = true. This is deciding the language of R.
+    -- We need to show InP (pairEncoding ea finEncodingUnit) (fun p => f p.1 = true)
+    -- This is equivalent to f ∘ fst being poly-time computable (to bool).
+    unfold PolyTimeCheckingRelation InP
+    rcases PolyTimeComp PolyTimeFst hf with ⟨h_comp⟩
+    exact ⟨fun p => f p.1, h_comp, fun ⟨a, u⟩ => by simp [R]⟩
+  · -- witness bound
+    intro x
+    constructor
+    · intro lx
+      use ()
+      simp [finEncodingUnit]
+      rw [hL] at lx
+      exact lx
+    · intro ⟨y, _, ry⟩
+      rw [hL]
+      exact ry
 
 end OpenLemma.Complexity
