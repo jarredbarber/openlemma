@@ -15,131 +15,82 @@
 - Output string on stack $k_1$: `ea.encode a`
 
 **Machine Model:** `FinTM2` (Multi-stack Turing Machine).
-- $K = \{k_0, k_1\}$.
+- $K = \{k_0, k_1, k_{aux}\}$. ($k_{aux}$ for reversal).
 - $\Gamma(k_0) = \Gamma_{pair}$.
-- $\Gamma(k_1) = \Gamma_a$.
+- $\Gamma(k_1) = \Gamma(k_{aux}) = \Gamma_a$.
 
-## 2. Algorithm
+## 2. Algorithm: Two-Phase Reversal
 
-The algorithm is a simple linear scan and filter.
-
-1.  **State `start`**:
-    -   Peek/Pop from input stack $k_0$.
-    -   **Case `some (inl x)`**:
-        -   The symbol belongs to the first component $a$.
-        -   Push `x` onto the output stack $k_1$.
-        -   Loop back to `start`.
-    -   **Case `some (inr y)`**:
-        -   The symbol belongs to the second component $b$.
-        -   We have finished reading $a$.
-        -   Transition to `halt` (we don't need to consume $b$, just stop).
-    -   **Case `none`** (Empty):
-        -   End of input.
-        -   Transition to `halt`.
+A direct transfer from $k_0$ to $k_1$ reverses the order (stack LIFO).
+To preserve order, we use two phases:
+1.  **Phase 1 (Filter & Reverse):** Pop from $k_0$. If `inl x`, push to $k_{aux}$. If `inr y` or `none`, stop reading and goto Phase 2.
+    -   Result on $k_{aux}$: `[an, ..., a1]` (reversed `a`).
+2.  **Phase 2 (Reverse Back):** Pop from $k_{aux}$. Push to $k_1$. Repeat until $k_{aux}$ is empty.
+    -   Result on $k_1$: `[a1, ..., an]` (correct order).
 
 ## 3. Formal Construction
 
 ### 3.1 States ($\sigma$)
-We only need one active state.
--   $\sigma = \text{Unit}$ (or `Bool` if we want distinct start/halt, but `FinTM2` handles halting via `Option Label`).
--   Let's use `Unit`. `initialState = ()`.
+We need to store the symbol being moved.
+-   $\sigma = \text{Option } (\text{Sum } \Gamma_{pair} \Gamma_a)$.
+-   Actually, we can just use `Option (Sum \Gamma_a \Gamma_b)` since we only read from $k_0$ (Phase 1) or $k_{aux}$ (Phase 2, type $\Gamma_a$).
+-   Let's use a unified type or rely on `FinTM2` flexibility.
+-   State: `Option (Sum ea.Γ eb.Γ)` works for Phase 1.
+-   State: `Option ea.Γ` works for Phase 2.
+-   Unified State: `Sum (Option (Sum ea.Γ eb.Γ)) (Option ea.Γ)`?
+-   Simpler: Use `Option (Sum ea.Γ eb.Γ)` throughout. In Phase 2, we just inject `ea.Γ` into `Sum.inl`.
 
 ### 3.2 Labels ($\Lambda$)
-We need labels for the transitions.
--   `read`: The main loop state.
--   `write(x)`: A parameterized label to handle pushing the read symbol?
-    -   Actually, `TM2.Stmt` can combine pop and push.
-    -   We can define the `Stmt` for `read` to do the logic.
+-   `phase1`: Main loop for filtering and pushing to aux.
+-   `phase2`: Main loop for popping aux and pushing to output.
 
-### 3.3 Statement (`read`)
-The statement at label `main` corresponds to the algorithm:
+### 3.3 Statements
 
+**Statement `phase1`:**
 ```lean
-TM2.Stmt.pop k₀ (fun _ s => -- read symbol `s` from input
-  match s with
-  | some (Sum.inl x) => 
-      -- Found part of 'a', keep it.
-      (s, some x) -- Store 'x' in auxiliary state/output? 
-      -- Wait, pop takes a function `σ → Option Γ → σ`. 
-      -- It updates the internal state.
-      -- We need to push to k₁.
-      -- We can't push immediately in the `pop` function.
-      -- We need to branch or use the value.
-  | _ => ...
-)
+TM2.Stmt.pop k₀ (fun _ sym => sym) -- Read input
+  (TM2.Stmt.branch (fun sym => match sym with | some (Sum.inl _) => true | _ => false)
+    -- Case: inl x (Part of 'a')
+    (TM2.Stmt.push k_aux (fun sym => match sym with | some (Sum.inl x) => x | _ => default)
+      (TM2.Stmt.goto (fun _ => phase1)))
+    -- Case: inr y or none (End of 'a')
+    (TM2.Stmt.goto (fun _ => phase2))
+  )
 ```
 
-**Revised Stmt using `peek` + `pop` + `push`:**
-
-It's cleaner to `pop` the input into the internal state `σ`, then `branch` on the value.
-Let `σ = Option \Gamma_a`. Initial state `none`.
-
-**Statement `loop`:**
-1.  **Pop $k_0$**: Update state `s` with the popped symbol.
-    -   If `inl x`, set state to `some x`.
-    -   If `inr y` or `none`, set state to `none` (flag to halt).
-2.  **Branch**: Check state.
-    -   If `some x`:
-        -   **Push $k_1$**: Push `x`.
-        -   **Goto `loop`**.
-    -   If `none`:
-        -   **Halt**.
-
-### 3.4 Refined State Space
-To implement the above:
--   $\sigma = \text{Option } \Gamma_a$.
--   `initialState` doesn't matter for the first step, but let's say `none`.
--   Wait, we need to handle the first read correctly.
-
-**Better State:**
-Use `σ = Option (Sum \Gamma_a \Gamma_b)`.
-But we only need to write `\Gamma_a`.
-
-**Optimized Stmt (Stateless approach using `load`?):**
-`FinTM2` statements are flexible.
-We can define the statement for `main` as:
-
+**Statement `phase2`:**
 ```lean
-TM2.Stmt.pop k₀ (fun _ sym => sym) -- Store popped symbol in state
-  (TM2.Stmt.branch (fun sym => 
-      match sym with 
-      | some (Sum.inl _) => true 
-      | _ => false)
-    -- Case: inl x
-    (TM2.Stmt.push k₁ (fun sym => 
-        match sym with 
-        | some (Sum.inl x) => x 
-        | _ => default) -- proven unreachable by branch
-      (TM2.Stmt.goto (fun _ => main)))
-    -- Case: inr y or none
+TM2.Stmt.pop k_aux (fun _ sym => sym.map Sum.inl) -- Read aux (lift to common state type)
+  (TM2.Stmt.branch (fun sym => sym.isSome)
+    -- Case: some x
+    (TM2.Stmt.push k₁ (fun sym => match sym with | some (Sum.inl x) => x | _ => default)
+      (TM2.Stmt.goto (fun _ => phase2)))
+    -- Case: none (Aux empty)
     TM2.Stmt.halt
   )
 ```
 
 ## 4. Complexity Analysis
 
--   **Time:** The machine performs 1 iteration per symbol of `encode(a)`.
-    -   It stops as soon as it hits the first `inr`.
-    -   Total steps = $|encode(a)| + 1$.
-    -   This is linear in input size $n$.
-    -   $T(n) = O(n)$.
--   **Space:** It writes exactly `encode(a)` to the output stack. $O(n)$.
+-   **Phase 1:** Reads $|a|$ symbols. Pushes $|a|$ symbols. Stops at first `inr`. Steps $\approx |a|$.
+-   **Phase 2:** Pops $|a|$ symbols. Pushes $|a|$ symbols. Steps $\approx |a|$.
+-   **Total Time:** $O(|a|) = O(n)$. Polynomial.
+-   **Space:** Aux stack uses $O(|a|)$. Output uses $O(|a|)$.
 
 ## 5. Lean Structure
 
 ```lean
 def polyTimeFstTM {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : FinTM2 :=
-  { K := Bool -- k₀=false, k₁=true
-    Γ := fun k => if k then ea.Γ else (pairEncoding ea eb).Γ
-    Λ := Unit -- just one label
-    σ := Option (Sum ea.Γ eb.Γ) -- hold the read symbol
+  { K := Fin 3 -- 0=input, 1=output, 2=aux
+    Γ := fun k => match k with
+      | 0 => (pairEncoding ea eb).Γ
+      | _ => ea.Γ
+    Λ := Bool -- false=phase1, true=phase2
+    σ := Option (Sum ea.Γ eb.Γ)
     ...
-    m := fun () => 
-      TM2.Stmt.pop false (fun _ s => s) $
-        TM2.Stmt.branch (fun s => match s with | some (Sum.inl _) => true | _ => false)
-          (TM2.Stmt.push true (fun s => match s with | some (Sum.inl x) => x | _ => default)
-            (TM2.Stmt.goto (fun _ => ())))
-          TM2.Stmt.halt
+    m := fun l => match l with
+      | false => -- Phase 1 stmt
+      | true  => -- Phase 2 stmt
   }
 ```
 
