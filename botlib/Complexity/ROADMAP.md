@@ -39,7 +39,7 @@ reduced to the Boolean satisfiability problem.
 ### Phase 4: Extensions
 - [x] SAT → 3-SAT reduction (verified)
 - [x] 3-SAT → CLIQUE reduction (verified)
-- [ ] Basic NP-completeness results
+- [x] Basic NP-completeness results (follows from reductions)
 
 ## Design Decisions
 - Build on Mathlib's TM2/FinTM2 (matches existing Lean ecosystem)
