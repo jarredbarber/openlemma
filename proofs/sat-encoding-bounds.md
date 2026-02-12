@@ -95,6 +95,11 @@ $$ \sum_{v \in V} |encode(v)| \le |encode(\phi)| $$
 Also, the number of distinct variables $|V|$ is bounded by the total number of literals, which is less than $|encode(\phi)|$.
 So $|V| \le |encode(\phi)|$.
 
+**Edge Cases:**
+- If $\phi = []$ (empty formula), then $|encode(\phi)| \ge 1$ (just the separator `none`). Since it contains no clauses, `vars` is empty, so $|V| = 0$. The inequality $0 \le 1$ holds.
+- If $\phi = [[]]$ (one empty clause), then $|encode(\phi)| \ge 2$ (separators for outer list and inner list). `vars` is still empty, $|V| = 0$. The inequality $0 \le 2$ holds.
+In general, every variable occurrence contributes at least 1 bit to the encoding of $\phi$, so the sum of variable sizes is strictly bounded.
+
 Substituting these into the certificate size:
 $$ |encode(y)| = \sum_{v \in V} |encode(v)| + 2|V| $$
 $$ |encode(y)| \le |encode(\phi)| + 2|encode(\phi)| $$
