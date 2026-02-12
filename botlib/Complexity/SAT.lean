@@ -168,10 +168,14 @@ def finEncodingCNF : FinEncoding CNF := listEncoding finEncodingClause
 /-- A certificate for SAT is a finite list of (variable index, truth value) pairs. -/
 abbrev SAT_Certificate := List (ℕ × Bool)
 
+/-- DecidableEq instance for the alphabet of the pair encoding (Bool ⊕ Bool). -/
+instance : DecidableEq (pairEncoding finEncodingNatBool finEncodingBoolBool).Γ := by
+  dsimp [pairEncoding, finEncodingNatBool, finEncodingBoolBool, encodingNatBool]
+  infer_instance
+
 /-- FinEncoding for SAT certificates. 
     Use the efficient listEncoding over pairEncoding. -/
 def finEncodingSATCertificate : FinEncoding SAT_Certificate :=
-  have : DecidableEq (pairEncoding finEncodingNatBool finEncodingBoolBool).Γ := inferInstance
   listEncoding (pairEncoding finEncodingNatBool finEncodingBoolBool)
 
 /-- Convert a certificate (list of pairs) to a full assignment.
