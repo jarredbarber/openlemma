@@ -9,10 +9,11 @@ This file re-exports the modular Cook-Levin development:
 -/
 import botlib.Complexity.CookLevin.Tableau
 import botlib.Complexity.CookLevin.Correctness
+import botlib.Complexity.SAT
 
 namespace OpenLemma.Complexity
 
-open CookLevinTableau
+open SAT
 
 /-! ## Cook-Levin Reduction Scaffold
 
@@ -24,12 +25,17 @@ to SAT. This requires connecting:
 4. The reduction is poly-time computable
 -/
 
+/-- SAT is in NP: given a CNF formula and a certificate (variable assignment),
+    we can verify satisfiability in polynomial time. -/
+theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
+  sorry
+
 /-- Cook-Levin: SAT is NP-hard. Every NP language poly-time reduces to SAT. -/
-theorem SAT_is_NP_hard : NP_hard SAT.SATLanguage := by
+theorem SAT_is_NP_hard : NPHard finEncodingCNF SAT_Language := by
   sorry
 
 /-- Cook-Levin: SAT is NP-complete. -/
-theorem CookLevin : NP_complete SAT.SATLanguage :=
-  ⟨SAT.SAT_in_NP, SAT_is_NP_hard⟩
+theorem CookLevin : NPComplete finEncodingCNF SAT_Language :=
+  ⟨SAT_in_NP, SAT_is_NP_hard⟩
 
 end OpenLemma.Complexity
