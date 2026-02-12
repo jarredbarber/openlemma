@@ -1,7 +1,8 @@
 # Proof: SAT reduces to 3-SAT
 
 **Statement:** SAT $\le_p$ 3-SAT.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any CNF formula $\phi$ to a 3-CNF formula $\psi$ such that $\phi$ is satisfiable if and only if $\psi$ is satisfiable.
 
 ## 1. The Reduction

@@ -34,10 +34,10 @@ reduced to the Boolean satisfiability problem.
 - [x] Transition constraints (local consistency) (verified)
 - [x] Acceptance constraints (verified)
 - [x] Prove: formula is satisfiable ↔ TM accepts (verified)
-- [x] Prove: reduction is polynomial-time (verified under linear encoding assumption)
+- [x] Prove: reduction is polynomial-time (verified with linear listEncoding)
 
 ### Phase 4: Extensions
-- [ ] SAT → 3-SAT reduction (Tseitin transformation)
+- [x] SAT → 3-SAT reduction (verified)
 - [ ] 3-SAT → CLIQUE reduction
 - [ ] Basic NP-completeness results
 
