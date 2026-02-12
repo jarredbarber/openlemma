@@ -33,8 +33,8 @@ reduced to the Boolean satisfiability problem.
 - [x] Initial configuration constraints
 - [x] Transition constraints (local consistency)
 - [x] Acceptance constraints
-- [ ] Prove: formula is satisfiable ↔ TM accepts
-- [ ] Prove: reduction is polynomial-time
+- [x] Prove: formula is satisfiable ↔ TM accepts
+- [ ] Prove: reduction is polynomial-time (blocked by linear encoding)
 
 ### Phase 4: Extensions
 - [ ] SAT → 3-SAT reduction (Tseitin transformation)
