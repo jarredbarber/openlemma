@@ -107,9 +107,11 @@ If the transition logic is correct, exactly one $H_{i+1, j'}$ will be true (Comp
 
 **Bit-length Note:**
 The actual bit-length of the encoded formula depends on the encoding scheme used for variable indices.
-Currently, `finEncodingOfEncodable` in `Defs.lean` may produce encodings where the bit-length is not strictly polynomial for all list types.
-However, assuming a standard binary encoding of indices (which is possible), the total bit-length of $\phi_w$ is $O(p(n)^2 \log(p(n)))$.
-We defer the formal proof of the polynomial bit-length bound until the encoding definitions are optimized.
+Currently, `finEncodingOfEncodable` in `Defs.lean` produces an exponentially bloated bit-length for lists because it uses Cantor pairing. 
+However, the reduction is only polynomial if a **linear encoding** for lists and CNF formulas is used.
+We assume such an encoding is provided (as requested in the project's encoding audit). 
+Under a linear encoding, the total bit-length of $\phi_w$ is $O(p(n)^2 \log(p(n)))$, where the logarithmic factor arises from the binary representation of variable indices.
+We defer the formal proof of the polynomial bit-length bound until the encoding definitions are officially updated in `Defs.lean`.
 
 ## 5. Correctness Proof
 
