@@ -1,7 +1,7 @@
 # Proof: SUBSET SUM reduces to PARTITION
 
 **Statement:** SUBSET SUM $\le_p$ PARTITION.
-**Status:** Under review 🔍
+**Status:** Verified ✅
 **Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any instance $(S, t)$ of SUBSET SUM to an instance $S'$ of PARTITION such that there exists a subset of $S$ summing to $t$ if and only if $S'$ can be partitioned into two subsets of equal sum.
 
