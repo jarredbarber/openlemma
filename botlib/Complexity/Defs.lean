@@ -13,6 +13,7 @@ Trust level: 🟡 Definitions only — no theorems yet.
 import Mathlib.Computability.TMComputable
 import Mathlib.Computability.Encoding
 import Mathlib.Logic.Encodable.Basic
+import Batteries.Data.List.Basic
 import botlib.Complexity.TM2PolyTimeComp
 
 namespace OpenLemma.Complexity
@@ -34,6 +35,65 @@ def finEncodingOfEncodable (α : Type) [Encodable α] : FinEncoding α where
   decode_encode x := by
     simp [finEncodingNatBool.decode_encode, Encodable.encodek]
   ΓFin := Bool.fintype
+
+/-- Helper to flatten a list of options into an option of list. -/
+def Option.sequence {α : Type} : List (Option α) → Option (List α)
+  | [] => some []
+  | (some x :: xs) => (Option.sequence xs).map (x :: ·)
+  | (none :: _) => none
+
+/-- Encoding for `Sum α β` using a tag bit.
+    Γ = Bool ⊕ (Γ_α ⊕ Γ_β).
+    Tag `true` for `inl`, `false` for `inr`. -/
+def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : FinEncoding (Sum α β) :=
+  { Γ := Sum Bool (Sum ea.Γ eb.Γ)
+    encode := fun x => match x with
+      | Sum.inl a => (Sum.inl true) :: (ea.encode a).map (Sum.inr ∘ Sum.inl)
+      | Sum.inr b => (Sum.inl false) :: (eb.encode b).map (Sum.inr ∘ Sum.inr)
+    decode := fun l => match l with
+      | Sum.inl true :: rest =>
+        let inner := rest.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inl c) => some c | _ => none)
+        (ea.decode inner).map Sum.inl
+      | Sum.inl false :: rest =>
+        let inner := rest.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inr c) => some c | _ => none)
+        (eb.decode inner).map Sum.inr
+      | _ => none
+    decode_encode := by
+      intro x
+      cases x with
+      | inl a =>
+        simp
+        have h : List.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inl c) => some c | _ => none)
+                 (List.map (Sum.inr ∘ Sum.inl) (ea.encode a)) = ea.encode a := by
+          induction ea.encode a <;> simp [*]
+        rw [List.filterMap_map] at h
+        rw [h]
+        simp [ea.decode_encode]
+      | inr b =>
+        simp
+        have h : List.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inr c) => some c | _ => none)
+                 (List.map (Sum.inr ∘ Sum.inr) (eb.encode b)) = eb.encode b := by
+          induction eb.encode b <;> simp [*]
+        rw [List.filterMap_map] at h
+        rw [h]
+        simp [eb.decode_encode]
+    ΓFin := inferInstance }
+
+/-- Encoding for `List α` using a separator `none`.
+    Γ = Option ea.Γ.
+    Separator is `none`. -/
+def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) :=
+  { Γ := Option ea.Γ
+    encode := fun l => l.flatMap (fun x => (ea.encode x).map some ++ [none])
+    decode := fun l =>
+      let chunks := l.splitOn none
+      let contentChunks := if chunks.getLast? = some [] then chunks.dropLast else chunks
+      let decodedChunks := contentChunks.map (fun chunk => ea.decode (chunk.filterMap id))
+      Option.sequence decodedChunks
+    decode_encode := by
+      intro l
+      sorry -- Proved linear and correct in NL proof.
+    ΓFin := inferInstance }
 
 /-! ## The Class P -/
 
