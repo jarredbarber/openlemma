@@ -41,12 +41,12 @@ reduced to the Boolean satisfiability problem.
 - [x] Prove: reduction is polynomial-time (verified NL)
 
 ### Phase 4: Axiom Elimination
-- [x] Implement `stepAux_soundness` in `Correctness.lean` (axiom-free proof)
-- [x] Prove `satisfies_initial` in `Soundness.lean` (axiom-free proof)
-- [x] Finalize `Soundness.lean` structure with modular citation axioms
-- [x] Resolve compile errors in `Correctness.lean` and `Soundness.lean`
-- [x] Rework `Completeness.lean` with proved transition technique (halted case)
-- [ ] Implement induction for `trace_tracks_label` in `Completeness.lean`
+- [x] Implement `stepAux_soundness` in `Correctness.lean` (Fully proved axiom-free)
+- [x] Implement `stepAux_preservation_elem` in `Correctness.lean` (Fully proved axiom-free)
+- [x] Prove `trace_tracks_label` in `Completeness.lean` (Inductive structure proved; narrowed to `step_tracks`)
+- [x] Refactor `Soundness.lean` to resolve build timeouts (Optimized with `evalCNF_append`)
+- [ ] Prove `satisfies_initial` in `Soundness.lean` (Axiom-free proof pending)
+- [ ] Implement induction for `step_tracks` in `Completeness.lean`
 - [ ] Eliminate `satisfies_transition` axiom in `Soundness.lean`
 
 ### Phase 4: Extensions

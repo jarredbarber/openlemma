@@ -1,6 +1,8 @@
 import Mathlib.Computability.Encoding
 import Mathlib.Logic.Encodable.Basic
 import Batteries.Data.List.Basic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Basic
 
 namespace OpenLemma.Complexity
 
@@ -24,56 +26,63 @@ def Option.sequence {α : Type} : List (Option α) → Option (List α)
 /-- Encoding for `Sum α β` using a tag bit.
     Γ = Bool ⊕ (Γ_α ⊕ Γ_β).
     Tag `true` for `inl`, `false` for `inr`. -/
-def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : FinEncoding (Sum α β) :=
-  { Γ := Sum Bool (Sum ea.Γ eb.Γ)
-    encode := fun x => match x with
-      | Sum.inl a => (Sum.inl true) :: (ea.encode a).map (Sum.inr ∘ Sum.inl)
-      | Sum.inr b => (Sum.inl false) :: (eb.encode b).map (Sum.inr ∘ Sum.inr)
-    decode := fun l => match l with
-      | Sum.inl true :: rest =>
-        let inner := rest.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inl c) => some c | _ => none)
-        (ea.decode inner).map Sum.inl
-      | Sum.inl false :: rest =>
-        let inner := rest.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inr c) => some c | _ => none)
-        (eb.decode inner).map Sum.inr
-      | _ => none
-    decode_encode := by
-      intro x
-      cases x with
-      | inl a =>
-        simp
-        sorry
-      | inr b =>
-        simp
-        sorry
-    ΓFin := inferInstance }
+def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : FinEncoding (Sum α β) where
+  Γ := Sum Bool (Sum ea.Γ eb.Γ)
+  encode x := match x with
+    | Sum.inl a => (Sum.inl true) :: (ea.encode a).map (Sum.inr ∘ Sum.inl)
+    | Sum.inr b => (Sum.inl false) :: (eb.encode b).map (Sum.inr ∘ Sum.inr)
+  decode l := match l with
+    | Sum.inl true :: rest =>
+      let inner := rest.filterMap (fun x => match (x : Sum Bool (Sum ea.Γ eb.Γ)) with | Sum.inr (Sum.inl c) => some c | _ => none)
+      (ea.decode inner).map Sum.inl
+    | Sum.inl false :: rest =>
+      let inner := rest.filterMap (fun x => match (x : Sum Bool (Sum ea.Γ eb.Γ)) with | Sum.inr (Sum.inr c) => some c | _ => none)
+      (eb.decode inner).map Sum.inr
+    | _ => none
+  decode_encode x := by
+    cases x with
+    | inl a =>
+      simp only [List.filterMap_map]
+      have : ((fun x => match (x : Sum Bool (Sum ea.Γ eb.Γ)) with | Sum.inr (Sum.inl c) => some c | _ => none) ∘ Sum.inr ∘ Sum.inl : ea.Γ → Option ea.Γ) = some := by
+        funext x; rfl
+      rw [this]
+      simp [ea.decode_encode]
+    | inr b =>
+      simp only [List.filterMap_map]
+      have : ((fun x => match (x : Sum Bool (Sum ea.Γ eb.Γ)) with | Sum.inr (Sum.inr c) => some c | _ => none) ∘ Sum.inr ∘ Sum.inr : eb.Γ → Option eb.Γ) = some := by
+        funext x; rfl
+      rw [this]
+      simp [eb.decode_encode]
+  ΓFin := inferInstance
 
 /-- Encoding for `List α` using a separator `none`.
-    Γ = Option Γ_α.
+    Γ = Option ea.Γ.
     Separator is `none`. -/
-def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) :=
-  { Γ := Option ea.Γ
-    encode := fun l => l.flatMap (fun x => (ea.encode x).map some ++ [none])
-    decode := fun l =>
-      let chunks := l.splitOn none
-      let contentChunks := if chunks.getLast? = some [] then chunks.dropLast else chunks
-      let decodedChunks := contentChunks.map (fun chunk => ea.decode (chunk.filterMap id))
-      Option.sequence decodedChunks
-    decode_encode := by
-      intro l
+def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) where
+  Γ := Option ea.Γ
+  encode l := l.flatMap (fun x => (ea.encode x).map some ++ [none])
+  decode l :=
+    let chunks := l.splitOn none
+    let contentChunks := if chunks.getLast? = some [] then chunks.dropLast else chunks
+    let decodedChunks := contentChunks.map (fun chunk => ea.decode (chunk.filterMap id))
+    Option.sequence decodedChunks
+  decode_encode l := by
+    induction l with
+    | nil =>
+      simp [List.splitOn, List.splitOnP, List.splitOnP.go, Option.sequence]
+    | cons x xs ih =>
+      -- The proof involves showing that splitOn correctly partitions the flattened list 
+      -- using 'none' as a separator, which then matches the element-wise decoding.
       sorry
-    ΓFin := inferInstance }
+  ΓFin := inferInstance
 
 theorem listEncoding_length {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] (l : List α) :
     ((listEncoding ea).encode l).length = (l.map (fun x => (ea.encode x).length + 1)).sum := by
   induction l with
   | nil => rfl
   | cons x xs ih =>
-    unfold listEncoding
-    simp only [List.flatMap_cons, List.length_append, List.map_cons, List.sum_cons]
-    simp only [List.length_map, List.length_singleton]
-    have : ((listEncoding ea).encode xs).length = (xs.flatMap (fun x => (ea.encode x).map some ++ [none])).length := rfl
-    rw [← this, ih]
+    simp [listEncoding, List.flatMap_cons]
+    linarith
 
 def sumInl? {α β : Type} : Sum α β → Option α
   | Sum.inl a => some a

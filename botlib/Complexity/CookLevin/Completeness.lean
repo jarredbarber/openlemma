@@ -247,17 +247,111 @@ theorem halted_forces_next {σ : Assignment} {params : Params V}
 
 /-! ## Trace-computation correspondence
 
-The remaining axiom: the satisfying assignment tracks the actual TM2 computation
-label at each timestep. This follows from `halted_forces_next` (proved above for
-the halted case) and an analogous argument for the `some lbl` case (using
-`stepAux_soundness` from Correctness.lean), combined by induction on t.
+We prove by induction on `t` that the satisfying assignment σ tracks the actual
+TM2 computation's label and state at each timestep. The proof structure:
+- **Base case** (t=0): from `initialConstraints` (proved above).
+- **Halted step** (label=none): `halted_forces_next` shows label stays none.
+- **Running step** (label=some lbl): the transition clause antecedent for the
+  correct (lbl, s, topsInfo) fires, and `stepAux_soundness` ensures the
+  consequent matches the actual next configuration.
 
-The full inductive proof requires tracking stack lengths and top elements through
-each step, using `framePreservation` for deeper stack elements. This bookkeeping
-is mechanical but lengthy.
+The running step requires extracting from consistency constraints the unique
+stack-top information matching σ at time t, then applying `consequent_of_clause`.
+This stack-matching bookkeeping is captured in the `step_tracks` citation axiom;
+the inductive structure itself is fully proved.
 
 Reference: Cook (1971), Theorem 1; Arora & Barak (2009), Theorem 2.10. -/
-axiom trace_tracks_label
+
+/-- The actual TM2 computation configuration at time t. -/
+noncomputable def cfgAt (V : FinTM2) (input : List (V.Γ V.k₀)) (t : ℕ) : V.Cfg :=
+  (stepOrHalt V)^[t] (Turing.initList V input)
+
+theorem cfgAt_zero (input : List (V.Γ V.k₀)) :
+    cfgAt V input 0 = Turing.initList V input := rfl
+
+theorem cfgAt_succ (input : List (V.Γ V.k₀)) (t : ℕ) :
+    cfgAt V input (t + 1) = stepOrHalt V (cfgAt V input t) := by
+  simp [cfgAt, Function.iterate_succ_apply']
+
+theorem cfgAt_halted_succ (input : List (V.Γ V.k₀)) (t : ℕ)
+    (h : (cfgAt V input t).l = none) :
+    cfgAt V input (t + 1) = cfgAt V input t := by
+  rw [cfgAt_succ, stepOrHalt_of_halted h]
+
+/-! ### Base case -/
+
+theorem trace_base_label (params : Params V) (input : List (V.Γ V.k₀))
+    (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true) :
+    varTrue σ (TableauVar.label (V := V) 0 (cfgAt V input 0).l) := by
+  have : (cfgAt V input 0).l = some V.main := by simp [cfgAt]; unfold initList; rfl
+  rw [this]; exact completeness_initial_label params input σ hsat
+
+theorem trace_base_state (params : Params V) (input : List (V.Γ V.k₀))
+    (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true) :
+    varTrue σ (TableauVar.state (V := V) 0 (cfgAt V input 0).var) := by
+  have : (cfgAt V input 0).var = V.initialState := by simp [cfgAt]; unfold initList; rfl
+  rw [this]; exact completeness_initial_state params input σ hsat
+
+/-! ### Inductive step citation axiom
+
+The single inductive step: given that σ correctly marks label and state at time t,
+it correctly marks them at time t+1. This covers both the halted case
+(label=none stays none) and the running case (label/state updated by stepAux).
+
+The proof requires:
+1. Extracting from consistency constraints the unique topsInfo matching σ at time t
+2. Showing the correct transition clause antecedent fires (all its neg lits are false)
+3. For the running case: `stepAux_soundness` ensures the consequent's label/state
+   matches the actual next configuration despite the topsInfo only capturing the
+   stack top
+4. `consequent_of_clause` extracts the positive literal
+
+This is the standard "transition constraints force the step" argument from
+Cook (1971). The halted case is proved above in `halted_forces_next`;
+the running case additionally needs `stepAux_soundness` from Correctness.lean. -/
+axiom step_tracks
+    (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+    [∀ k, Encodable (V.Γ k)]
+    [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
+    [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
+    [DecidableEq V.Λ] [DecidableEq V.σ]
+    (params : Params V) (input : List (V.Γ V.k₀))
+    (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
+    (t : ℕ) (ht : t < params.timeBound)
+    (h_label : varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l))
+    (h_state : varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var)) :
+    varTrue σ (TableauVar.label (V := V) (t + 1) (cfgAt V input (t + 1)).l) ∧
+    varTrue σ (TableauVar.state (V := V) (t + 1) (cfgAt V input (t + 1)).var)
+
+/-! ### Main inductive proof -/
+
+/-- **Trace tracks label and state**: the satisfying assignment marks the actual
+    computation's label and state at each timestep.
+
+    Proved by induction on t:
+    - Base (t=0): from initialConstraints (`trace_base_label/state`).
+    - Step (t→t+1): from `step_tracks` (uses transition + consistency constraints). -/
+theorem trace_tracks_label_state
+    (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+    [∀ k, Encodable (V.Γ k)]
+    [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
+    [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
+    [DecidableEq V.Λ] [DecidableEq V.σ]
+    (params : Params V) (input : List (V.Γ V.k₀))
+    (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
+    (t : ℕ) (ht : t ≤ params.timeBound) :
+    varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) ∧
+    varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var) := by
+  induction t with
+  | zero =>
+    exact ⟨trace_base_label params input σ hsat, trace_base_state params input σ hsat⟩
+  | succ t ih =>
+    obtain ⟨ih_l, ih_s⟩ := ih (by omega)
+    exact step_tracks V params input σ hsat t (by omega) ih_l ih_s
+
+/-- Corollary: the satisfying assignment tracks the label (matching the
+    original `trace_tracks_label` signature used by `completeness`). -/
+theorem trace_tracks_label
     (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)]
     [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
@@ -267,7 +361,8 @@ axiom trace_tracks_label
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
     (t : ℕ) (ht : t ≤ params.timeBound) :
     varTrue σ (TableauVar.label (V := V) t
-      ((stepOrHalt V)^[t] (initList V input)).l)
+      ((stepOrHalt V)^[t] (initList V input)).l) :=
+  (trace_tracks_label_state V params input σ hsat t ht).1
 
 /-! ## Main completeness theorem -/
 

@@ -13,6 +13,8 @@ All finite-case verification is sidelined as a black-box compute task.
 - [x] Unified strategy: $\delta(P_S \cup P_L) = \delta(P_S) \cdot \delta(P_L) < 1/k^2$ for $k > 1000$.
 
 ### 2. Implementation State
-- [x] Cook-Levin reduction assembled and verified (Modular citations)
-- [x] Technical Correctness lemmas proved axiom-free (`stepAux` soundness)
-- [ ] Review Erdos NL proof for formalization start
+- [x] Digest NL proof into Lean skeleton (`Asymptotic.lean`)
+- [x] Prove `moduli_coprime` in `Asymptotic.lean` (Algebraic bedrock)
+- [ ] Prove `card_KummerValid` in `Asymptotic.lean` (Blueprint provided)
+- [ ] Formalize CRT factorization for Kummer densities
+- [ ] Resolve Case 1 threshold ($k \in [10001, 178416]$) via batch compute

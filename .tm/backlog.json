@@ -109,7 +109,7 @@
   },
   {
     "id": "workspace-1uq",
-    "description": "Implement TM2 Read-Depth Soundness Lemma in CookLevin/Correctness.lean. (Formalize).",
+    "description": "Implement TM2 Read-Depth Soundness and Preservation Lemmas in CookLevin/Correctness.lean. (Formalize).",
     "state": "closed",
     "role": "formalize",
     "priority": 2,
@@ -117,7 +117,7 @@
     "dependencies": [],
     "createdAt": "2026-02-12T15:22:30.434Z",
     "updatedAt": "2026-02-12T18:54:37.014Z",
-    "summary": "Advisor: Fully proved Read-Depth Soundness and Stack Preservation lemmas in Correctness.lean."
+    "summary": "Advisor: Fully proved Read-Depth Soundness and Stack Preservation lemmas in Correctness.lean (0 axioms, 0 sorrys)."
   },
   {
     "id": "workspace-wos",
@@ -228,15 +228,27 @@
     "summary": "Explore proved that for k > 1000, the large-prime density is < 1/k^2."
   },
   {
-    "id": "erdos-008",
-    "description": "Draft a proof (NL) for the Independent Moduli Intersection Lemma",
-    "state": "closed",
-    "role": "verify",
+    "id": "erdos-012",
+    "description": "Formalize card_KummerValid\nImplement the combinatorial proof from proofs/erdos-1094/card-kummer-valid-blueprint.md in Asymptotic.lean. Purely symbolic induction on digit length.",
+    "state": "open",
+    "role": "formalize",
     "priority": 1,
     "isSystem": false,
+    "dependencies": ["erdos-011"],
+    "createdAt": "2026-02-12T21:40:00.000Z",
+    "updatedAt": "2026-02-12T21:40:00.000Z",
+    "summary": "Formalize is implementing card_KummerValid using the 4-step induction blueprint."
+  },
+  {
+    "id": "erdos-013",
+    "description": "Verify Asymptotic.lean citation axioms\nAudit the annotated citation axioms for Stewart and Mertens in Asymptotic.lean against the provided links.",
+    "state": "open",
+    "role": "verify",
+    "priority": 2,
+    "isSystem": false,
     "dependencies": [],
-    "createdAt": "2026-02-12T20:00:00.000Z",
-    "updatedAt": "2026-02-12T20:00:00.000Z",
-    "summary": "Verify proved the bounded discrepancy of independent modular constraints."
+    "createdAt": "2026-02-12T21:40:00.000Z",
+    "updatedAt": "2026-02-12T21:40:00.000Z",
+    "summary": "Verify is auditing the revised citation axioms for Erdős 1094."
   }
 ]

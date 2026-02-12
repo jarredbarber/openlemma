@@ -78,6 +78,13 @@ theorem satisfies_acceptance (params : Params V) (c : ℕ → V.Cfg)
   · simp only [mem_map, mem_range]; use i; exact ⟨Nat.lt_succ_of_le hi, rfl⟩
   · rw [evalTLit_trace, traceValuation, h_l]; simp
 
+/-! ## Helper lemma -/
+
+/-- `evalCNF` distributes over list append. -/
+theorem evalCNF_append (σ : Assignment) (c1 c2 : CNF) :
+    evalCNF σ (c1 ++ c2) = (evalCNF σ c1 && evalCNF σ c2) := by
+  simp [evalCNF, all_append]
+
 /-- Main Soundness Theorem: Acceptance implies satisfiability. -/
 theorem reduction_sound (params : Params V) (inputContents : List (V.Γ V.k₀))
     (c : ℕ → V.Cfg)
@@ -87,13 +94,14 @@ theorem reduction_sound (params : Params V) (inputContents : List (V.Γ V.k₀))
     (h_halt : ∃ i ≤ params.timeBound, (c i).l = none) :
     Satisfiable (tableauFormula params inputContents) := by
   use traceAssignment c
+  show evalCNF (traceAssignment c) (tableauFormula params inputContents) = true
   unfold tableauFormula
-  simp only [evalCNF, all_append, Bool.and_eq_true]
-  repeat' constructor
-  · exact satisfies_consistency params c h_depth
-  · exact satisfies_initial params inputContents c h_init
-  · exact satisfies_transition params c h_step
-  · exact satisfies_frame params c h_step
-  · exact satisfies_acceptance params c h_halt
+  rw [evalCNF_append, evalCNF_append, evalCNF_append, evalCNF_append]
+  simp only [Bool.and_eq_true]
+  exact ⟨⟨⟨⟨satisfies_consistency params c h_depth,
+           satisfies_initial params inputContents c h_init⟩,
+          satisfies_transition params c h_step⟩,
+         satisfies_frame params c h_step⟩,
+        satisfies_acceptance params c h_halt⟩
 
 end CookLevinTableau
