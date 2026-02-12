@@ -109,3 +109,5 @@ Total size is $O(p(n)^2)$, which is polynomial in $n$.
 ## Conclusion
 
 The transformation $w \mapsto \phi_w$ is a polynomial-time reduction from any $L \in NP$ to SAT. Thus, SAT is NP-hard.
+
+<!-- Updated after review -->
