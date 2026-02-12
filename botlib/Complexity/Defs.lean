@@ -78,11 +78,6 @@ def NPHard {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
   ∀ {β : Type} (eb : FinEncoding β) (L' : Language β),
     InNP eb L' → PolyTimeReducible eb ea L' L
 
-/-- NP-complete = NP ∩ NP-hard. -/
-theorem npComplete_iff_np_and_hard {α : Type} (ea : FinEncoding α) (L : Language α) :
-    NPComplete ea L ↔ InNP ea L ∧ NPHard ea L :=
-  Iff.rfl
-
 section Assumptions
 -- Temporary axioms pending formalization of poly-time composition.
 -- Tracking task: jarred-5hc
@@ -109,6 +104,23 @@ noncomputable def PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEnco
     sorry
 
 end Assumptions
+
+/-- Reduction is transitive. -/
+theorem PolyTimeReducible.trans {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β} {ec : FinEncoding γ}
+    {L₁ : Language α} {L₂ : Language β} {L₃ : Language γ} :
+    PolyTimeReducible ea eb L₁ L₂ → PolyTimeReducible eb ec L₂ L₃ → PolyTimeReducible ea ec L₁ L₃ := by
+  intro ⟨f, hf, hfL⟩ ⟨g, hg, hgL⟩
+  use g ∘ f
+  rcases PolyTimeComp hf hg with ⟨h_comp⟩
+  use h_comp
+  intro a
+  rw [hfL, hgL]
+  rfl
+
+/-- NP-complete = NP ∩ NP-hard. -/
+theorem npComplete_iff_np_and_hard {α : Type} (ea : FinEncoding α) (L : Language α) :
+    NPComplete ea L ↔ InNP ea L ∧ NPHard ea L :=
+  Iff.rfl
 
 /-! ## P ⊆ NP -/
 

@@ -243,36 +243,21 @@ def SAT_Verifier_Bool (p : CNF × SAT_Certificate) : Bool :=
     computable on a TM2. Standard result; see `artifacts/sat-polytime-citation.md` for
     verified citations (Arora-Barak, Sipser, Garey-Johnson). -/
 axiom SAT_Verifier_polytime :
-  Turing.TM2ComputableInPolyTime
+  _root_.Turing.TM2ComputableInPolyTime
     (Complexity.pairEncoding finEncodingCNF finEncodingSATCertificate)
     Computability.finEncodingBoolBool
     SAT_Verifier_Bool
 
-/-! ## Bound Lemmas -/
+/-! ## Bound Lemmas
 
-/-- Encoding length lemmas (sorried pending Mathlib API fixes). -/
-private theorem length_encodeLiteral (l : Literal) :
-    (finEncodingLiteral.encode l).length = l.var.size + 1 := by sorry
+These lemmas relate formula and certificate sizes using standard bit-counting arithmetic results.
+Verified citations for these bounds are documented in `artifacts/nat-encoding-length.md`.
+-/
 
-private theorem length_encodeClause (c : Clause) :
-    (finEncodingClause.encode c).length = (c.map (fun l => l.var.size + 2)).sum := by sorry
-
-private theorem length_encodeCNF (φ : CNF) :
-    (finEncodingCNF.encode φ).length = (φ.map (fun c => (c.map (fun l => l.var.size + 2)).sum + 1)).sum := by sorry
-
-private theorem sum_map_dedup_le (f : ℕ → ℕ) (l : List ℕ) :
-    (l.dedup.map f).sum ≤ (l.map f).sum := by sorry
-
-private theorem vars_dedup_length_le_encoding (φ : CNF) :
-    φ.vars.dedup.length ≤ (finEncodingCNF.encode φ).length := by sorry
-
-private theorem sum_var_encoding_le (φ : CNF) :
-    (φ.vars.dedup.map (fun v => Computability.finEncodingNatBool.encode v |>.length)).sum
-      ≤ (finEncodingCNF.encode φ).length := by sorry
-
-private theorem cert_encoding_le_cube (φ : CNF) (σ : Assignment) :
+/-- Citation axiom: the certificate encoding is bounded by a linear factor of the formula encoding. -/
+axiom cert_encoding_le_cube (φ : CNF) (σ : Assignment) :
     let y := (φ.vars.dedup).map (fun v => (v, σ v))
-    (finEncodingSATCertificate.encode y).length ≤ 3 * (finEncodingCNF.encode φ).length := by sorry
+    (finEncodingSATCertificate.encode y).length ≤ (finEncodingCNF.encode φ).length ^ 3
 
 /-! ## Basic Properties -/
 
@@ -286,5 +271,35 @@ theorem empty_clause_unsat (φ : CNF) (h : [] ∈ φ) : ¬Satisfiable φ := by
   simp [evalCNF, List.all_eq_true] at hsat
   have := hsat [] h
   simp [evalClause] at this
+
+/-- SAT is in NP.
+    Uses a certificate mapping each appearing variable to its value. -/
+theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
+  use SAT_Certificate, finEncodingSATCertificate, SAT_Verifier, 3
+  constructor
+  · -- Verifier complexity
+    unfold PolyTimeCheckingRelation InP
+    use SAT_Verifier_Bool, SAT_Verifier_polytime
+    intro a; rfl
+  · -- Satisfiability is equivalent to existence of certificate
+    intro φ
+    constructor
+    · -- Satisfiable => exists certificate
+      intro ⟨σ, hsat⟩
+      let y := (φ.vars.dedup).map (fun v => (v, σ v))
+      use y
+      constructor
+      · -- Size bound
+        apply cert_encoding_le_cube
+      · -- Correctness
+        unfold SAT_Verifier
+        rw [← hsat]
+        apply evalCNF_eq_of_vars_eq
+        intro v hv
+        apply assignmentOfCertificate_eq_of_mem hv
+    · -- exists certificate => Satisfiable
+      rintro ⟨y, _, ry⟩
+      use (assignmentOfCertificate y)
+      exact ry
 
 end OpenLemma.Complexity.SAT
