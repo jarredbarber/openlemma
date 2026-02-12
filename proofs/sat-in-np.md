@@ -1,5 +1,11 @@
 # Proof: SAT is in NP
 
+**Status:** Verified ✅
+**Reviewed by:** verify
+**Statement:** The Boolean Satisfiability Problem (SAT) belongs to the complexity class NP.
+**Dependencies:** None
+**Confidence:** Certain
+
 This document provides a proof sketch that the Boolean Satisfiability Problem (SAT) belongs to the complexity class NP.
 
 ## Definitions
