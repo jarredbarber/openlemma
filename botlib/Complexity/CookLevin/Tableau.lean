@@ -345,20 +345,76 @@ def computeStep (inp : StepInput V) : Option (Turing.TM2.Cfg V.Γ V.Λ V.σ) :=
   Turing.TM2.step V.m (mkMinimalCfg inp)
 
 /-- Generate transition clauses for a single timestep i.
-    For each possible (label, state, stack-tops) combination:
-    - Compute the expected next configuration via `TM2.step`
-    - Emit clauses: "if input matches this pattern, then output must match"
 
-    Each implication `(A₁ ∧ ... ∧ Aₙ) → B` becomes `¬A₁ ∨ ... ∨ ¬Aₙ ∨ B` in CNF.
+    Strategy: For each possible combination of (label, state, stack tops),
+    compute what `TM2.step V.m` produces, and emit implication clauses:
 
-    TODO: This is a placeholder. The full implementation needs to:
-    1. Enumerate all (label × state × stack-top-elements) tuples
-    2. For each, compute `TM2.step` result
-    3. Emit clauses linking time i variables to time i+1 variables
-    4. Handle the stack position updates (push/pop affects length and top element)
+      label(i)=l ∧ state(i)=s ∧ top(i,k)=γₖ  →  label(i+1)=l' ∧ state(i+1)=s' ∧ ...
+
+    Each implication `(A₁ ∧ ... ∧ Aₙ) → B` becomes CNF clause `¬A₁ ∨ ... ∨ ¬Aₙ ∨ B`.
+
+    For the halted case (label = none): configuration is frozen.
 -/
-noncomputable def transitionClausesAt (_i : ℕ) : SAT.CNF :=
-  sorry
+noncomputable def transitionClausesAt (i : ℕ) : SAT.CNF :=
+  -- For each possible label at time i:
+  Finset.univ (α := Option V.Λ).toList.flatMap fun l =>
+    -- For each possible state at time i:
+    Finset.univ (α := V.σ).toList.flatMap fun s =>
+      -- For each possible combination of stack tops:
+      -- We use Option (V.Γ k) for the top of each stack (None = empty stack)
+      -- For read-depth-1, this suffices.
+      let topCombinations := stackTopCombinations V
+      topCombinations.flatMap fun tops =>
+        -- Build the antecedent literals (all negated in the clause)
+        let antecedent : List SAT.Literal :=
+          [tLit (TableauVar.label i l) false,
+           tLit (TableauVar.state i s) false] ++
+          stackTopAntecedent V i tops
+        -- Compute the step result
+        let stacks : ∀ k : V.K, List (V.Γ k) := fun k =>
+          match tops k with
+          | none => []
+          | some γ => [γ]
+        let cfg : Turing.TM2.Cfg V.Γ V.Λ V.σ := ⟨l, s, stacks⟩
+        match l with
+        | none =>
+          -- Halted: label stays none, state stays s, stacks unchanged
+          [antecedent ++ [tLit (TableauVar.label (i+1) none) true],
+           antecedent ++ [tLit (TableauVar.state (i+1) s) true]] ++
+          -- Each stack top is preserved
+          Finset.univ (α := V.K).toList.flatMap fun k =>
+            match tops k with
+            | none => [antecedent ++ [tLit (TableauVar.stkLen (i+1) k 0) true]]
+            | some γ => [antecedent ++ [tLit (TableauVar.stkElem (i+1) k 0 γ) true]]
+        | some lbl =>
+          -- Active: compute step
+          let result := Turing.TM2.stepAux (V.m lbl) s stacks
+          -- Emit clauses for the next label
+          [antecedent ++ [tLit (TableauVar.label (i+1) result.l) true],
+           antecedent ++ [tLit (TableauVar.state (i+1) result.var) true]] ++
+          -- For each stack k, emit clauses about the new stack contents
+          Finset.univ (α := V.K).toList.flatMap fun k =>
+            let newStk := result.stk k
+            [antecedent ++ [tLit (TableauVar.stkLen (i+1) k newStk.length) true]] ++
+            newStk.enum.map fun ⟨j, γ⟩ =>
+              antecedent ++ [tLit (TableauVar.stkElem (i+1) k j γ) true]
+
+where
+  /-- Enumerate all possible combinations of stack tops.
+      Returns a list of functions `V.K → Option (V.Γ k)`.
+      Since V.K and each Option (V.Γ k) are Fintype, the dependent
+      product ∀ k, Option (V.Γ k) is also Fintype. -/
+  stackTopCombinations (V : Turing.FinTM2) [∀ k, Fintype (V.Γ k)] :
+      List (∀ k : V.K, Option (V.Γ k)) :=
+    @Finset.univ (∀ k : V.K, Option (V.Γ k)) Pi.fintype |>.toList
+  /-- Generate antecedent literals for the stack tops at time i. -/
+  stackTopAntecedent (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ]
+      [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+      (i : ℕ) (tops : ∀ k : V.K, Option (V.Γ k)) : List SAT.Literal :=
+    Finset.univ (α := V.K).toList.flatMap fun k =>
+      match tops k with
+      | none => [tLit (TableauVar.stkLen i k 0) false]
+      | some γ => [tLit (TableauVar.stkElem i k 0 γ) false]
 
 /-- Transition constraints for all timesteps. -/
 noncomputable def transitionConstraints : SAT.CNF :=
