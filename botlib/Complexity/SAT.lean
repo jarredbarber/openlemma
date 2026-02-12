@@ -82,6 +82,25 @@ def finEncodingClause : FinEncoding Clause := finEncodingOfEncodable Clause
 /-- FinEncoding for CNF formulas. -/
 def finEncodingCNF : FinEncoding CNF := finEncodingOfEncodable CNF
 
+/-- A certificate for SAT is a finite list of (variable index, truth value) pairs. -/
+abbrev SAT_Certificate := List (ℕ × Bool)
+
+/-- FinEncoding for SAT certificates. -/
+def finEncodingSATCertificate : FinEncoding SAT_Certificate := finEncodingOfEncodable SAT_Certificate
+
+/-- Convert a certificate (list of pairs) to a full assignment.
+    Variables not in the list default to `false`. -/
+def assignmentOfCertificate (y : SAT_Certificate) : Assignment :=
+  fun v => (y.find? (fun p => p.1 = v)).map (fun p => p.2) |>.getD false
+
+/-- The SAT verifier relation: R(φ, y) iff y represents a satisfying assignment for φ. -/
+def SAT_Verifier (φ : CNF) (y : SAT_Certificate) : Prop :=
+  evalCNF (assignmentOfCertificate y) φ = true
+
+/-- The Boolean version of the SAT verifier for use in P/NP definitions. -/
+def SAT_Verifier_Bool (p : CNF × SAT_Certificate) : Bool :=
+  evalCNF (assignmentOfCertificate p.2) p.1
+
 /-! ## 3-SAT
 
 A restricted version where every clause has exactly 3 literals.

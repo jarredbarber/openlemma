@@ -21,10 +21,10 @@ reduced to the Boolean satisfiability problem.
 - [ ] Poly-time composition (adapt from LeanMillenniumPrizeProblems)
 - [ ] P ⊆ NP
 - [ ] Reduction transitivity
-- [x] FinEncoding for CNF formulas
+- [x] FinEncoding for CNF formulas (SAT.lean)
 
 ### Phase 2: SAT ∈ NP
-- [ ] Define a verifier for SAT (given formula + assignment, check in poly-time)
+- [x] Define a verifier for SAT (given formula + assignment, check in poly-time)
 - [ ] Prove the verifier runs in polynomial time
 - [ ] Conclude SAT ∈ NP
 
