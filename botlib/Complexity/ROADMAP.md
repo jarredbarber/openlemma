@@ -31,11 +31,11 @@ reduced to the Boolean satisfiability problem.
 - [ ] Conclude SAT ∈ NP (Verified NL, 2 sorrys remain in SAT.lean)
 
 ### Phase 3: Cook-Levin Reduction
-- [ ] Tableau construction: encode TM computation as Boolean variables (`CookLevin/Tableau.lean`)
-- [ ] Initial configuration constraints
-- [ ] Transition constraints (forbidden windows approach)
-- [ ] Acceptance constraints
-- [ ] Correctness: formula satisfiable ↔ TM accepts (`CookLevin/Correctness.lean`)
+- [x] Tableau construction: encode TM computation as Boolean variables (Implemented in `CookLevin/Tableau.lean`, 0 sorrys)
+- [x] Initial configuration constraints (Implemented)
+- [x] Transition constraints (Forbidden windows implemented)
+- [x] Acceptance constraints (Implemented)
+- [ ] Correctness: formula satisfiable ↔ TM accepts (In progress, `CookLevin/Correctness.lean`)
 - [ ] Polynomial-time bound on the reduction (`CookLevin/PolyTime.lean`)
 - [x] Prove: formula is satisfiable ↔ TM accepts (verified NL)
 - [x] Prove: reduction is polynomial-time (verified NL)
