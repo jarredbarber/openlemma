@@ -151,6 +151,7 @@ We must show $M$ accepts $w \iff \phi_w$ is satisfiable.
 
 ## Conclusion
 
-The transformation $w \mapsto \phi_w$ is a polynomial-time reduction from any $L \in NP$ to SAT. Thus, SAT is NP-hard.
+### Implementation Note: Verifier Tableau
+The formalization in Lean 4 uses a **Verifier Tableau** approach. Instead of a non-deterministic machine, we encode the deterministic computation of the `TM2` verifier on a fixed input $x$ and a symbolic witness $y$. The variables corresponding to $y$ are free (unconstrained), effectively allowing the SAT solver to "guess" the certificate. This bypasses the need for an explicit NDTM type in Lean while remaining logically equivalent to the window-based NDTM proof.
 
 <!-- Updated after review -->

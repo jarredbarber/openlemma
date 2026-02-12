@@ -39,7 +39,7 @@ Assume $M$ accepts $w$. By definition of an NDTM, there exists a sequence of con
 3.  $C_t$ is an accepting configuration.
 4.  $t \le p(|w|)$.
 
-We can pad this sequence to length $p(|w|)$ by repeating $C_t$ (assuming the accept state is a sink or allows staying). Let the sequence be $C_0, \dots, C_{p(n)}$.
+We can pad this sequence to length $p(|w|)$ by repeating $C_t$ (assuming the accept state is a sink or allows staying). Let the sequence be $C_0, \dots, C_{p(n)$.
 
 We construct a boolean assignment $\sigma$ for the variables of $\phi_w$:
 -   Set $C_{i,j,s} = \text{true}$ if the symbol at cell $j$ in configuration $C_i$ is $s$.
@@ -138,3 +138,6 @@ We have shown that:
 
 Combining these, $w \in L \iff \phi_w \in \text{SAT}$.
 This completes the correctness proof of the Cook-Levin reduction.
+
+### Implementation Note: Verifier Tableau
+The formalization in Lean 4 uses a **Verifier Tableau** approach. Instead of a non-deterministic machine, we encode the deterministic computation of the `TM2` verifier on a fixed input $x$ and a symbolic witness $y$. The variables corresponding to $y$ are free (unconstrained), effectively allowing the SAT solver to "guess" the certificate. This bypasses the need for an explicit NDTM type in Lean while remaining logically equivalent to the window-based NDTM proof.
