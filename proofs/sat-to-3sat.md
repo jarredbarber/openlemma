@@ -96,4 +96,13 @@ So $\phi$ is satisfied.
 
 ## Conclusion
 
-Since SAT $\in$ NP (proven separately), and SAT $\le_p$ 3-SAT, and 3-SAT $\in$ NP (trivial subset of SAT), 3-SAT is NP-complete.
+We have established:
+1.  **3-SAT $\in$ NP:** The language 3-SAT is a subset of SAT (restricted by clause length). The polynomial-time verifier for SAT also works for 3-SAT.
+2.  **NP-Hardness:**
+    -   SAT is NP-hard (by the Cook-Levin theorem).
+    -   SAT $\le_p$ 3-SAT (by the reduction above).
+    -   By transitivity of polynomial-time reductions, if $L \in NP$, then $L \le_p \text{SAT} \le_p \text{3-SAT}$, so $L \le_p \text{3-SAT}$.
+    -   Thus, 3-SAT is NP-hard.
+
+Since 3-SAT is in NP and is NP-hard, **3-SAT is NP-complete**.
+
