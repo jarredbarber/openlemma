@@ -20,20 +20,23 @@ reduced to the Boolean satisfiability problem.
 - [x] Close pairEncoding sorry (decode roundtrip)
 - [x] Poly-time composition (Ported 1431 lines to `TM2PolyTimeComp.lean`)
 - [x] P ⊆ NP (Fully formalized in `Defs.lean` without axioms)
+- [x] PolyTimeFst (Fully proven in `PolyTimeFst.lean`, 0 sorrys)
 - [x] Reduction transitivity (verified NL)
 - [x] FinEncoding for CNF formulas (Implemented in `SAT.lean`)
 
 ### Phase 2: SAT ∈ NP
 - [x] Define a verifier for SAT (given formula + assignment, check in poly-time) (SAT.lean)
-- [ ] Prove the verifier runs in polynomial time (Formalizing PolyTimeFst)
+- [ ] Prove the verifier runs in polynomial time (Formalizing PolyTimeFst witness)
 - [x] Prove variable-relevance lemmas for SAT assignments (Fully formalized in `SAT.lean`)
 - [ ] Conclude SAT ∈ NP (Verified NL, 2 sorrys remain in SAT.lean)
 
 ### Phase 3: Cook-Levin Reduction
-- [x] Tableau construction: encode TM computation as Boolean variables (verified blueprint)
-- [x] Initial configuration constraints (verified blueprint)
-- [x] Transition constraints (local consistency) (verified blueprint)
-- [x] Acceptance constraints (verified blueprint)
+- [ ] Tableau construction: encode TM computation as Boolean variables (`CookLevin/Tableau.lean`)
+- [ ] Initial configuration constraints
+- [ ] Transition constraints (forbidden windows approach)
+- [ ] Acceptance constraints
+- [ ] Correctness: formula satisfiable ↔ TM accepts (`CookLevin/Correctness.lean`)
+- [ ] Polynomial-time bound on the reduction (`CookLevin/PolyTime.lean`)
 - [x] Prove: formula is satisfiable ↔ TM accepts (verified NL)
 - [x] Prove: reduction is polynomial-time (verified NL)
 
@@ -42,7 +45,7 @@ reduced to the Boolean satisfiability problem.
 - [x] 3-SAT → CLIQUE reduction (verified)
 - [x] CLIQUE → VERTEX COVER reduction (verified)
 - [x] 3-SAT → SUBSET SUM reduction (verified)
-- [x] SUBSET SUM → PARTITION reduction (verified)
+- [ ] SUBSET SUM → PARTITION reduction (In progress)
 - [x] Basic NP-completeness results (follows from reductions)
 
 ## Design Decisions
