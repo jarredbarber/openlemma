@@ -49,6 +49,7 @@ reduced to the Boolean satisfiability problem.
 - [x] PARTITION → KNAPSACK reduction (verified)
 - [x] SUBSET SUM → BIN PACKING reduction (verified)
 - [x] VERTEX COVER → DOMINATING SET reduction (verified)
+- [x] 3-SAT → EXACT COVER reduction (verified)
 - [x] Basic NP-completeness results (follows from reductions)
 
 ## Design Decisions
