@@ -30,9 +30,9 @@ reduced to the Boolean satisfiability problem.
 
 ### Phase 3: Cook-Levin Reduction
 - [x] Tableau construction: encode TM computation as Boolean variables
-- [ ] Initial configuration constraints
-- [ ] Transition constraints (local consistency)
-- [ ] Acceptance constraints
+- [x] Initial configuration constraints
+- [x] Transition constraints (local consistency)
+- [x] Acceptance constraints
 - [ ] Prove: formula is satisfiable ↔ TM accepts
 - [ ] Prove: reduction is polynomial-time
 
