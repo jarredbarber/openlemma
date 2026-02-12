@@ -1,7 +1,8 @@
 # Proof: SUBSET SUM reduces to BIN PACKING
 
 **Statement:** SUBSET SUM $\le_p$ BIN PACKING.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any instance $(S, t)$ of SUBSET SUM to an instance $(I, C, k)$ of BIN PACKING such that a subset of $S$ sums to $t$ if and only if the items $I$ can be packed into $k$ bins of capacity $C$.
 
 ## 1. Definitions
