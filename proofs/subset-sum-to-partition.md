@@ -6,9 +6,8 @@
 **Goal:** Construct a polynomial-time reduction $f$ that maps any instance $(S, t)$ of SUBSET SUM to an instance $S'$ of PARTITION such that there exists a subset of $S$ summing to $t$ if and only if $S'$ can be partitioned into two subsets of equal sum.
 
 ## Review Notes
-The proof is logically sound for the general case, but needs more rigor for boundary conditions:
-- **Guard for $t > \sigma$**: Explicitly handle the case where the SUBSET SUM target exceeds the total sum.
-- **NP Membership**: Provide explicit justification for why PARTITION belongs to NP.
+(Resolved)
+
 
 ## 1. Definitions
 
@@ -27,13 +26,19 @@ Let $(S, t)$ be an instance of SUBSET SUM.
 Let $\sigma = \sum_{x \in S} x$ be the total sum of elements in $S$.
 
 ### 2.1 Construction of $S'$
+**Case $t > \sigma$:**
+If the target sum $t$ exceeds the total sum $\sigma$, the SUBSET SUM instance is trivially unsatisfiable (since elements are non-negative).
+In this case, we output a fixed unsatisfiable PARTITION instance, e.g., $S' = \{1\}$.
+This correctly maps "no" instance to "no" instance.
+
+**Case $t \le \sigma$:**
 We construct $S'$ by adding two new elements to $S$:
 $$ S' = S \cup \{J_1, J_2\} $$
 where
 $$ J_1 = 2\sigma - t $$
 $$ J_2 = \sigma + t $$
-
-(Note: If $J_1$ or $J_2$ are not valid natural numbers (e.g., negative), the reduction can handle trivial cases or ensure scaling. Assuming $t \le \sigma$, they are non-negative).
+Since $t \le \sigma$, $J_1 = 2\sigma - t \ge \sigma \ge 0$, so $J_1$ is a valid natural number.
+$J_2$ is clearly valid.
 
 ### 2.2 Target Sum
 The total sum of $S'$ is:
@@ -91,5 +96,11 @@ SUBSET SUM is satisfied.
 
 We have constructed a polynomial-time reduction from SUBSET SUM to PARTITION.
 Since SUBSET SUM is NP-hard, PARTITION is NP-hard.
-Since PARTITION is a special case of SUBSET SUM (or easily verifiable), it is in NP.
+
+**PARTITION $\in$ NP:**
+A witness for PARTITION is the subset $A' \subseteq S'$.
+A verifier takes $(S', A')$ and checks if $\sum_{y \in A'} y = \sum_{y \in S' \setminus A'} y$.
+Computing these sums requires iterating over the input once, which takes polynomial time (linear in the bit-size of $S'$).
+Since a polynomial-time verifier exists, PARTITION is in NP.
+
 Thus, **PARTITION is NP-complete**.
