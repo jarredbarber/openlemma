@@ -251,7 +251,13 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
       rcases hsat with ⟨σ, hσ⟩
       let y := (φ.vars.dedup).map (fun v => (v, σ v))
       refine ⟨y, ?_, ?_⟩
-      · /- Bound: |y| ≤ |φ|^2 -/
+      · /- Bound: |encode y| ≤ |encode φ|^2
+            The certificate y = φ.vars.dedup.map (v ↦ (v, σ v)) has:
+            - |y| = |φ.vars.dedup| ≤ total_literals(φ) ≤ |encode φ|
+            - Each entry (v, b) encodes to |encode_nat v| + O(1) symbols
+            - Variable v appears in φ, so |encode_nat v| ≤ |encode φ|
+            - Therefore |encode y| ≤ |encode φ| · (|encode φ| + O(1)) ≤ |encode φ|²
+            Needs: listEncoding_length, pairEncoding_length, variable index bound. -/
         sorry
       · /- SAT_Verifier φ y -/
         rw [← hσ]
