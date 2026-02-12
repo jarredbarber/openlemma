@@ -9,6 +9,7 @@ This file re-exports the modular Cook-Levin development:
 -/
 import botlib.Complexity.CookLevin.Tableau
 import botlib.Complexity.CookLevin.Correctness
+import botlib.Complexity.CookLevin.PolyTime
 import botlib.Complexity.SAT
 
 namespace OpenLemma.Complexity

@@ -112,35 +112,46 @@ noncomputable def initialConstraints (params : Params V) (inputContents : List (
   [[tLit V (TableauVar.label 0 (some V.main)) true]] ++
   [[tLit V (TableauVar.state 0 V.initialState) true]] ++
   [[tLit V (TableauVar.stkLen 0 V.k₀ inputContents.length) true]] ++
-  (inputContents.zipIdx.map (fun ⟨γ, j⟩ => [tLit V (TableauVar.stkElem 0 V.k₀ j γ) true])) ++
+  (inputContents.reverse.zipIdx.map (fun ⟨γ, j⟩ => [tLit V (TableauVar.stkElem 0 V.k₀ j γ) true])) ++
   (Finset.univ.toList.flatMap (fun k => if k = V.k₀ then [] else [[tLit V (TableauVar.stkLen 0 k 0) true]]))
 
 /-- Local transition logic at time i. -/
 noncomputable def transitionClausesAt (params : Params V) (i : ℕ) : CNF :=
   (Finset.univ : Finset (Option V.Λ)).toList.flatMap fun l =>
     (Finset.univ : Finset V.σ).toList.flatMap fun s =>
-      (Finset.univ : Finset (∀ k : V.K, Option (V.Γ k))).toList.flatMap fun tops =>
+      -- For each stack, either it's empty or it has some length len_k > 0 and top γ_k
+      (Finset.univ : Finset (∀ k : V.K, Option (Fin params.maxStackDepth × V.Γ k))).toList.flatMap fun topsInfo =>
         let antecedent : List Literal :=
           [tLit V (TableauVar.label i l) false, tLit V (TableauVar.state i s) false] ++
-          (Finset.univ : Finset V.K).toList.flatMap (fun k => match tops k with
+          (Finset.univ : Finset V.K).toList.flatMap (fun k => match topsInfo k with
             | none => [tLit V (TableauVar.stkLen i k 0) false]
-            | some γ => [tLit V (TableauVar.stkElem i k 0 γ) false])
-        let stkVals : ∀ k : V.K, List (V.Γ k) := fun k => match tops k with | none => [] | some γ => [γ]
+            | some (len, γ) => [tLit V (TableauVar.stkLen i k (len.val + 1)) false,
+                               tLit V (TableauVar.stkElem i k len.val γ) false])
+        
+        let stkVals : ∀ k : V.K, List (V.Γ k) := fun k => match topsInfo k with | none => [] | some (_, γ) => [γ]
         match l with
         | none =>
           [antecedent ++ [tLit V (TableauVar.label (i+1) none) true],
            antecedent ++ [tLit V (TableauVar.state (i+1) s) true]] ++
-          (Finset.univ : Finset V.K).toList.flatMap fun k => match tops k with
+          (Finset.univ : Finset V.K).toList.flatMap fun k => match topsInfo k with
             | none => [antecedent ++ [tLit V (TableauVar.stkLen (i+1) k 0) true]]
-            | some γ => [antecedent ++ [tLit V (TableauVar.stkElem (i+1) k 0 γ) true]]
+            | some (len, γ) => [antecedent ++ [tLit V (TableauVar.stkLen (i+1) k (len.val + 1)) true],
+                               antecedent ++ [tLit V (TableauVar.stkElem (i+1) k len.val γ) true]]
         | some lbl =>
           let res := Turing.TM2.stepAux (V.m lbl) s stkVals
           [antecedent ++ [tLit V (TableauVar.label (i+1) res.l) true],
            antecedent ++ [tLit V (TableauVar.state (i+1) res.var) true]] ++
           (Finset.univ : Finset V.K).toList.flatMap fun k =>
             let ns := res.stk k
-            [antecedent ++ [tLit V (TableauVar.stkLen (i+1) k ns.length) true]] ++
-            ns.zipIdx.map (fun ⟨γ, j⟩ => antecedent ++ [tLit V (TableauVar.stkElem (i+1) k j γ) true])
+            -- If push/pop happened, the new length is (len + 1) + (ns.length - 1)
+            let oldLen := match topsInfo k with | none => 0 | some (len, _) => len.val + 1
+            let newLen := oldLen + ns.length - (if (topsInfo k).isSome then 1 else 0)
+            [antecedent ++ [tLit V (TableauVar.stkLen (i+1) k newLen) true]] ++
+            ns.reverse.zipIdx.map (fun ⟨γ, j⟩ => 
+              -- j is index from bottom of the new segment. 
+              -- We need to add (oldLen - (if isSome then 1 else 0)) to get the absolute index.
+              let base := oldLen - (if (topsInfo k).isSome then 1 else 0)
+              antecedent ++ [tLit V (TableauVar.stkElem (i+1) k (base + j) γ) true])
 
 /-- Transition constraints for all timesteps. -/
 noncomputable def transitionConstraints (params : Params V) : CNF :=
