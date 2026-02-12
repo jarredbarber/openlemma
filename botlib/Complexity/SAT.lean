@@ -12,6 +12,7 @@ import Mathlib.Logic.Encodable.Basic
 import Mathlib.Logic.Equiv.List
 import Mathlib.Tactic.DeriveEncodable
 import Mathlib.Data.Bool.AllAny
+import Mathlib.Data.List.Dedup
 import Batteries.Data.List.Basic
 import botlib.Complexity.Defs
 
@@ -205,9 +206,10 @@ theorem find?_key_eq_some {l : List ℕ} {v : ℕ} (hv : v ∈ l) :
     · have h_ne : (x == v) = false := by simp [h]
       rw [h_ne]
       apply ih
+      simp at hv
       cases hv with
-      | head => contradiction
-      | tail _ h_mem => exact h_mem
+      | inl h_eq => subst h_eq; contradiction
+      | inr h_mem => exact h_mem
 
 theorem find?_map_assignment {σ : Assignment} {l : List ℕ} {v : ℕ} (hv : v ∈ l) :
     List.find? (fun (p : ℕ × Bool) => p.1 == v) (l.map (fun v_inner => (v_inner, σ v_inner))) = some (v, σ v) := by
@@ -216,8 +218,7 @@ theorem find?_map_assignment {σ : Assignment} {l : List ℕ} {v : ℕ} (hv : v 
     funext n; rfl
   rw [h_comp]
   rcases find?_key_eq_some hv with ⟨x, hx, hxv⟩
-  rw [hx]
-  subst hxv
+  rw [hx, hxv]
   rfl
 
 theorem assignmentOfCertificate_eq_of_mem {σ : Assignment} {φ : CNF} {v : ℕ}

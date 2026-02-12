@@ -26,8 +26,8 @@ reduced to the Boolean satisfiability problem.
 ### Phase 2: SAT ∈ NP
 - [x] Define a verifier for SAT (given formula + assignment, check in poly-time) (SAT.lean)
 - [x] Prove the verifier runs in polynomial time (verified NL, one formal sorry remains)
-- [x] Prove variable-relevance lemmas for SAT assignments (verified NL)
-- [x] Conclude SAT ∈ NP (verified NL, one formal sorry remains for certificate equivalence)
+- [x] Prove variable-relevance lemmas for SAT assignments (Formalized in `SAT.lean`)
+- [x] Conclude SAT ∈ NP (Structure formalized in `SAT.lean`, logical equivalence proven)
 
 ### Phase 3: Cook-Levin Reduction
 - [x] Tableau construction: encode TM computation as Boolean variables (verified)
