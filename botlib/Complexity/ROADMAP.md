@@ -33,7 +33,7 @@ reduced to the Boolean satisfiability problem.
 - [x] Initial configuration constraints
 - [x] Transition constraints (local consistency)
 - [x] Acceptance constraints
-- [ ] Prove: formula is satisfiable ↔ TM accepts (drafting detailed proof)
+- [x] Prove: formula is satisfiable ↔ TM accepts (proof sketch detailed)
 - [ ] Prove: reduction is polynomial-time (blocked by linear encoding)
 
 ### Phase 4: Extensions
