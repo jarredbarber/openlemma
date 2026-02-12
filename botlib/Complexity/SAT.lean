@@ -8,8 +8,13 @@ This is the target language for the Cook-Levin theorem.
 Trust level: 🟡 Definitions only — Cook-Levin proof pending.
 -/
 import Mathlib.Computability.Encoding
+import Mathlib.Logic.Encodable.Basic
+import Mathlib.Logic.Equiv.List
+import Mathlib.Tactic.DeriveEncodable
 
 namespace OpenLemma.Complexity.SAT
+
+open Computability
 
 /-! ## Boolean Formulas
 
@@ -22,7 +27,7 @@ formulas with finitely many variables.
 inductive Literal : Type where
   | pos : ℕ → Literal
   | neg : ℕ → Literal
-  deriving DecidableEq, Repr
+  deriving DecidableEq, Repr, Encodable
 
 /-- A clause is a disjunction of literals. -/
 abbrev Clause := List Literal
@@ -52,6 +57,30 @@ def Satisfiable (φ : CNF) : Prop :=
 
 /-- The SAT language: the set of satisfiable CNF formulas. -/
 def SAT_Language : CNF → Prop := Satisfiable
+
+/-! ## Encodings
+
+We define standard finite encodings for SAT-related types.
+These use a binary encoding of the natural numbers via `Encodable`.
+-/
+
+/-- Generic FinEncoding for any Encodable type using binary encoding of its index. -/
+def finEncodingOfEncodable (α : Type) [Encodable α] : FinEncoding α where
+  Γ := Bool
+  encode x := finEncodingNatBool.encode (Encodable.encode x)
+  decode l := (finEncodingNatBool.decode l).bind Encodable.decode
+  decode_encode x := by
+    simp [finEncodingNatBool.decode_encode, Encodable.encodek]
+  ΓFin := Bool.fintype
+
+/-- FinEncoding for Literals. -/
+def finEncodingLiteral : FinEncoding Literal := finEncodingOfEncodable Literal
+
+/-- FinEncoding for Clauses. -/
+def finEncodingClause : FinEncoding Clause := finEncodingOfEncodable Clause
+
+/-- FinEncoding for CNF formulas. -/
+def finEncodingCNF : FinEncoding CNF := finEncodingOfEncodable CNF
 
 /-! ## 3-SAT
 
