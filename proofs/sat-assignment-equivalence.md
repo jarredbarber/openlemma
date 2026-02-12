@@ -1,6 +1,7 @@
 # Proof: SAT Assignment Equivalence Lemmas
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Provide rigorous proof sketches for variable-relevance lemmas in `botlib/Complexity/SAT.lean` to support the formalization of `SAT ∈ NP`.
 
 ## Lemma 1: `evalClause_eq_of_vars_eq`
