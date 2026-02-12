@@ -127,26 +127,66 @@ theorem npComplete_iff_np_and_hard {α : Type} (ea : FinEncoding α) (L : Langua
     NPComplete ea L ↔ InNP ea L ∧ NPHard ea L :=
   Iff.rfl
 
-/-- P ⊆ NP. -/
+/-! ## Basic Encodings & Axioms -/
+
+/-- Trivial encoding for Unit. -/
+def finEncodingUnit : FinEncoding Unit :=
+  { Γ := Bool
+    encode := fun _ => []
+    decode := fun l => if l.isEmpty then some () else none
+    decode_encode := by simp
+    ΓFin := inferInstance }
+
+section Assumptions
+-- Temporary axioms pending formalization of poly-time composition.
+-- Tracking task: jarred-5hc
+
+/-- Axiom: Poly-time functions are closed under composition. -/
+axiom PolyTimeComp {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β} {ec : FinEncoding γ}
+  {f : α → β} {g : β → γ}
+  (hf : TM2ComputableInPolyTime ea eb f)
+  (hg : TM2ComputableInPolyTime eb ec g) :
+  TM2ComputableInPolyTime ea ec (g ∘ f)
+
+/-- Axiom: Projection (fst) from pairEncoding is poly-time. -/
+axiom PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β} :
+  TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst
+
+end Assumptions
+
+/-! ## P ⊆ NP -/
+
+/-- P is a subset of NP. -/
 theorem P_subset_NP {α : Type} (ea : FinEncoding α) (L : Language α) :
     InP ea L → InNP ea L := by
-  intro hP
-  rcases hP with ⟨f, hf, hL⟩
-  /- Use PUnit as the certificate type. -/
-  refine ⟨PUnit, finEncodingOfEncodable PUnit, fun a _ => f a = true, 1, ?_, ?_⟩
-  · /- The checking relation R(a, b) = (f a = true) is in P. -/
-    /- This requires showing that (fun p => f p.1) is poly-time. -/
-    sorry
-  · /- x ∈ L ↔ ∃ y, |y| ≤ |x|^1 ∧ R(x, y) -/
-    intro a
-    rw [hL]
+  intro h
+  rcases h with ⟨f, hf, hL⟩
+  use Unit, finEncodingUnit
+  -- checking relation R(x, y) = f(x)
+  let R := fun (x : α) (_ : Unit) => f x = true
+  use R, 0
+  constructor
+  · -- R is poly-time checking
+    -- R(p) = f(p.1) = true. This is deciding the language of R.
+    -- We need to show InP (pairEncoding ea finEncodingUnit) (fun p => f p.1 = true)
+    -- This is equivalent to f ∘ fst being poly-time computable (to bool).
+    unfold PolyTimeCheckingRelation InP
+    refine ⟨fun p => f p.1, ?_, ?_⟩
+    · apply PolyTimeComp
+      · exact PolyTimeFst
+      · exact hf
+    · intro ⟨a, u⟩
+      simp [R]
+  · -- witness bound
+    intro x
     constructor
-    · intro ha
-      refine ⟨PUnit.unit, ?_, ha⟩
-      /- |encode PUnit.unit| = 0.
-         0 ≤ |encode a|^1 is true since it's a Nat. -/
-      simp [finEncodingOfEncodable, Encodable.encode_star, finEncodingNatBool, encodingNatBool, encodeNat, encodeNum]
-    · rintro ⟨b, _, hb⟩
-      exact hb
+    · intro lx
+      use ()
+      simp [finEncodingUnit]
+      rw [hL] at lx
+      exact lx
+    · intro ⟨y, _, ry⟩
+      rw [hL]
+      exact ry
 
 end OpenLemma.Complexity

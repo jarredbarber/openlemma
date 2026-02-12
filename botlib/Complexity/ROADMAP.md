@@ -17,11 +17,11 @@ reduced to the Boolean satisfiability problem.
 ### Phase 1: Foundations (current)
 - [x] P, NP, NP-complete definitions (Defs.lean)
 - [x] SAT, 3-SAT definitions (SAT.lean)
-- [x] Close pairEncoding sorry (decode roundtrip) (Defs.lean)
-- [ ] Poly-time composition (adapt from LeanMillenniumPrizeProblems)
-- [x] P ⊆ NP
-- [x] Reduction transitivity
-- [x] FinEncoding for CNF formulas (SAT.lean)
+- [x] Close pairEncoding sorry (decode roundtrip)
+- [ ] Poly-time composition (Using axiom `PolyTimeComp` temporarily)
+- [x] P ⊆ NP (Formalized in `Defs.lean`, depends on `PolyTimeComp` axiom)
+- [ ] Reduction transitivity
+- [x] FinEncoding for CNF formulas (Implemented in `SAT.lean`)
 
 ### Phase 2: SAT ∈ NP
 - [x] Define a verifier for SAT (given formula + assignment, check in poly-time) (SAT.lean)
@@ -29,11 +29,11 @@ reduced to the Boolean satisfiability problem.
 - [x] Conclude SAT ∈ NP (SAT.lean - one sorry remains for certificate equivalence)
 
 ### Phase 3: Cook-Levin Reduction
-- [x] Tableau construction: encode TM computation as Boolean variables
-- [x] Initial configuration constraints
-- [x] Transition constraints (local consistency)
-- [x] Acceptance constraints
-- [x] Prove: formula is satisfiable ↔ TM accepts
+- [x] Tableau construction: encode TM computation as Boolean variables (verified)
+- [x] Initial configuration constraints (verified)
+- [x] Transition constraints (local consistency) (verified)
+- [x] Acceptance constraints (verified)
+- [x] Prove: formula is satisfiable ↔ TM accepts (verified)
 - [x] Prove: reduction is polynomial-time (verified under linear encoding assumption)
 
 ### Phase 4: Extensions
