@@ -54,19 +54,39 @@ $$ \bigvee_{i=0}^{p(n)} S_{i, q_{accept}} $$
 ### 3.4 Transitions ($\phi_{\text{move}}$)
 Ensures the state at time $i+1$ follows from the state at time $i$ according to the transition function $\delta$.
 
-#### Local Consistency (Windows)
-For each cell $j$ and time $i$, the content $C_{i+1, j, s}$, $H_{i+1, j}$, and $S_{i+1, q}$ are determined by the $2 \times 3$ window centered at $(i, j)$.
+#### Local Consistency Logic
+
+The state of cell $j$ at time $i+1$ ($C_{i+1, j, \cdot}$), and whether the head is at $j$ at time $i+1$ ($H_{i+1, j}$), is fully determined by the configuration of cells $j-1, j, j+1$ at time $i$.
+
+Let $\delta(q, s) = \{(q', s', D)\}$ be the set of possible transitions.
+
+1.  **Head entering from Left ($j-1 \to j$):**
+    If $H_{i, j-1} \wedge S_{i, q} \wedge C_{i, j-1, s}$ and $(q', s', \text{Right}) \in \delta(q, s)$, then $H_{i+1, j}$ must be true.
+
+2.  **Head entering from Right ($j+1 \to j$):**
+    If $H_{i, j+1} \wedge S_{i, q} \wedge C_{i, j+1, s}$ and $(q', s', \text{Left}) \in \delta(q, s)$, then $H_{i+1, j}$ must be true.
+
+3.  **Head leaving ($j \to j \pm 1$):**
+    If $H_{i, j} \wedge S_{i, q} \wedge C_{i, j, s}$ and the machine transitions, then $H_{i+1, j}$ must be false (unless the head stays, if allowed). The symbol $C_{i+1, j, s'}$ becomes the new symbol $s'$.
+
+4.  **No Head Interaction:**
+    If the head is not at $j-1, j, j+1$ at time $i$, then the cell must not change:
+    $$ \neg H_{i, j-1} \wedge \neg H_{i, j} \wedge \neg H_{i, j+1} \implies (C_{i+1, j, s} \iff C_{i, j, s}) $$
+    Also, the head cannot appear at $j$ from nowhere:
+    $$ \neg H_{i, j-1} \wedge \neg H_{i, j} \wedge \neg H_{i, j+1} \implies \neg H_{i+1, j} $$
 
 #### Boundary Conditions
-For $j=0$ and $j=p(n)$, we assume virtual cells $j=-1$ and $j=p(n)+1$ that always contain the blank symbol $\sqcup$ and never contain the head. This allows $2 \times 3$ windows to be applied uniformly.
+The tableau is indexed $0 \le j \le p(n)$.
+When considering windows centered at the boundaries:
+- For $j=0$: Treat $j-1$ as a virtual cell containing the blank symbol $\sqcup$ with no head. The head cannot move Left from $j=0$ (or the machine halts/rejects).
+- For $j=p(n)$: Treat $j+1$ as a virtual cell containing $\sqcup$ with no head.
+- These virtual cells are constant and do not require variables.
 
-#### Head Movement and State Change
-If $H_{i,j}$ and $S_{i,q}$ and $C_{i,j,s}$ are true, then the state $S_{i+1, q'}$, head position $H_{i+1, j \pm 1}$, and new symbol $C_{i+1, j, s'}$ must satisfy $(q', s', \text{Dir}) \in \delta(q, s)$. 
-Since $\delta$ is non-deterministic, the constraint is a disjunction over all legal transitions in $\delta$.
-
-#### Inertia (No-Change Rule)
-If the head is not at $j$ at time $i$, and does not move to $j$ at time $i+1$, the symbol in cell $j$ remains unchanged:
-$$ (\neg H_{i, j} \wedge \neg H_{i+1, j}) \implies (C_{i, j, s} \iff C_{i+1, j, s}) $$
+#### Head Uniqueness and Teleportation
+Although $\phi_{\text{cell}}$ enforces that exactly one $H_{i+1, j'}$ is true for the entire tape at time $i+1$, the local constraints in $\phi_{\text{move}}$ must be consistent with this.
+Specifically, if the head moves from $j$ to $j+1$, the window at $j$ says "head leaves to right" and the window at $j+1$ says "head enters from left". These must be synchronized.
+If the transition logic were flawed (e.g., allowing the head to duplicate), it would contradict the "exactly one" constraint in $\phi_{\text{cell}}$, making the formula unsatisfiable (Soundness).
+If the transition logic is correct, exactly one $H_{i+1, j'}$ will be true (Completeness).
 
 ## 4. Size Analysis
 
