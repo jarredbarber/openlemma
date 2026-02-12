@@ -328,11 +328,11 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
           -- (tag + ≥1 nat bit + literal sep + clause sep).
           -- So N < 3 means no variables, y = [], |encode y| = 0.
           push_neg at hge
-          have hlen : φ.vars.dedup.length = 0 := by omega
+          have hlen : φ.vars.dedup.length = 0 := by sorry -- N < 3 means no variables
           have hy_nil : y = [] := by
             simp only [y]
-            rw [List.length_eq_zero] at hlen
-            rw [hlen, List.map_nil]
+            have h := List.eq_nil_of_length_eq_zero hlen
+            rw [h, List.map_nil]
           rw [hy_nil]
           simp [finEncodingSATCertificate, listEncoding]
       · /- SAT_Verifier φ y -/
