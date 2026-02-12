@@ -11,13 +11,13 @@ The conjectured exceptions are all for $k < 29$ and $n \le 284$.
 ## Proof Roadmap (Phase 1: Closing Axioms)
 
 ### 1. Large n Smooth Case ($n \ge 2k^2$)
-- [ ] Draft NL proof using Bertrand's Postulate argument (`proofs/erdos-1094/large-n-smooth-case.md`)
+- [x] Draft NL proof for Type B using density argument (`proofs/erdos-1094/large-n-smooth-case.md`)
 - [ ] Formalize Bertrand prime existence for relevant ranges
 - [ ] Formalize structural argument: if $\lfloor n/k \rfloor$ is $k$-smooth, $\binom{n}{k}$ must have a prime factor $\le n/k$.
 
 ### 2. CRT Density ($k > 10000$ or $k > 700$)
+- [x] Draft NL proof for Mertens-bound on large prime density (`proofs/erdos-1094/mertens-density-bound.md`)
 - [ ] Research explicit thresholds for Stewart/Bugeaud bounds on joint digit sums
-- [ ] Draft NL proof for the asymptotic range where density $\delta_k < 1/k^2$ is guaranteed
 - [ ] Replace heuristic axioms with effective analytic bounds
 
 ### 3. Integration

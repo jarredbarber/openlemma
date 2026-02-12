@@ -58,19 +58,27 @@ theorem satisfies_initial (params : Params V) (inputContents : List (V.Γ V.k₀
     evalCNF (traceAssignment c) (initialConstraints params inputContents) = true := by
   sorry
 
+/-- Mapping the Stmt cases to the traceValuation and using stepAux_soundness. -/
 theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
     (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i)) :
     evalCNF (traceAssignment c) (transitionConstraints params) = true := by
+  -- Strategy:
+  -- 1. Unfold transitionConstraints and transitionClausesAt.
+  -- 2. Case analysis on label l and statement V.m lbl.
+  -- 3. If label matches trace at step i, apply stepAux_soundness.
+  -- 4. Show that trace at i+1 matches the consequent of the clause.
   sorry
 
 theorem satisfies_frame (params : Params V) (c : ℕ → V.Cfg)
     (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i)) :
     evalCNF (traceAssignment c) (framePreservation params) = true := by
+  -- Use stepAux_preservation to show elements deep in stack are unchanged.
   sorry
 
 theorem satisfies_acceptance (params : Params V) (c : ℕ → V.Cfg)
     (h_halt : ∃ i ≤ params.timeBound, (c i).l = none) :
     evalCNF (traceAssignment c) (acceptanceConstraints params) = true := by
+  -- Match halting timestep in acceptance list.
   sorry
 
 /-- Main Soundness Theorem: Acceptance implies satisfiability. -/
