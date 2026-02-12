@@ -25,6 +25,8 @@ namespace OpenLemma.Complexity.CookLevin
 
 open Turing Computability SAT Complexity
 
+-- Re-export Turing names that get shadowed by the OpenLemma.Complexity namespace
+
 /-! ## Statement Analysis
 
 Before defining the tableau, we need to know how deeply the TM2 `stepAux`
@@ -39,7 +41,7 @@ variable {K : Type*} {Γ : K → Type*} {Λ : Type*} {σ : Type*}
 /-- Maximum number of pops on stack `k` within a TM2 statement.
     This determines how many stack elements need to be tracked
     in the transition window for stack `k`. -/
-def stmtPopDepth (k : K) [DecidableEq K] : TM2.Stmt Γ Λ σ → ℕ
+def stmtPopDepth (k : K) [DecidableEq K] : Turing.TM2.Stmt Γ Λ σ → ℕ
   | .push k' _ q => stmtPopDepth k q
   | .peek k' _ q => stmtPopDepth k q
   | .pop k' _ q => (if k' = k then 1 else 0) + stmtPopDepth k q
@@ -49,7 +51,7 @@ def stmtPopDepth (k : K) [DecidableEq K] : TM2.Stmt Γ Λ σ → ℕ
   | .halt => 0
 
 /-- Maximum number of pushes on stack `k` within a TM2 statement. -/
-def stmtPushDepth (k : K) [DecidableEq K] : TM2.Stmt Γ Λ σ → ℕ
+def stmtPushDepth (k : K) [DecidableEq K] : Turing.TM2.Stmt Γ Λ σ → ℕ
   | .push k' _ q => (if k' = k then 1 else 0) + stmtPushDepth k q
   | .peek _ _ q => stmtPushDepth k q
   | .pop _ _ q => stmtPushDepth k q
@@ -61,7 +63,7 @@ def stmtPushDepth (k : K) [DecidableEq K] : TM2.Stmt Γ Λ σ → ℕ
 /-- The "read depth" of a statement on stack k: how many elements from the top
     the statement may inspect (via pop or peek). After processing, at most
     this many elements are consumed (and possibly replaced). -/
-def stmtReadDepth (k : K) [DecidableEq K] : TM2.Stmt Γ Λ σ → ℕ
+def stmtReadDepth (k : K) [DecidableEq K] : Turing.TM2.Stmt Γ Λ σ → ℕ
   | .push _ _ q => stmtReadDepth k q
   | .peek k' _ q => (if k' = k then 1 else 0) + stmtReadDepth k q
   | .pop k' _ q => (if k' = k then 1 else 0) + stmtReadDepth k q
@@ -72,8 +74,8 @@ def stmtReadDepth (k : K) [DecidableEq K] : TM2.Stmt Γ Λ σ → ℕ
 
 end StmtAnalysis
 
-/-- Maximum read depth across all labels of a FinTM2 machine on stack `k`. -/
-noncomputable def maxReadDepth (V : FinTM2) (k : V.K) : ℕ :=
+/-- Maximum read depth across all labels of a Turing.FinTM2 machine on stack `k`. -/
+noncomputable def maxReadDepth (V : Turing.FinTM2) (k : V.K) : ℕ :=
   @Finset.sup V.Λ ℕ _ Finset.univ (fun l => stmtReadDepth k (V.m l))
 
 /-! ## Abstract Step Input/Output
@@ -85,7 +87,7 @@ For the forbidden windows approach, we abstract each TM2 step into:
 
 /-- The observable state before a step: label, internal state, and the top
     `d(k)` elements of each stack (where d is the read depth). -/
-structure StepInput (V : FinTM2) where
+structure StepInput (V : Turing.FinTM2) where
   /-- Current label (None = halted) -/
   label : Option V.Λ
   /-- Current internal state -/
@@ -103,7 +105,7 @@ inductive StackDelta (Γ : Type*)
   | push : Γ → StackDelta Γ
 
 /-- The observable output after a step. -/
-structure StepOutput (V : FinTM2) where
+structure StepOutput (V : Turing.FinTM2) where
   /-- New label -/
   label : Option V.Λ
   /-- New internal state -/
@@ -117,9 +119,9 @@ We define variables for the Cook-Levin tableau. Each variable is a proposition
 about the TM2 computation at a specific timestep.
 -/
 
-/-- Variables used in the Cook-Levin reduction for a FinTM2 machine V.
+/-- Variables used in the Cook-Levin reduction for a Turing.FinTM2 machine V.
     The time bound T and stack size bound S are parameters. -/
-inductive TableauVar (V : FinTM2) where
+inductive TableauVar (V : Turing.FinTM2) where
   /-- The machine has label `l` at time `i`. -/
   | label (i : ℕ) (l : Option V.Λ) : TableauVar V
   /-- The machine has internal state `s` at time `i`. -/
@@ -137,7 +139,7 @@ We need `Encodable (TableauVar V)` to map tableau variables to SAT variable
 indices. We construct this via equivalence with a sum type. -/
 
 /-- Auxiliary sum type isomorphic to TableauVar, for Encodable derivation. -/
-private abbrev TableauVarSum (V : FinTM2) :=
+private abbrev TableauVarSum (V : Turing.FinTM2) :=
   -- label
   (ℕ × Option V.Λ) ⊕
   -- state
@@ -150,7 +152,7 @@ private abbrev TableauVarSum (V : FinTM2) :=
   ℕ
 
 /-- Convert TableauVar to the sum representation. -/
-private def TableauVar.toSum {V : FinTM2} : TableauVar V → TableauVarSum V
+private def TableauVar.toSum {V : Turing.FinTM2} : TableauVar V → TableauVarSum V
   | .label i l => Sum.inl (i, l)
   | .state i s => Sum.inr (Sum.inl (i, s))
   | .stkElem i k j γ => Sum.inr (Sum.inr (Sum.inl (i, ⟨k, j, γ⟩)))
@@ -158,23 +160,23 @@ private def TableauVar.toSum {V : FinTM2} : TableauVar V → TableauVarSum V
   | .cert j => Sum.inr (Sum.inr (Sum.inr (Sum.inr j)))
 
 /-- Convert the sum representation back to TableauVar. -/
-private def TableauVar.ofSum {V : FinTM2} : TableauVarSum V → TableauVar V
+private def TableauVar.ofSum {V : Turing.FinTM2} : TableauVarSum V → TableauVar V
   | Sum.inl (i, l) => .label i l
   | Sum.inr (Sum.inl (i, s)) => .state i s
   | Sum.inr (Sum.inr (Sum.inl (i, ⟨k, j, γ⟩))) => .stkElem i k j γ
   | Sum.inr (Sum.inr (Sum.inr (Sum.inl (i, k, len)))) => .stkLen i k len
   | Sum.inr (Sum.inr (Sum.inr (Sum.inr j))) => .cert j
 
-private theorem TableauVar.toSum_ofSum {V : FinTM2} (x : TableauVarSum V) :
+private theorem TableauVar.toSum_ofSum {V : Turing.FinTM2} (x : TableauVarSum V) :
     TableauVar.toSum (TableauVar.ofSum x) = x := by
   rcases x with ⟨i, l⟩ | ⟨i, s⟩ | ⟨i, ⟨k, j, γ⟩⟩ | ⟨i, k, len⟩ | j <;> rfl
 
-private theorem TableauVar.ofSum_toSum {V : FinTM2} (v : TableauVar V) :
+private theorem TableauVar.ofSum_toSum {V : Turing.FinTM2} (v : TableauVar V) :
     TableauVar.ofSum (TableauVar.toSum v) = v := by
   cases v <;> rfl
 
 /-- Equivalence between TableauVar and the sum type. -/
-private def TableauVar.equiv (V : FinTM2) : TableauVar V ≃ TableauVarSum V where
+private def TableauVar.equiv (V : Turing.FinTM2) : TableauVar V ≃ TableauVarSum V where
   toFun := TableauVar.toSum
   invFun := TableauVar.ofSum
   left_inv := TableauVar.ofSum_toSum
@@ -182,7 +184,7 @@ private def TableauVar.equiv (V : FinTM2) : TableauVar V ≃ TableauVarSum V whe
 
 /-- Encodable instance for TableauVar, derived from the sum-type equivalence.
     Requires Encodable instances for V.Λ, V.σ, V.K, and V.Γ k. -/
-noncomputable instance [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable instance {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] :
     Encodable (TableauVar V) :=
   Encodable.ofEquiv _ (TableauVar.equiv V).symm
@@ -221,7 +223,7 @@ noncomputable def exactlyOne [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
 /-! ## Reduction Parameters -/
 
 /-- Parameters for the Cook-Levin reduction for a specific machine and input. -/
-structure Params (V : FinTM2) where
+structure Params (V : Turing.FinTM2) where
   /-- Time bound T: the computation runs for at most T steps. -/
   timeBound : ℕ
   /-- Maximum stack depth: each stack has at most this many elements. -/
@@ -235,7 +237,7 @@ has exactly one symbol, and each stack has exactly one length.
 
 section Consistency
 
-variable (V : FinTM2) (params : Params V)
+variable (V : Turing.FinTM2) (params : Params V)
   [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
   [∀ k, Fintype (V.Γ k)]
 
@@ -281,7 +283,7 @@ on stack k₀ and all other stacks empty.
 
 section Initial
 
-variable (V : FinTM2) (params : Params V)
+variable (V : Turing.FinTM2) (params : Params V)
   [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
 
 /-- Fix the label at time 0 to `some V.main`. -/
@@ -319,7 +321,7 @@ end Initial
 
 For each timestep i, we enumerate all possible "abstract step inputs"
 (label, state, top elements of relevant stacks) and enforce that the
-configuration at time i+1 is consistent with `TM2.step V.m`.
+configuration at time i+1 is consistent with `Turing.TM2.step V.m`.
 
 The key insight: since `Λ`, `σ`, and `Γ k` are all `Fintype`, we can
 enumerate all possible input tuples. For each one, we compute what the
@@ -328,19 +330,19 @@ next configuration should be, and emit implication clauses.
 
 section Transitions
 
-variable (V : FinTM2) (params : Params V)
+variable (V : Turing.FinTM2) (params : Params V)
   [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
   [DecidableEq V.K] [∀ k, Fintype (V.Γ k)] [∀ k, DecidableEq (V.Γ k)]
 
 /-- Build a minimal Cfg from an abstract step input, with stacks containing
     only the provided top elements. Used to compute the step output. -/
-def mkMinimalCfg (inp : StepInput V) : TM2.Cfg V.Γ V.Λ V.σ :=
+def mkMinimalCfg (inp : StepInput V) : Turing.TM2.Cfg V.Γ V.Λ V.σ :=
   ⟨inp.label, inp.state, inp.tops⟩
 
-/-- Compute the abstract step output by running `TM2.step V.m` on a minimal Cfg.
+/-- Compute the abstract step output by running `Turing.TM2.step V.m` on a minimal Cfg.
     Returns `none` if the machine is halted (label = none). -/
-def computeStep (inp : StepInput V) : Option (TM2.Cfg V.Γ V.Λ V.σ) :=
-  TM2.step V.m (mkMinimalCfg inp)
+def computeStep (inp : StepInput V) : Option (Turing.TM2.Cfg V.Γ V.Λ V.σ) :=
+  Turing.TM2.step V.m (mkMinimalCfg inp)
 
 /-- Generate transition clauses for a single timestep i.
     For each possible (label, state, stack-tops) combination:
@@ -374,7 +376,7 @@ If `stkLen(i, k) = len` and `j < len - maxReadDepth`, then
 
 section FramePreservation
 
-variable (V : FinTM2) (params : Params V)
+variable (V : Turing.FinTM2) (params : Params V)
   [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
   [∀ k, Fintype (V.Γ k)]
 
@@ -414,7 +416,7 @@ with a specific output on stack k₁.
 
 section Acceptance
 
-variable (V : FinTM2) (params : Params V)
+variable (V : Turing.FinTM2) (params : Params V)
   [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
 
 /-- The machine must halt at some point: at least one timestep has label = none. -/
@@ -437,7 +439,7 @@ end Acceptance
 noncomputable def tableauFormula [DecidableEq V.K]
     [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] [∀ k, Fintype (V.Γ k)] [∀ k, DecidableEq (V.Γ k)]
-    (V : FinTM2) (params : Params V) (inputContents : List (V.Γ V.k₀)) : SAT.CNF :=
+    (V : Turing.FinTM2) (params : Params V) (inputContents : List (V.Γ V.k₀)) : SAT.CNF :=
   consistencyConstraints V params ++
   initialConstraints V params inputContents ++
   transitionConstraints V params ++

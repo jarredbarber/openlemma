@@ -47,6 +47,7 @@ reduced to the Boolean satisfiability problem.
 - [x] 3-SAT → SUBSET SUM reduction (verified)
 - [x] SUBSET SUM → PARTITION reduction (verified)
 - [x] PARTITION → KNAPSACK reduction (verified)
+- [x] SUBSET SUM → BIN PACKING reduction (verified)
 - [x] Basic NP-completeness results (follows from reductions)
 
 ## Design Decisions
