@@ -1,7 +1,8 @@
 # Proof: 3-SAT reduces to EXACT COVER
 
 **Statement:** 3-SAT $\le_p$ EXACT COVER.
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** Construct a polynomial-time reduction $f$ that maps any 3-CNF formula $\phi$ to an instance $(X, \mathcal{S})$ of EXACT COVER such that $\phi$ is satisfiable if and only if there exists a subcollection $\mathcal{S}^* \subseteq \mathcal{S}$ that partitions $X$ (every element in $X$ is in exactly one set in $\mathcal{S}^*$).
 
 ## 1. Definitions
