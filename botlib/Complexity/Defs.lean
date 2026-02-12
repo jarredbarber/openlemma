@@ -13,6 +13,7 @@ Trust level: 🟡 Definitions only — no theorems yet.
 import Mathlib.Computability.TMComputable
 import Mathlib.Computability.Encoding
 import Mathlib.Logic.Encodable.Basic
+import botlib.Complexity.TM2PolyTimeComp
 
 namespace OpenLemma.Complexity
 
@@ -39,7 +40,7 @@ def finEncodingOfEncodable (α : Type) [Encodable α] : FinEncoding α where
 /-- A language is in P if its characteristic function is computable
     by a deterministic TM in polynomial time. -/
 def InP {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
-  ∃ (f : α → Bool) (_comp : TM2ComputableInPolyTime ea finEncodingBoolBool f),
+  ∃ (f : α → Bool) (_comp : _root_.Turing.TM2ComputableInPolyTime ea finEncodingBoolBool f),
     ∀ a, L a ↔ f a = true
 
 /-! ## Pair Encoding -/
@@ -102,7 +103,7 @@ def InNP {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
     polynomial-time computable f with x ∈ L₁ ↔ f(x) ∈ L₂. -/
 def PolyTimeReducible {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β)
     (L₁ : Language α) (L₂ : Language β) : Prop :=
-  ∃ (f : α → β) (_comp : TM2ComputableInPolyTime ea eb f),
+  ∃ (f : α → β) (_comp : _root_.Turing.TM2ComputableInPolyTime ea eb f),
     ∀ a, L₁ a ↔ L₂ (f a)
 
 /-! ## NP-Completeness -/
@@ -141,16 +142,18 @@ section Assumptions
 -- Temporary axioms pending formalization of poly-time composition.
 -- Tracking task: jarred-5hc
 
-/-- Axiom: Poly-time functions are closed under composition. -/
-axiom PolyTimeComp {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β} {ec : FinEncoding γ}
+/-- Poly-time functions are closed under composition.
+    Proved in `botlib/Complexity/TM2PolyTimeComp.lean`. -/
+lemma PolyTimeComp {α β γ : Type} {ea : FinEncoding α} {eb : FinEncoding β} {ec : FinEncoding γ}
   {f : α → β} {g : β → γ}
-  (hf : TM2ComputableInPolyTime ea eb f)
-  (hg : TM2ComputableInPolyTime eb ec g) :
-  TM2ComputableInPolyTime ea ec (g ∘ f)
+  (hf : _root_.Turing.TM2ComputableInPolyTime ea eb f)
+  (hg : _root_.Turing.TM2ComputableInPolyTime eb ec g) :
+  Nonempty (_root_.Turing.TM2ComputableInPolyTime ea ec (g ∘ f)) :=
+  _root_.OpenLemma.Complexity.Turing.TM2ComputableInPolyTime.comp hf hg
 
 /-- Axiom: Projection (fst) from pairEncoding is poly-time. -/
 axiom PolyTimeFst {α β : Type} {ea : FinEncoding α} {eb : FinEncoding β} :
-  TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst
+  _root_.Turing.TM2ComputableInPolyTime (pairEncoding ea eb) ea Prod.fst
 
 end Assumptions
 
@@ -171,12 +174,8 @@ theorem P_subset_NP {α : Type} (ea : FinEncoding α) (L : Language α) :
     -- We need to show InP (pairEncoding ea finEncodingUnit) (fun p => f p.1 = true)
     -- This is equivalent to f ∘ fst being poly-time computable (to bool).
     unfold PolyTimeCheckingRelation InP
-    refine ⟨fun p => f p.1, ?_, ?_⟩
-    · apply PolyTimeComp
-      · exact PolyTimeFst
-      · exact hf
-    · intro ⟨a, u⟩
-      simp [R]
+    rcases PolyTimeComp PolyTimeFst hf with ⟨h_comp⟩
+    exact ⟨fun p => f p.1, h_comp, fun ⟨a, u⟩ => by simp [R]⟩
   · -- witness bound
     intro x
     constructor
