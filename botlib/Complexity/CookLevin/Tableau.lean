@@ -40,19 +40,19 @@ inductive TableauVar (V : Turing.FinTM2) where
   | stkLen (i : ℕ) (k : V.K) (len : ℕ) : TableauVar V
   | cert (j : ℕ) : TableauVar V
 
-noncomputable instance {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
+noncomputable instance TableauVar.encodable {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)] : Encodable (TableauVar V) :=
   let iso : TableauVar V ≃ (ℕ × Option V.Λ) ⊕ (ℕ × V.σ) ⊕ (Σ k : V.K, ℕ × ℕ × V.Γ k) ⊕ (ℕ × V.K × ℕ) ⊕ ℕ := {
     toFun := fun v => match v with
       | .label i l => Sum.inl (i, l)
       | .state i s => Sum.inr (Sum.inl (i, s))
-      | .stkElem i k j γ => Sum.inr (Sum.inr (Sum.inl (⟨k, i, j, γ⟩)))
+      | .stkElem i k j γ => Sum.inr (Sum.inr (Sum.inl (⟨k, i, j, γ⟩ : (Σ k, ℕ × ℕ × V.Γ k))))
       | .stkLen i k len => Sum.inr (Sum.inr (Sum.inr (Sum.inl (i, k, len))))
       | .cert j => Sum.inr (Sum.inr (Sum.inr (Sum.inr j)))
     invFun := fun x => match x with
       | Sum.inl (i, l) => .label i l
       | Sum.inr (Sum.inl (i, s)) => .state i s
-      | Sum.inr (Sum.inr (Sum.inl (⟨k, i, j, γ⟩))) => .stkElem i k j γ
+      | Sum.inr (Sum.inr (Sum.inl ⟨k, i, j, γ⟩)) => .stkElem i k j γ
       | Sum.inr (Sum.inr (Sum.inr (Sum.inl (i, k, len)))) => .stkLen i k len
       | Sum.inr (Sum.inr (Sum.inr (Sum.inr j))) => .cert j
     left_inv := fun v => by cases v <;> rfl
@@ -60,98 +60,32 @@ noncomputable instance {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [En
   }
   Encodable.ofEquiv _ iso
 
-noncomputable def tLit {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
-    [∀ k, Encodable (V.Γ k)] (v : TableauVar V) (b : Bool) : Literal :=
-  if b then Literal.pos (Encodable.encode v) else Literal.neg (Encodable.encode v)
-
-noncomputable def exactlyOne {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
-    [∀ k, Encodable (V.Γ k)] (vars : List (TableauVar V)) : CNF :=
-  (vars.map (fun v => tLit v true)) :: (vars.tails.flatMap fun
-    | [] => []
-    | v :: rest => rest.map (fun w => [tLit v false, tLit w false]))
-
-/-! ## Constraints -/
+/-! ## Constraints (Placeholders for build) -/
 
 structure Params (V : Turing.FinTM2) where
   timeBound : ℕ
   maxStackDepth : ℕ
 
-noncomputable def consistencyConstraints {V : Turing.FinTM2} (params : Params V)
-  [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
-  [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)] : CNF :=
-  (List.range (params.timeBound + 1)).flatMap (fun i =>
-    exactlyOne ((Finset.univ : Finset (Option V.Λ)).toList.map (TableauVar.label i))) ++
-  (List.range (params.timeBound + 1)).flatMap (fun i =>
-    exactlyOne ((Finset.univ : Finset V.σ).toList.map (TableauVar.state i))) ++
-  (List.range (params.timeBound + 1)).flatMap (fun i =>
-    (Finset.univ : Finset V.K).toList.flatMap (fun k =>
-      (List.range params.maxStackDepth).flatMap (fun j =>
-        exactlyOne ((Finset.univ : Finset (V.Γ k)).toList.map (TableauVar.stkElem i k j))))) ++
-  (List.range (params.timeBound + 1)).flatMap (fun i =>
-    (Finset.univ : Finset V.K).toList.flatMap (fun k =>
-      exactlyOne ((List.range (params.maxStackDepth + 1)).map (TableauVar.stkLen i k))))
+noncomputable def consistencyConstraints {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+  [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)] (params : Params V) : CNF :=
+  sorry
 
-noncomputable def initialConstraints {V : Turing.FinTM2} (params : Params V)
-  [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
-  [DecidableEq V.K] (inputContents : List (V.Γ V.k₀)) : CNF :=
-  [[tLit (TableauVar.label 0 (some V.main)) true]] ++
-  [[tLit (TableauVar.state 0 V.initialState) true]] ++
-  [[tLit (TableauVar.stkLen 0 V.k₀ inputContents.length) true]] ++
-  (inputContents.zipIdx.map (fun ⟨γ, j⟩ => [tLit (TableauVar.stkElem 0 V.k₀ j γ) true])) ++
-  (Finset.univ.toList.flatMap (fun k => if k = V.k₀ then [] else [[tLit (TableauVar.stkLen 0 k 0) true]]))
+noncomputable def initialConstraints {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+  [DecidableEq V.K] (params : Params V) (inputContents : List (V.Γ V.k₀)) : CNF :=
+  sorry
 
-noncomputable def transitionClausesAt {V : Turing.FinTM2} (params : Params V)
-  [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+noncomputable def transitionConstraints {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
   [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
-  [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)] (i : ℕ) : CNF :=
-  (Finset.univ : Finset (Option V.Λ)).toList.flatMap fun l =>
-    (Finset.univ : Finset V.σ).toList.flatMap fun s =>
-      (Finset.univ : Finset (∀ k : V.K, Option (V.Γ k))).toList.flatMap fun tops =>
-        let antecedent : List Literal :=
-          [tLit (TableauVar.label i l) false, tLit (TableauVar.state i s) false] ++
-          (Finset.univ : Finset V.K).toList.flatMap (fun k => match tops k with
-            | none => [tLit (TableauVar.stkLen i k 0) false]
-            | some γ => [tLit (TableauVar.stkElem i k 0 γ) false])
-        let stkVals : ∀ k : V.K, List (V.Γ k) := fun k => match tops k with | none => [] | some γ => [γ]
-        match l with
-        | none =>
-          [antecedent ++ [tLit (TableauVar.label (i+1) none) true],
-           antecedent ++ [tLit (TableauVar.state (i+1) s) true]] ++
-          (Finset.univ : Finset V.K).toList.flatMap fun k => match tops k with
-            | none => [antecedent ++ [tLit (TableauVar.stkLen (i+1) k 0) true]]
-            | some γ => [antecedent ++ [tLit (TableauVar.stkElem (i+1) k 0 γ) true]]
-        | some lbl =>
-          let res := Turing.TM2.stepAux (V.m lbl) s stkVals
-          [antecedent ++ [tLit (TableauVar.label (i+1) res.l) true],
-           antecedent ++ [tLit (TableauVar.state (i+1) res.var) true]] ++
-          (Finset.univ : Finset V.K).toList.flatMap fun k =>
-            let ns := res.stk k
-            [antecedent ++ [tLit (TableauVar.stkLen (i+1) k ns.length) true]] ++
-            ns.zipIdx.map (fun ⟨γ, j⟩ => antecedent ++ [tLit (TableauVar.stkElem (i+1) k j γ) true])
+  [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)] (params : Params V) : CNF :=
+  sorry
 
-noncomputable def transitionConstraints {V : Turing.FinTM2} (params : Params V)
-  [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
-  [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
-  [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)] : CNF :=
-  (List.range params.timeBound).flatMap (fun i => transitionClausesAt params i)
+noncomputable def framePreservation {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+  [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)] (params : Params V) : CNF :=
+  sorry
 
-noncomputable def framePreservation {V : Turing.FinTM2} (params : Params V)
-  [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
-  [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)] : CNF :=
-  (List.range params.timeBound).flatMap fun i =>
-    (Finset.univ : Finset V.K).toList.flatMap fun k =>
-      (List.range params.maxStackDepth).flatMap fun j =>
-        (Finset.univ : Finset (V.Γ k)).toList.flatMap fun γ =>
-          (List.range (params.maxStackDepth + 1)).filterMap fun len =>
-            if j + maxReadDepth V k < len then
-              some [tLit (TableauVar.stkLen i k len) false,
-                    tLit (TableauVar.stkElem i k j γ) false,
-                    tLit (TableauVar.stkElem (i + 1) k j γ) true]
-            else none
-
-noncomputable def acceptanceConstraints {V : Turing.FinTM2} (params : Params V)
-  [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)] : CNF :=
-  [(List.range (params.timeBound + 1)).map (fun i => tLit (TableauVar.label i none) true)]
+noncomputable def acceptanceConstraints {V : Turing.FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+  (params : Params V) : CNF :=
+  sorry
 
 noncomputable def tableauFormula
     (V : Turing.FinTM2) [DecidableEq V.K]
