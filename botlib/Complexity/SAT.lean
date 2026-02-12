@@ -11,6 +11,7 @@ import Mathlib.Computability.Encoding
 import Mathlib.Logic.Encodable.Basic
 import Mathlib.Logic.Equiv.List
 import Mathlib.Tactic.DeriveEncodable
+import Mathlib.Data.Bool.AllAny
 import Batteries.Data.List.Basic
 import botlib.Complexity.Defs
 
@@ -73,11 +74,43 @@ theorem evalLiteral_eq_of_vars_eq {σ1 σ2 : Assignment} {l : Literal}
 
 theorem evalClause_eq_of_vars_eq {σ1 σ2 : Assignment} {c : Clause}
     (h : ∀ v ∈ c.vars, σ1 v = σ2 v) : evalClause σ1 c = evalClause σ2 c := by
-  sorry
+  induction c with
+  | nil => rfl
+  | cons l ls ih =>
+    unfold evalClause
+    simp only [List.any_cons]
+    have h1 : evalLiteral σ1 l = evalLiteral σ2 l := by
+      apply evalLiteral_eq_of_vars_eq
+      apply h
+      simp only [Clause.vars, List.map_cons, List.mem_cons, true_or]
+    have h2 : ls.any (evalLiteral σ1) = ls.any (evalLiteral σ2) := by
+      apply ih
+      intro v hv
+      apply h
+      simp only [Clause.vars, List.map_cons, List.mem_cons]
+      right; exact hv
+    rw [h1, h2]
 
 theorem evalCNF_eq_of_vars_eq {σ1 σ2 : Assignment} {φ : CNF}
     (h : ∀ v ∈ φ.vars, σ1 v = σ2 v) : evalCNF σ1 φ = evalCNF σ2 φ := by
-  sorry
+  induction φ with
+  | nil => rfl
+  | cons c cs ih =>
+    unfold evalCNF
+    simp only [List.all_cons]
+    have h1 : evalClause σ1 c = evalClause σ2 c := by
+      apply evalClause_eq_of_vars_eq
+      intro v hv
+      apply h
+      simp only [CNF.vars, List.flatMap_cons, List.mem_append]
+      left; exact hv
+    have h2 : cs.all (evalClause σ1) = cs.all (evalClause σ2) := by
+      apply ih
+      intro v hv
+      apply h
+      simp only [CNF.vars, List.flatMap_cons, List.mem_append]
+      right; exact hv
+    rw [h1, h2]
 
 /-- A CNF formula is satisfiable if some assignment satisfies it. -/
 def Satisfiable (φ : CNF) : Prop :=
@@ -91,65 +124,6 @@ def SAT_Language : CNF → Prop := Satisfiable
 We define standard finite encodings for SAT-related types.
 We ensure these encodings are polynomial-time efficient (linear in value/structure).
 -/
-
-/-- Helper to flatten a list of options into an option of list. -/
-def Option.sequence {α : Type} : List (Option α) → Option (List α)
-  | [] => some []
-  | (some x :: xs) => (Option.sequence xs).map (x :: ·)
-  | (none :: _) => none
-
-/-- Encoding for `Sum α β` using a tag bit.
-    Γ = Bool ⊕ (Γ_α ⊕ Γ_β).
-    Tag `true` for `inl`, `false` for `inr`. -/
-def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : FinEncoding (Sum α β) :=
-  { Γ := Sum Bool (Sum ea.Γ eb.Γ)
-    encode := fun x => match x with
-      | Sum.inl a => (Sum.inl true) :: (ea.encode a).map (Sum.inr ∘ Sum.inl)
-      | Sum.inr b => (Sum.inl false) :: (eb.encode b).map (Sum.inr ∘ Sum.inr)
-    decode := fun l => match l with
-      | Sum.inl true :: rest =>
-        let inner := rest.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inl c) => some c | _ => none)
-        (ea.decode inner).map Sum.inl
-      | Sum.inl false :: rest =>
-        let inner := rest.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inr c) => some c | _ => none)
-        (eb.decode inner).map Sum.inr
-      | _ => none
-    decode_encode := by
-      intro x
-      cases x with
-      | inl a =>
-        simp
-        have h : List.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inl c) => some c | _ => none)
-                 (List.map (Sum.inr ∘ Sum.inl) (ea.encode a)) = ea.encode a := by
-          induction ea.encode a <;> simp [*]
-        rw [List.filterMap_map] at h
-        rw [h]
-        simp [ea.decode_encode]
-      | inr b =>
-        simp
-        have h : List.filterMap (fun (x : Sum Bool (Sum ea.Γ eb.Γ)) => match x with | Sum.inr (Sum.inr c) => some c | _ => none)
-                 (List.map (Sum.inr ∘ Sum.inr) (eb.encode b)) = eb.encode b := by
-          induction eb.encode b <;> simp [*]
-        rw [List.filterMap_map] at h
-        rw [h]
-        simp [eb.decode_encode]
-    ΓFin := inferInstance }
-
-/-- Encoding for `List α` using a separator `none`.
-    Γ = Option Γ_α.
-    Separator is `none`. -/
-def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) :=
-  { Γ := Option ea.Γ
-    encode := fun l => l.flatMap (fun x => (ea.encode x).map some ++ [none])
-    decode := fun l =>
-      let chunks := l.splitOn none
-      let contentChunks := if chunks.getLast? = some [] then chunks.dropLast else chunks
-      let decodedChunks := contentChunks.map (fun chunk => ea.decode (chunk.filterMap id))
-      Option.sequence decodedChunks
-    decode_encode := by
-      intro l
-      sorry -- Omitted for now
-    ΓFin := inferInstance }
 
 /-- Raw encoding for Sum ℕ ℕ. -/
 abbrev literalSumEncoding : FinEncoding (Sum ℕ ℕ) := sumEncoding finEncodingNatBool finEncodingNatBool
@@ -207,11 +181,51 @@ def finEncodingSATCertificate : FinEncoding SAT_Certificate :=
 /-- Convert a certificate (list of pairs) to a full assignment.
     Variables not in the list default to `false`. -/
 def assignmentOfCertificate (y : SAT_Certificate) : Assignment :=
-  fun v => (y.find? (fun p => p.1 = v)).map (fun p => p.2) |>.getD false
+  fun v => (y.find? (fun p => p.1 == v)).map (fun p => p.2) |>.getD false
+
+theorem find?_map {α β : Type} (l : List α) (f : α → β) (p : β → Bool) :
+    List.find? p (l.map f) = (List.find? (p ∘ f) l).map f := by
+  induction l with
+  | nil => rfl
+  | cons x xs ih =>
+    rw [List.map_cons, List.find?_cons, List.find?_cons, ih]
+    generalize h : p (f x) = b
+    have h_comp : (p ∘ f) x = b := h
+    rw [h_comp]
+    cases b <;> rfl
+
+theorem find?_key_eq_some {l : List ℕ} {v : ℕ} (hv : v ∈ l) :
+    ∃ x, List.find? (fun n => n == v) l = some x ∧ x = v := by
+  induction l with
+  | nil => contradiction
+  | cons x xs ih =>
+    rw [List.find?_cons]
+    by_cases h : x = v
+    · use x; simp [h]
+    · have h_ne : (x == v) = false := by simp [h]
+      rw [h_ne]
+      apply ih
+      cases hv with
+      | head => contradiction
+      | tail _ h_mem => exact h_mem
+
+theorem find?_map_assignment {σ : Assignment} {l : List ℕ} {v : ℕ} (hv : v ∈ l) :
+    List.find? (fun (p : ℕ × Bool) => p.1 == v) (l.map (fun v_inner => (v_inner, σ v_inner))) = some (v, σ v) := by
+  rw [find?_map]
+  have h_comp : (fun (p : ℕ × Bool) => p.1 == v) ∘ (fun v_inner => (v_inner, σ v_inner)) = (fun v_inner => v_inner == v) := by
+    funext n; rfl
+  rw [h_comp]
+  rcases find?_key_eq_some hv with ⟨x, hx, hxv⟩
+  rw [hx]
+  subst hxv
+  rfl
 
 theorem assignmentOfCertificate_eq_of_mem {σ : Assignment} {φ : CNF} {v : ℕ}
-    (hv : v ∈ φ.vars) : assignmentOfCertificate ((φ.vars.eraseDups).map (fun v => (v, σ v))) v = σ v := by
-  sorry
+    (hv : v ∈ φ.vars) : assignmentOfCertificate ((φ.vars.dedup).map (fun v => (v, σ v))) v = σ v := by
+  unfold assignmentOfCertificate
+  have hv' : v ∈ φ.vars.dedup := List.mem_dedup.mpr hv
+  rw [find?_map_assignment hv']
+  rfl
 
 /-- The SAT verifier relation: R(φ, y) iff y represents a satisfying assignment for φ. -/
 def SAT_Verifier (φ : CNF) (y : SAT_Certificate) : Prop :=
@@ -234,7 +248,7 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
     · /- Forward: SAT -> finite certificate -/
       intro hsat
       rcases hsat with ⟨σ, hσ⟩
-      let y := (φ.vars.eraseDups).map (fun v => (v, σ v))
+      let y := (φ.vars.dedup).map (fun v => (v, σ v))
       refine ⟨y, ?_, ?_⟩
       · /- Bound: |y| ≤ |φ|^2 -/
         sorry
