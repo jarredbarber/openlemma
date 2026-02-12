@@ -10,15 +10,24 @@ Let $\phi = C_1 \land C_2 \land \dots \land C_m$ be a CNF formula over variables
 We construct $\psi = f(\phi)$ by transforming each clause $C_i$ into a set of 3-literal clauses.
 Let $C_i = (l_1 \lor l_2 \lor \dots \lor l_k)$.
 
+### Case 0: $k = 0$
+Clause is empty $()$.
+This is always false.
+Replace with $(y_{i,1} \lor y_{i,1} \lor y_{i,1}) \land (\neg y_{i,1} \lor \neg y_{i,1} \lor \neg y_{i,1})$, where $y_{i,1}$ is a fresh variable.
+This conjunction is unsatisfiable (requires $y_{i,1}$ true and false).
+Thus, if $\phi$ contains an empty clause, $\psi$ is unsatisfiable, preserving equivalence.
+
 ### Case 1: $k = 1$
 Clause is $(l_1)$.
-Replace with $(l_1 \lor l_1 \lor l_1)$ (or equivalent using dummy variables).
+Replace with $(l_1 \lor l_1 \lor l_1)$.
 This clause is satisfied iff $l_1$ is true.
+
+**Note on Distinct Literals:** Our definition of `Clause` is `List Literal`, and `isThreeLitClause` only checks `length = 3`. It does not require distinct literals. If distinct literals were required, we would need two fresh variables $z_1, z_2$ and use 4 clauses: $(l_1 \lor z_1 \lor z_2) \land (l_1 \lor \neg z_1 \lor z_2) \land (l_1 \lor z_1 \lor \neg z_2) \land (l_1 \lor \neg z_1 \lor \neg z_2)$. Given our definitions, repetition is valid and simpler.
 
 ### Case 2: $k = 2$
 Clause is $(l_1 \lor l_2)$.
-Replace with $(l_1 \lor l_2 \lor l_1)$ (repeating a literal is valid in logic, or add a dummy variable that forces itself).
-Standard simple replacement: $(l_1 \lor l_2 \lor z)$ where $z$ is forced false? No, easiest is just $(l_1 \lor l_2 \lor l_1)$ which is equivalent to $l_1 \lor l_2$.
+Replace with $(l_1 \lor l_2 \lor l_1)$.
+Equivalent to $l_1 \lor l_2$.
 
 ### Case 3: $k = 3$
 Keep the clause as is: $(l_1 \lor l_2 \lor l_3)$.
