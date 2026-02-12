@@ -1,6 +1,7 @@
 # Blueprint: PolyTimeFst TM
 
-**Status:** Draft ✏️
+**Status:** Verified ✅
+**Reviewed by:** verify
 **Goal:** detailed blueprint for constructing a `FinTM2` that computes `Prod.fst` on `pairEncoding` in polynomial time.
 **Target:** `botlib/Complexity/Defs.lean` (to witness `PolyTimeFst`).
 
