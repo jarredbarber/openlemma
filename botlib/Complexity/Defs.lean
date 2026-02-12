@@ -5,7 +5,7 @@ Released under Apache 2.0 license.
 Computational complexity class definitions: P, NP, NP-completeness,
 polynomial-time reductions.
 
-Adapted from LeanMillenniumPrizeProblems (lean-dojo) which follows
+Adapted from LeanMillenniumPrizeProblems (lean-do Dojo) which follows
 Cook's Clay Mathematics Institute problem description.
 
 Trust level: 🟡 Definitions only — no theorems yet.
@@ -19,11 +19,6 @@ import botlib.Complexity.TM2PolyTimeComp
 namespace OpenLemma.Complexity
 
 open Turing Computability
-
-/-! ## Languages (Decision Problems) -/
-
-/-- A language (decision problem) is a predicate on an input type. -/
-def Language (α : Type) := α → Prop
 
 /-! ## Encodings -/
 
@@ -80,7 +75,7 @@ def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : Fin
     ΓFin := inferInstance }
 
 /-- Encoding for `List α` using a separator `none`.
-    Γ = Option ea.Γ.
+    Γ = Option Γ_α.
     Separator is `none`. -/
 def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) :=
   { Γ := Option ea.Γ
@@ -94,6 +89,22 @@ def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEnco
       intro l
       sorry -- Proved linear and correct in NL proof.
     ΓFin := inferInstance }
+
+theorem listEncoding_length {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] (l : List α) :
+    ((listEncoding ea).encode l).length = (l.map (fun x => (ea.encode x).length + 1)).sum := by
+  induction l with
+  | nil => rfl
+  | cons x xs ih =>
+    unfold listEncoding
+    simp only [List.flatMap_cons, List.length_append, List.map_cons, List.sum_cons]
+    simp only [List.length_map, List.length_singleton]
+    have : ((listEncoding ea).encode xs).length = (xs.flatMap (fun x => (ea.encode x).map some ++ [none])).length := rfl
+    rw [← this, ih]
+
+/-! ## Languages (Decision Problems) -/
+
+/-- A language (decision problem) is a predicate on an input type. -/
+def Language (α : Type) := α → Prop
 
 /-! ## The Class P -/
 
