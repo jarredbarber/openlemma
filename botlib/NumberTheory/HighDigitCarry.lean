@@ -39,6 +39,9 @@ def digit (p m i : ℕ) : ℕ := (m / p ^ i) % p
 /-- A digit is "high" if it is at least ⌈p/2⌉. -/
 def is_high_digit (p m i : ℕ) : Prop := digit p m i ≥ (p + 1) / 2
 
+instance : DecidablePred (is_high_digit p m) :=
+  fun i => Nat.decLe ((p + 1) / 2) (digit p m i)
+
 /-- The set of indices of high digits in m (up to a bound D). -/
 noncomputable def high_digits_finset (p m D : ℕ) : Finset ℕ :=
   (Finset.range D).filter (fun i => is_high_digit p m i)
