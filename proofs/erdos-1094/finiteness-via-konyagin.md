@@ -26,7 +26,7 @@ $$\forall\, k > K_1:\quad g(k) > 2k^2. \tag{$\star$}$$
 
 We fix $K_1$ but never compute it.
 
-## 1.3 Step 3: $E_k = \emptyset$ for $k > K_1$
+## 1.3 Analysis of $E_k$ for $k > K_1$
 
 **Notation.** $E_k = \{n \ge 2k : \mathrm{minFac}\binom{n}{k} > \max(\lfloor n/k\rfloor, k)\}$.
 
@@ -63,17 +63,23 @@ $$\text{Term 2} \le \frac{4k\,(e^\gamma \ln k + 1)}{\ln n}$$
 
 **The gap: $g(k) \le n \le n_0(k)$ with $k$-smooth $M$.**
 
-For $k > K_1$: $g(k) \ge \exp(c\log^2 k)$. The $k$-smooth values of $M$ in $[\exp(c\log^2 k)/k,\, k^{14}]$ form a finite (and, for $k$ large, sparse) set. For each such $M$ and $r \in \{0,\ldots,k-1\}$: the pair $(kM+r, k)$ either has a medium prime dividing $\binom{kM+r}{k}$ (handled above) or is one of at most $k \cdot \Psi(k^{14}, k)$ specific values.
+For $k > K_1$: $g(k) \ge \exp(c\log^2 k)$. The gap $[g(k), n_0(k)]$ is enormous — $n_0(k) = \exp(15k\ln k)$ dwarfs $g(k) = \exp(c\log^2 k)$ for large $k$. Within this gap, $k$-smooth values of $M$ exist (e.g., powers of 2), so Type B pairs $(kM+r, k)$ arise.
 
-The count of exceptions in this range is at most $k \cdot \Psi(n_0(k)/k,\, k) \cdot \delta_k$, where $\Psi(X, y)$ counts $y$-smooth integers up to $X$. By the Dickman estimate with $u = \log(n_0(k)/k)/\log k = 15k - 1$:
+**Expected count.** The count of exceptions in the gap is at most $k \cdot \Psi(n_0(k)/k, k) \cdot \delta_k$, where $\Psi$ counts $k$-smooth integers. By Dickman with $u = 15k-1$:
 
-$$\Psi(n_0(k)/k,\, k) \approx \frac{n_0(k)}{k} \cdot \rho(15k) \approx \frac{\exp(15k\ln k)}{k} \cdot \exp(-15k(\ln k + O(1))) = \frac{\exp(-O(k))}{k}$$
+$$\Psi(n_0(k)/k,\, k) \approx \frac{n_0(k)}{k} \cdot \rho(15k) = \frac{\exp(-O(k))}{k}$$
 
-So the count $\le k \cdot \exp(-O(k))/k \cdot 1/k^2 = \exp(-O(k))/k^2 < 1$ for all $k \ge 1$. Combined with the deterministic CRT structure: the count is exactly 0 for $k > K_2$ (computable).
+So the expected count $\le \exp(-O(k))/k^2 < 1$ for all $k \ge 1$.
 
-Set $K^* = \max(K_1, K_2)$. For $k > K^*$: $E_k = \emptyset$. $\square$
+**⚠️ HONEST ASSESSMENT:** Expected count $< 1$ does NOT prove actual count $= 0$. The CRT density $\delta_k$ bounds the fraction of $n$ satisfying digit domination, but this is a density statement, not a deterministic one. Going from "expected $< 1$" to "count $= 0$" requires either:
 
-## 1.4 Step 4: $E_k$ is Finite for Fixed $k \le K^*$
+1. **An explicit Konyagin constant** $c$ large enough that $g(k) > n_0(k)$ (impossible: $\exp(c\log^2 k) < \exp(15k\ln k)$ for all large $k$), OR
+2. **An explicit Konyagin constant** $c$ with $g(k) > k^2$ so that the Lean axiom `crt_density_from_asymptotic` handles $[2k, k^2]$ and no gap remains, OR
+3. **A direct proof** that for $n \ge g(k)$ with $k$-smooth $M$, some prime $\le M$ divides $\binom{n}{k}$ (this is exactly axiom `large_n_smooth_case`).
+
+**Conclusion for §1.3:** We CANNOT prove $E_k = \emptyset$ for large $k$ using Konyagin alone, without either an explicit constant or the smooth-case axiom. $\square$
+
+## 1.4 What IS Proved: $E_k$ is Finite for Each Fixed $k$
 
 **Theorem.** *For each fixed $k \ge 2$: $E_k$ is finite.*
 
@@ -81,26 +87,46 @@ Set $K^* = \max(K_1, K_2)$. For $k > K^*$: $E_k = \emptyset$. $\square$
 
 Therefore $E_k \subseteq [2k,\, n_0(k)]$. This is a bounded interval of integers, hence finite. $\square$
 
-**Remark.** The bound $n_0(k) = \exp(15k\ln k)$ is astronomical for large $k$ but irrelevant — we only use it for $k \le K^*$.
+**This is unconditional** — no axioms needed. PNT + Dickman are classical.
 
-## 1.5 Step 5: Conclusion
+## 1.5 What is NOT Proved: $E_k = \emptyset$ for Large $k$
 
-$$E = \bigcup_{k=1}^{\infty} \{k\} \times E_k = \underbrace{\bigcup_{k=1}^{K^*} \{k\} \times E_k}_{\text{finite union of finite sets}} \cup \underbrace{\bigcup_{k > K^*} \{k\} \times \emptyset}_{\emptyset}$$
+The proof in §1.3 shows:
+- **Range I** ($n \le 2k^2$): $E_k \cap [2k, 2k^2] = \emptyset$ for $k > K_1$. ✓ (Konyagin)
+- **Range II, Type A**: Handled by IDL. ✓
+- **Range II, Type B, $n < g(k)$**: $\mathrm{minFac} \le k$. ✓
+- **Range II, Type B, $n \ge g(k)$, $n > n_0(k)$**: Medium-prime. ✓
+- **Range II, Type B, $g(k) \le n \le n_0(k)$**: ⚠️ **OPEN GAP**
 
-The first union is finite (each $E_k$ is finite by §1.4). The second is empty (each $E_k = \emptyset$ by §1.3). Therefore $|E| < \infty$. $\square$
+To close the gap and prove $E_k = \emptyset$, we need ONE of:
 
-## 1.6 What This Proof Uses
+| Path | What's needed | Closes gap? | Axiom count |
+|------|--------------|-------------|-------------|
+| A: Explicit Konyagin | $c$ effective, $g(k) > k^2$ computable | No (only [2k, k²]) | 1 (smooth case) |
+| B: Smooth-case axiom | `large_n_smooth_case` | Yes (all $n > k^2$) | 1 (+ Konyagin citation) |
+| C: Direct argument | Prove smooth case analytically | Yes | 0 (if combined with A) |
+
+## 1.6 Conclusion: Two Tiers
+
+**Tier 1 (Unconditional):** $E_k$ is finite for each $k$. Therefore $E$ is finite iff only finitely many $k$ have $E_k \ne \emptyset$. *Proved by medium-prime argument alone.*
+
+**Tier 2 (Conditional):** $E_k = \emptyset$ for $k > K_1$, hence $|E| < \infty$. *Requires closing the gap via Path A, B, or C above.*
+
+$$E = \bigcup_{k=1}^{\infty} \{k\} \times E_k$$
+
+- **Path A** (explicit $c$, $g(k) > k^2$ for $k > K_0$): Eliminates axiom 1 (`crt_density_from_asymptotic`) — Konyagin directly proves no $n \in [2k, k^2]$ is $k$-rough. Combined with `native_decide` for $k \le K_0$. But axiom 2 (`large_n_smooth_case`) still needed for $n > k^2$. **1 axiom + 1 citation.**
+- **Path B** (smooth-case axiom): $E_k \subseteq [2k, k^2]$ for all $k$. Konyagin (nonconstructive) gives $E_k = \emptyset$ for $k > K_1$. **1 axiom** (smooth case) + **1 citation** (Konyagin).
+- **Current Lean:** **2 axioms** (`crt_density_from_asymptotic` + `large_n_smooth_case`).
+- **0 axioms:** Requires explicit $c$ (Path A) AND proving `large_n_smooth_case` analytically or reducing $n_0(k)$ to a computationally feasible range. Both are open.
+
+## 1.7 What This Proof Uses
 
 | Input | Role | Status |
 |-------|------|--------|
-| Konyagin: $g(k) \ge \exp(c\log^2 k)$ | Eliminates $E_k$ for large $k$ | Citation axiom |
+| Medium-prime (PNT + Dickman) | $E_k \subseteq [2k, n_0(k)]$, hence finite | Classical ✅ |
+| Konyagin: $g(k) \ge \exp(c\log^2 k)$ | $E_k \cap [2k, 2k^2] = \emptyset$ for $k > K_1$ | Citation |
 | IDL (Type A) | Handles $n > k^2$ when $n/k$ has large prime | Verified ✅ |
-| Medium-prime argument (PNT + Dickman) | Bounds $(k,\sqrt{n}]$-free integers in short interval | Classical |
-| CRT density $\delta_k < 1/k^2$ | Eliminates gap region for large $k$ | Proved |
-
-**Net axiom count: 1** (Konyagin). Compare: current Lean proof uses 2 axioms.
-
-**Nonconstructive elements:** $K_1$ (from Konyagin), $K_2$ (from Dickman estimates), $K^* = \max(K_1, K_2)$.
+| **Gap:** $g(k) \le n \le n_0(k)$, smooth $M$ | Requires Path A, B, or C | **Open** |
 
 ---
 
@@ -109,12 +135,19 @@ The first union is finite (each $E_k$ is finite by §1.4). The second is empty (
 ## 2.1 Why It Matters
 
 If we can extract an explicit $c$ from Konyagin's proof, then:
-- $K_1$ becomes computable: solve $\exp(c\log^2 k) > 2k^2$.
-- $K_2$ is already computable from Dickman function estimates.
-- For $k \le K^*$: enumerate $E_k \cap [2k, n_0(k)]$ computationally.
-- **Result: 0 axioms.** The Lean proof becomes fully verified.
+- $K_0$ becomes computable: solve $\exp(c\log^2 k) > k^2$.
+- For $k > K_0$: Konyagin directly proves $g(k) > k^2$, eliminating axiom 1 (`crt_density_from_asymptotic`).
+- For $k \le K_0$: extend `native_decide` or external computation to cover $[2k, k^2]$.
+- **Result: 1 axiom** (smooth-case only). Down from 2.
 
-Even a loose bound ($c = 10^{-6}$, giving $K^* \approx 10^{12}$) would suffice — `native_decide` doesn't need to reach $K^*$ because the medium-prime + Dickman argument handles the gap.
+| Explicit $c$ | $K_0$ threshold | Verification method |
+|:---:|:---:|:---|
+| $\ge 0.5$ | $\approx 75$ | Already covered by `native_decide` (k ≤ 700) |
+| $\ge 0.25$ | $\approx 4{,}200$ | Moderate computation extension |
+| $\ge 0.1$ | $\approx 7 \times 10^8$ | External CRT algorithm |
+| $\ge 0.05$ | $\approx 4 \times 10^{17}$ | Infeasible |
+
+**Note:** The smooth-case axiom (`large_n_smooth_case`) remains regardless of $c$. It handles $n > k^2$ with $k$-smooth $M$ — a structural requirement independent of $g(k)$.
 
 ## 2.2 Konyagin's Method: Overview
 
@@ -284,7 +317,7 @@ If the full Konyagin reconstruction is too complex, a SIMPLER argument might suf
 
 **Hypothesis:** Konyagin's constant $c$ is **effective** (computable). The claim of "ineffectivity" in earlier discussions may have been premature. The key methods — exponential sum estimates and lattice point counting — are all effective. Whether $c$ is merely "not computed" vs "not computable" requires reading the full paper.
 
-**If $c$ is effective:** The path to 0 axioms is open. Extract $c$ → compute $K_1$ → verify $k \le K_1$ computationally → done.
+**If $c$ is effective:** Axiom 1 can be eliminated. Extract $c$ → compute $K_0$ → verify $k \le K_0$ computationally → axiom 1 gone. The smooth-case axiom (axiom 2) would remain as the sole axiom.
 
 **If $c$ is ineffective** (uses Schmidt's Thue–Siegel–Roth): Fall back to Granville–Ramaré, which is definitely effective (elementary exponential sums only).
 
