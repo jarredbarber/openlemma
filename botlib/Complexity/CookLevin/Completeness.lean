@@ -555,17 +555,95 @@ axiom step_tracks_stacks'
         (((cfgAt V input (t+1)).stk k).reverse[j]'(by rw [length_reverse]; exact hj)))) ∧
     (∀ k, ((cfgAt V input (t+1)).stk k).length ≤ params.maxStackDepth)
 
-/-- Citation axiom: base case for stack tracking.
-    The initial constraints force σ to correctly track stkLen and stkElem at t=0.
-    Reference: Mechanical consequence of initial constraint clauses. -/
-axiom trace_base_stacks'
+-- CNF helpers (local copies, also in Soundness.lean)
+private theorem evalCNF_append_c (σ : Assignment) (c1 c2 : CNF) :
+    evalCNF σ (c1 ++ c2) = (evalCNF σ c1 && evalCNF σ c2) := by
+  simp [evalCNF, List.all_append]
+
+private theorem evalCNF_left_c {σ : Assignment} {a b : CNF}
+    (h : evalCNF σ (a ++ b) = true) : evalCNF σ a = true := by
+  rw [evalCNF_append_c] at h; simp [Bool.and_eq_true] at h; exact h.1
+
+private theorem evalCNF_right_c {σ : Assignment} {a b : CNF}
+    (h : evalCNF σ (a ++ b) = true) : evalCNF σ b = true := by
+  rw [evalCNF_append_c] at h; simp [Bool.and_eq_true] at h; exact h.2
+
+private theorem evalCNF_singleton_c {σ : Assignment} {lit : Literal}
+    (h : evalCNF σ [[lit]] = true) : evalLiteral σ lit = true := by
+  simp [evalCNF, evalClause] at h; exact h
+
+private theorem tLit_pos_val_c {σ : Assignment} (v : TableauVar V)
+    (h : evalLiteral σ (tLit V v true) = true) : σ (Encodable.encode v) = true := by
+  unfold tLit at h; simp [evalLiteral] at h; exact h
+
+private theorem extract_initial_c {params : Params V} {input : List (V.Γ V.k₀)} {σ : Assignment}
+    (hsat : evalCNF σ (tableauFormula params input) = true) :
+    evalCNF σ (initialConstraints params input) = true := by
+  unfold tableauFormula at hsat
+  exact evalCNF_right_c (evalCNF_left_c (evalCNF_left_c (evalCNF_left_c hsat)))
+
+private theorem initList_stk_k0_c (input : List (V.Γ V.k₀)) :
+    (Turing.initList V input).stk V.k₀ = input := by
+  simp [Turing.initList]
+
+private theorem initList_stk_other_c (input : List (V.Γ V.k₀)) (k : V.K) (hk : k ≠ V.k₀) :
+    (Turing.initList V input).stk k = [] := by
+  simp [Turing.initList, hk]
+
+/-- Base case for stack tracking: initial constraints force correct stkLen and stkElem at t=0.
+    Proved from the structure of initialConstraints. -/
+theorem trace_base_stacks'
     {params : Params V} {input : List (V.Γ V.k₀)}
     {σ : Assignment} (hsat : evalCNF σ (tableauFormula params input) = true)
     (h_depth : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth) :
     (∀ k, varTrue σ (TableauVar.stkLen (V := V) 0 k ((cfgAt V input 0).stk k).length)) ∧
     (∀ k (j : ℕ) (hj : j < ((cfgAt V input 0).stk k).length),
       varTrue σ (TableauVar.stkElem (V := V) 0 k j
-        (((cfgAt V input 0).stk k).reverse[j]'(by rw [length_reverse]; exact hj))))
+        (((cfgAt V input 0).stk k).reverse[j]'(by rw [List.length_reverse]; exact hj)))) := by
+  have h_init := extract_initial_c hsat
+  have h_cfg0 : cfgAt V input 0 = Turing.initList V input := by simp [cfgAt]
+  rw [h_cfg0]
+  unfold initialConstraints at h_init
+  constructor
+  · -- stkLen
+    intro k; unfold varTrue
+    by_cases hk : k = V.k₀
+    · subst hk; rw [initList_stk_k0_c]
+      have h3 := evalCNF_singleton_c (evalCNF_right_c (evalCNF_left_c (evalCNF_left_c h_init)))
+      exact tLit_pos_val_c _ h3
+    · rw [initList_stk_other_c input k hk]
+      have h5 := evalCNF_right_c h_init
+      rw [evalCNF, List.all_eq_true] at h5
+      have h_mem : [tLit V (TableauVar.stkLen 0 k 0) true] ∈
+          (Finset.univ.toList.flatMap (fun k' => if k' = V.k₀ then [] else
+            [[tLit V (TableauVar.stkLen 0 k' 0) true]])) := by
+        rw [List.mem_flatMap]
+        exact ⟨k, Finset.mem_toList.mpr (Finset.mem_univ k), by simp [hk]⟩
+      have h_cl := h5 _ h_mem
+      simp [evalClause] at h_cl
+      exact tLit_pos_val_c _ h_cl
+  · -- stkElem
+    intro k j hj; unfold varTrue
+    by_cases hk : k = V.k₀
+    · subst hk
+      have h_stk_eq : (Turing.initList V input).stk V.k₀ = input := initList_stk_k0_c input
+      simp only [h_stk_eq] at hj ⊢
+      have h4 := evalCNF_right_c (evalCNF_left_c h_init)
+      rw [evalCNF, List.all_eq_true] at h4
+      set γ := input.reverse[j]'(by rw [List.length_reverse]; exact hj) with γ_def
+      have hj' : j < (input.reverse.zipIdx).length := by simp; exact hj
+      have h_mem_zip : (γ, j) ∈ input.reverse.zipIdx := by
+        have h := getElem_mem hj'
+        rw [List.getElem_zipIdx, Nat.zero_add] at h
+        rwa [γ_def]
+      have h_cl_mem : [tLit V (TableauVar.stkElem 0 V.k₀ j γ) true] ∈
+          (input.reverse.zipIdx.map (fun ⟨γ', j'⟩ => [tLit V (TableauVar.stkElem 0 V.k₀ j' γ') true])) := by
+        rw [List.mem_map]; exact ⟨(γ, j), h_mem_zip, rfl⟩
+      have h_cl := h4 _ h_cl_mem
+      simp [evalClause] at h_cl
+      exact tLit_pos_val_c _ h_cl
+    · rw [initList_stk_other_c input k hk] at hj
+      exact absurd hj (by simp)
 
 /-! ### Full invariant induction -/
 
