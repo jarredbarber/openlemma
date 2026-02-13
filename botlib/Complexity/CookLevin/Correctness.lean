@@ -155,4 +155,108 @@ theorem stepAux_preservation_elem (q : TM2.Stmt Γ Λ σ) (s : σ) (S : ∀ k, L
     · have h_ne : update S k' (S k').tail k = S k := update_of_ne hk _ S
       rw [ih _ (update S k' (S k').tail) k j (by rw [h_ne]; omega), h_ne]
 
+/-! ### Stack length delta -/
+
+private theorem stmtReadDepth_peek_pos' (k : K) (f : σ → Option (Γ k) → σ)
+    (q : TM2.Stmt Γ Λ σ) : 0 < stmtReadDepth k (TM2.Stmt.peek k f q) := by
+  simp [stmtReadDepth]
+
+private theorem stmtReadDepth_pop_pos' (k : K) (f : σ → Option (Γ k) → σ)
+    (q : TM2.Stmt Γ Λ σ) : 0 < stmtReadDepth k (TM2.Stmt.pop k f q) := by
+  simp [stmtReadDepth]
+
+private theorem head?_of_take_pos {α : Type*} {l₁ l₂ : List α} {n : ℕ} (hn : 0 < n)
+    (h : l₁.take n = l₂.take n) : l₁.head? = l₂.head? := by
+  have h1 := congrArg (List.take 1) h
+  simp only [List.take_take, show min 1 n = 1 by omega] at h1
+  cases l₁ <;> cases l₂ <;> simp_all [List.take]
+
+/-- **Stack Length Delta**: The length change of stack `k` through `stepAux` is the same
+    regardless of which full stack we use, as long as the tops agree on `stmtReadDepth`. -/
+theorem stepAux_stk_len_delta (q : TM2.Stmt Γ Λ σ) (s : σ) (S1 S2 : ∀ k, List (Γ k))
+    (h_agree : ∀ k, (S1 k).take (stmtReadDepth k q) = (S2 k).take (stmtReadDepth k q))
+    (k : K) :
+    ((TM2.stepAux q s S1).stk k).length + (S2 k).length =
+    ((TM2.stepAux q s S2).stk k).length + (S1 k).length := by
+  induction q generalizing s S1 S2 with
+  | halt => simp [TM2.stepAux]; omega
+  | goto _ => simp [TM2.stepAux]; omega
+  | load f q ih =>
+    simp only [TM2.stepAux]; exact ih (f s) S1 S2 h_agree
+  | branch f q1 q2 ih1 ih2 =>
+    simp only [TM2.stepAux]; cases f s
+    · exact ih2 s S1 S2 (fun k₂ => by
+        have := h_agree k₂; simp only [stmtReadDepth] at this
+        exact take_of_take_max_right this)
+    · exact ih1 s S1 S2 (fun k₂ => by
+        have := h_agree k₂; simp only [stmtReadDepth] at this
+        exact take_of_take_max_left this)
+  | push k' f q ih =>
+    simp only [TM2.stepAux]
+    have h_inner : ∀ k₂, (update S1 k' (f s :: S1 k') k₂).take (stmtReadDepth k₂ q) =
+                         (update S2 k' (f s :: S2 k') k₂).take (stmtReadDepth k₂ q) := by
+      intro k₂
+      by_cases hk : k₂ = k'
+      · subst hk; simp only [update_self]
+        have ha := h_agree k₂; simp only [stmtReadDepth] at ha
+        cases hn : stmtReadDepth k₂ q with
+        | zero => simp [List.take]
+        | succ m =>
+          rw [List.take_succ_cons, List.take_succ_cons]; congr 1
+          rw [hn] at ha; exact take_of_take_ge (by omega) ha
+      · simp only [update_of_ne hk]
+        have ha := h_agree k₂; simp only [stmtReadDepth] at ha; exact ha
+    have h_eq := ih s _ _ h_inner
+    by_cases hk : k = k'
+    · subst hk; simp only [update_self, List.length_cons] at h_eq ⊢; omega
+    · simp only [update_of_ne hk] at h_eq; exact h_eq
+  | peek k' f q ih =>
+    simp only [TM2.stepAux]
+    have h_head : (S1 k').head? = (S2 k').head? := by
+      exact head?_of_take_pos (stmtReadDepth_peek_pos' k' f q) (h_agree k')
+    rw [h_head]
+    exact ih _ S1 S2 (fun k₂ => by
+      have ha := h_agree k₂; simp only [stmtReadDepth] at ha
+      by_cases hk : k₂ = k'
+      · subst hk; simp only [ite_true] at ha
+        exact take_of_take_ge (by omega) ha
+      · simp only [show k' = k₂ ↔ False from ⟨fun h => hk h.symm, False.elim⟩, ite_false,
+          Nat.zero_add] at ha; exact ha)
+  | pop k' f q ih =>
+    simp only [TM2.stepAux]
+    have h_head : (S1 k').head? = (S2 k').head? := by
+      exact head?_of_take_pos (stmtReadDepth_pop_pos' k' f q) (h_agree k')
+    rw [h_head]
+    have h_inner : ∀ k₂, (update S1 k' (S1 k').tail k₂).take (stmtReadDepth k₂ q) =
+                         (update S2 k' (S2 k').tail k₂).take (stmtReadDepth k₂ q) := by
+      intro k₂
+      by_cases hk : k₂ = k'
+      · subst hk; simp only [update_self]
+        have ha := h_agree k₂; simp only [stmtReadDepth, ite_true] at ha
+        exact take_tail_of_take_succ (by rwa [Nat.add_comm] at ha)
+      · simp only [update_of_ne hk]
+        have ha := h_agree k₂; simp only [stmtReadDepth] at ha
+        simp only [show k' = k₂ ↔ False from ⟨fun h => hk h.symm, False.elim⟩, ite_false,
+          Nat.zero_add] at ha; exact ha
+    have h_eq := ih (f s ((S2 k').head?)) _ _ h_inner
+    by_cases hk : k = k'
+    · subst hk; simp only [update_self] at h_eq ⊢
+      have h_add : (S1 k).tail.length + (S2 k).length = (S2 k).tail.length + (S1 k).length := by
+        have h1 := h_agree k; simp only [stmtReadDepth, ite_true] at h1
+        cases hs1 : S1 k with
+        | nil =>
+          cases hs2 : S2 k with
+          | nil => simp [List.tail]
+          | cons b rest =>
+            exfalso; rw [hs1, hs2] at h1
+            exact absurd (head?_of_take_pos (by omega) h1) (by simp [List.head?])
+        | cons a rest₁ =>
+          cases hs2 : S2 k with
+          | nil =>
+            exfalso; rw [hs1, hs2] at h1
+            exact absurd (head?_of_take_pos (by omega) h1).symm (by simp [List.head?])
+          | cons b rest₂ => simp [List.tail, List.length]; omega
+      omega
+    · simp only [update_of_ne hk] at h_eq; exact h_eq
+
 end CookLevinTableau
