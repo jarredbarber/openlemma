@@ -12,10 +12,11 @@ import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import botlib.NumberTheory.Kummer
 
 namespace Erdos1094
 
-open Nat Finset
+open Nat Finset OpenLemma.Kummer
 
 /-- The set of large primes in (k, 2k]. -/
 def P_L (k : ℕ) : Finset ℕ := (range (2 * k + 1)).filter (fun p => p.Prime ∧ p > k)
@@ -31,10 +32,6 @@ def dig (p k j : ℕ) : ℕ := (digits p k).getD j 0
 def KummerValid (p k : ℕ) : Finset ℕ :=
   (range (p ^ L_p p k)).filter (fun r =>
     ∀ j < L_p p k, dig p k j ≤ (digits p r).getD j 0)
-
-/-- The Kummer density for a single prime p. -/
-noncomputable def density_p (p k : ℕ) : ℝ :=
-  (KummerValid p k).card / (p ^ L_p p k : ℝ)
 
 /-! ### Citation Axiom -/
 
@@ -53,6 +50,14 @@ axiom mertens_large_prime_bound (k : ℕ) (h_large : k > 23) :
   (P_L k).prod (fun p => (p - (k : ℝ)) / p) < 1 / (k : ℝ)^2
 
 /-! ### Theorem Statements -/
+
+/-- **Kummer-valid residues count**: The number of residues mod p^L that avoid 
+    p-divisibility is given by the product of (p - digit). -/
+theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
+    (KummerValid p k).card = ((List.range (L_p p k)).map (fun j => p - dig p k j)).prod := by
+  -- Proof is postponed to focus on build stability.
+  -- This lemma is purely combinatorial and uses digits of r.
+  sorry
 
 /-- Main Asymptotic Density Theorem: δ(P_L) < 1/k².
     This is sufficient to prove finiteness of exceptions for n ≥ 2k²
