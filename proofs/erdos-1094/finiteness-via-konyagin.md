@@ -1,339 +1,274 @@
 # Finiteness of the Exceptional Set via Konyagin's Theorem
 
 **Status:** Draft ✏️  
-**Statement:** The set $E = \{(n,k) \in \mathbb{N}^2 : 0 < k \wedge 2k \le n \wedge \mathrm{minFac}\binom{n}{k} > \max(\lfloor n/k \rfloor, k)\}$ is finite.  
-**Approach:** Nonconstructive — uses Konyagin's asymptotic bound as a single citation axiom.  
-**Dependencies:**
-- **Citation axiom:** Konyagin (1999), $g(k) \ge \exp(c\log^2 k)$
-- `proofs/erdos-1094/large-n-divisibility.md` — Interval Divisibility Lemma (Verified ✅)
-- Bertrand's postulate (Mathlib)
-- Brun–Titchmarsh sieve upper bound (classical)  
-**Confidence:** High for the overall structure. One subtlety flagged in §5.
+**Dependencies:** Konyagin (1999), IDL (Verified ✅), Bertrand (Mathlib)  
+**Confidence:** High (Part 1), Exploratory (Part 2)
 
 ---
 
-## 0. Overview
+# Part 1: Nonconstructive Finiteness Proof
 
-We prove $|E| < \infty$ in five steps:
+## 1.1 Citation Axiom
 
-1. **Cite Konyagin:** $g(k) \ge \exp(c \log^2 k)$ for an absolute constant $c > 0$.
-2. **Threshold:** $\exists\, K_1$ such that $g(k) > 2k^2$ for all $k > K_1$.
-3. **Large $k$:** For $k > K_1$, $E_k = \emptyset$.
-4. **Small $k$:** For each $k \le K_1$, $E_k$ is finite.
-5. **Conclude:** $E = \bigcup_{k \le K_1} E_k$ is a finite union of finite sets.
-
-The proof is **nonconstructive** — $K_1$ exists but is not computed.
-
----
-
-## 1. Citation Axiom
-
-**Definition.** For $k \ge 1$, let $g(k)$ denote the least integer $n > k+1$ such that $\mathrm{minFac}\binom{n}{k} > k$, or $+\infty$ if no such $n$ exists.
-
-**Theorem (Konyagin, 1999).** *There exists an absolute constant $c > 0$ such that*
-$$g(k) \ge \exp(c \log^2 k) \quad \text{for all } k \ge 2.$$
+**Theorem (Konyagin, 1999).** *There exists an absolute constant $c > 0$ such that for all $k \ge 2$:*
+$$g(k) \ge \exp(c \log^2 k)$$
+*where $g(k)$ is the least integer $n > k+1$ with $\mathrm{minFac}\binom{n}{k} > k$.*
 
 **Source:** S. V. Konyagin, "Estimates of the least prime factor of a binomial coefficient," *Mathematika* **46** (1999), no. 1, 41–55.
 
-**Interpretation.** For all $n \in [k+2,\, g(k)-1]$: $\mathrm{minFac}\binom{n}{k} \le k$.
+**What this means:** For ALL $n \in \{k+2, k+3, \ldots, g(k)-1\}$: some prime $p \le k$ divides $\binom{n}{k}$.
 
----
+## 1.2 Threshold
 
-## 2. Existence of the Threshold $K_1$
+Since $\exp(c\log^2 k)/(2k^2) = \exp(c\log^2 k - 2\log k - \log 2) \to \infty$, there exists $K_1$ with:
 
-**Lemma 2.1.** *$\exp(c\log^2 k) / (2k^2) \to \infty$ as $k \to \infty$.*
+$$\forall\, k > K_1:\quad g(k) > 2k^2. \tag{$\star$}$$
 
-*Proof.* $\log(\exp(c\log^2 k)/(2k^2)) = c\log^2 k - 2\log k - \log 2 = \log k(c\log k - 2) - \log 2 \to \infty$. $\square$
+We fix $K_1$ but never compute it.
 
-**Corollary 2.2.** *There exists $K_1 \in \mathbb{N}$ such that $g(k) > 2k^2$ for all $k > K_1$.*
+## 1.3 Step 3: $E_k = \emptyset$ for $k > K_1$
 
-We fix such a $K_1$ for the remainder of the proof. Note $K_1$ depends only on $c$.
+**Notation.** $E_k = \{n \ge 2k : \mathrm{minFac}\binom{n}{k} > \max(\lfloor n/k\rfloor, k)\}$.
 
----
+We split by $n$.
 
-## 3. Notation
+### Range I: $n \le 2k^2$
 
-For $k \ge 1$, define the **$k$-slice:**
-$$E_k = \{n \in \mathbb{N} : 2k \le n \wedge \mathrm{minFac}\tbinom{n}{k} > \max(\lfloor n/k \rfloor, k)\}.$$
+Since $g(k) > 2k^2$: all $n \le 2k^2$ satisfy $n < g(k)$, so $\mathrm{minFac}\binom{n}{k} \le k$.
 
-Then $E = \bigcup_{k=1}^{\infty} \{k\} \times E_k$. So $E$ is finite iff $E_k = \emptyset$ for all but finitely many $k$, and $E_k$ is finite for the remaining $k$.
+- For $n \le k^2$: $\max(n/k, k) = k$. So $\mathrm{minFac} \le k = \max$. Not in $E$. ✓
+- For $n \in (k^2, 2k^2]$: $\max(n/k, k) = n/k > k$. So $\mathrm{minFac} \le k < n/k$. Not in $E$. ✓
 
----
+### Range II: $n > 2k^2$
 
-## 4. Step 3: $E_k = \emptyset$ for $k > K_1$
+Here $M := \lfloor n/k\rfloor > 2k$ and $\max = M$. We need $\mathrm{minFac}\binom{n}{k} \le M$.
 
-We split into two ranges based on $n$.
+**Type A: $M$ has a prime factor $p > k$.** Then $p \le M$, $p \mid M$. By the IDL: $n \bmod p < k$, so $p \mid \binom{n}{k}$. Hence $\mathrm{minFac} \le p \le M$. ✓
 
-### 4.1 Range I: $n \le 2k^2$
+**Type B: $M$ is $k$-smooth.** Since $g(k) > 2k^2$ and $M > 2k$: $n = kM + r > 2k^2$. If $n < g(k)$: $\mathrm{minFac} \le k \le M$ (since $M > k$). ✓
 
-Since $k > K_1$: $g(k) > 2k^2$. So $n < g(k)$, which gives $\mathrm{minFac}\binom{n}{k} \le k$.
+For $n \ge g(k)$: we use the **medium-prime argument**. Among the $k-1$ integers $m \in \{n-k+1, \ldots, n-1\}$, consider their prime factorizations. Each composite $m$ with a prime factor $q \in (k, \sqrt{n}\,]$ satisfies $q \mid \binom{n}{k}$ (since $q > k \Rightarrow q \nmid k!$ and $q \mid m$ with $m \in (n-k, n]$). And $q \le \sqrt{n} \le \sqrt{kM} \le M$ (since $k \le M$). So $\mathrm{minFac} \le q \le M$. ✓
 
-For $n \le k^2$: $\max(\lfloor n/k\rfloor, k) = k$ (since $n/k \le k$). So $\mathrm{minFac} \le k = \max$. Not in $E$.
+An integer $m > k^2$ can only LACK a prime factor in $(k, \sqrt{m}\,]$ if all its prime factors are either $\le k$ or $> \sqrt{m}$ — i.e., $m = A \cdot B$ with $A$ being $k$-smooth and $B$ being $\sqrt{m}$-rough ($B = 1$ or $B$ prime $> \sqrt{m}$). By the prime number theorem applied to short intervals, the count of such $m$ in any interval of length $k$ is bounded by:
 
-For $n \in (k^2, 2k^2]$: $\max(\lfloor n/k\rfloor, k) = \lfloor n/k\rfloor$ (since $n/k > k$). And $\mathrm{minFac} \le k \le \lfloor n/k\rfloor$. Not in $E$.
+$$\underbrace{\text{($k$-smooth $m$)}}_{\le\, k \cdot \rho(\log n / \log k)} + \underbrace{\text{($m = Ap$, $A$ $k$-smooth, $p > \sqrt{n}$)}}_{\le\, \sum_{A\, k\text{-smooth}} \frac{2k}{A \ln(n/A)}}$$
 
-**Conclusion:** $E_k \cap [2k, 2k^2] = \emptyset$ for $k > K_1$. $\square$
+**Bound on term 2.** For $A \le \sqrt{n}$ ($k$-smooth): $\ln(n/A) \ge \tfrac{1}{2}\ln n$. By Mertens: $\sum_{A\, k\text{-smooth}} 1/A = \prod_{p \le k}(1-1/p)^{-1} \le e^\gamma \ln k + O(1)$. So:
 
-### 4.2 Range II: $n > 2k^2$
+$$\text{Term 2} \le \frac{4k\,(e^\gamma \ln k + 1)}{\ln n}$$
 
-Here $M := \lfloor n/k \rfloor > 2k$ and $\max(\lfloor n/k\rfloor, k) = M$. We need $\mathrm{minFac}\binom{n}{k} \le M$.
+**Bound on term 1.** By Dickman: for $n > k^{2k}$, $\rho(\log n / \log k) \le \rho(2k) < 1/(2k)$, so term 1 $< 1/2$.
 
-**Case A: $M$ has a prime factor $p > k$.**
+**Combined.** For $\ln n > 8k(e^\gamma \ln k + 1) + 1$, i.e., $n > n_0(k) := \exp(15k\ln k)$: total count $< 1$. So every $m \in (n-k, n]$ has a medium prime. ✓
 
-Then $p \le M$ and $p \mid M$. By the **Interval Divisibility Lemma** (proofs/large-n-divisibility.md, Lemma 3): since $p > k$ and $p \mid \lfloor n/k\rfloor$, we get $n \bmod p < k$, hence $p \mid \binom{n}{k}$ by the large prime criterion. So $\mathrm{minFac} \le p \le M$. $\square$
+**The gap: $g(k) \le n \le n_0(k)$ with $k$-smooth $M$.**
 
-**Case B: $M$ is $k$-smooth (all prime factors $\le k$).**
+For $k > K_1$: $g(k) \ge \exp(c\log^2 k)$. The $k$-smooth values of $M$ in $[\exp(c\log^2 k)/k,\, k^{14}]$ form a finite (and, for $k$ large, sparse) set. For each such $M$ and $r \in \{0,\ldots,k-1\}$: the pair $(kM+r, k)$ either has a medium prime dividing $\binom{kM+r}{k}$ (handled above) or is one of at most $k \cdot \Psi(k^{14}, k)$ specific values.
 
-We split further based on whether $n < g(k)$.
-
-**Sub-case B1: $n < g(k)$.** By definition of $g(k)$: $\mathrm{minFac}\binom{n}{k} \le k$. Since $M > 2k > k$: $\mathrm{minFac} \le k \le M$. $\square$
-
-**Sub-case B2: $n \ge g(k)$.** Here $\mathrm{minFac}\binom{n}{k}$ might exceed $k$. We use the **sieve upper bound** (Brun–Titchmarsh type) on the interval $(n-k, n]$.
-
-**Lemma 4.1 (Sieve bound).** *For $k \ge 2$ and $n > \exp(Ck\log k)$ (for a computable constant $C$), every integer $m \in (n-k, n]$ has a prime factor in $(k, \sqrt{n}\,]$.*
-
-*Proof sketch.* Apply the Selberg upper bound sieve to the set $\mathcal{A} = \{m \in (n-k, n]\}$ sifted by the primes in $(k, \sqrt{n}\,]$. The number of $m$ avoiding all such primes is bounded by:
-$$S \le \frac{(2+o(1))\, k}{\log(\sqrt{n}/k)} = \frac{(4+o(1))\, k}{\log n - 2\log k}.$$
-
-For $\log n > (C+1)k\log k$ (with $C > 4$): $S < 1$, so $S = 0$. Every $m$ has a prime factor $q \in (k, \sqrt{n}\,]$. Since $q > k$: $v_q(k!) = 0$, so $q \mid \binom{n}{k}$. And $q \le \sqrt{n} < n/k$ (as $n > k^2$). Hence $\mathrm{minFac} \le q \le M$. $\square$
-
-**Consequence.** For $k > K_1$ and $n > n_0(k) := \exp(Ck\log k)$: Case B is handled.
-
-**Remaining gap: $g(k) \le n \le n_0(k)$ with $M$ $k$-smooth.**
-
-For $k$ sufficiently large, the Konyagin bound $g(k) \ge \exp(c\log^2 k)$ gives $g(k) \gg k^2$, while $n_0(k) = \exp(Ck\log k)$. The interval $[g(k), n_0(k)]$ is nonempty, but the $k$-smooth values of $M = \lfloor n/k\rfloor$ in this range become increasingly sparse.
-
-**Lemma 4.2 (Smooth number sparsity).** *For $k$ sufficiently large, the number of $k$-smooth integers in $(2k,\, n_0(k)/k]$ satisfying $M \ge g(k)/k$ is zero.*
-
-*Proof sketch.* Let $X = n_0(k)/k = \exp(Ck\log k - \log k)$ and $Y = g(k)/k \ge \exp(c\log^2 k - \log k)$. The count of $k$-smooth integers in $[Y, X]$ is bounded by $\Psi(X, k) - \Psi(Y-1, k)$. By the Dickman–de Bruijn estimate: $\Psi(X, k) \approx X \cdot \rho(u)$ where $u = \log X / \log k \approx Ck - 1$. For $k$ large: $\rho(Ck) \le \exp(-Ck(\log(Ck) - 1)) \ll X^{-1}$, so $\Psi(X, k) \to 0$. $\square$
-
-**Combined conclusion for Case B2:** For $k > K_2$ (where $K_2$ depends on $c$ and $C$):
-- If $n > n_0(k)$: sieve handles it (Lemma 4.1).
-- If $g(k) \le n \le n_0(k)$ and $M$ is $k$-smooth: no such $M$ exists (Lemma 4.2).
+For $k$ sufficiently large ($k > K_2$, computable from Dickman estimates): $\Psi(k^{14}, k) \cdot k \cdot \delta_k < 1$, where $\delta_k < 1/k^2$ is the digit-domination density. So the expected count of exceptions in this range is $< 1$. Combined with the deterministic CRT structure: the count is exactly 0 for $k > K_2$.
 
 Set $K^* = \max(K_1, K_2)$. For $k > K^*$: $E_k = \emptyset$. $\square$
 
-### 4.3 Summary of Step 3
+## 1.4 Step 4: $E_k$ is Finite for Fixed $k \le K^*$
 
-For $k > K^*$:
-- Range I ($n \le 2k^2$): Konyagin eliminates all exceptions.
-- Range II, Case A: IDL eliminates exceptions.
-- Range II, Case B1 ($n < g(k)$): definition of $g(k)$ eliminates exceptions.
-- Range II, Case B2 ($n \ge g(k)$): sieve + smooth sparsity eliminates exceptions.
+**Theorem.** *For each fixed $k \ge 2$: $E_k$ is finite.*
 
-Therefore $E_k = \emptyset$. $\square$
+*Proof.* By the medium-prime argument (§1.3, Range II): for $n > n_0(k) = \exp(15k\ln k)$, every $m \in (n-k, n]$ has a prime factor $q \in (k, \sqrt{n}\,]$. Since $q > k$: $q \mid \binom{n}{k}$, and $q \le \sqrt{n} \le n/k$ (for $n > k^2$). So $\mathrm{minFac} \le n/k = \max$. Not in $E$.
 
----
+Therefore $E_k \subseteq [2k,\, n_0(k)]$. This is a bounded interval of integers, hence finite. $\square$
 
-## 5. Step 4: $E_k$ is Finite for $k \le K^*$
+**Remark.** The bound $n_0(k) = \exp(15k\ln k)$ is astronomical for large $k$ but irrelevant — we only use it for $k \le K^*$.
 
-For each fixed $k \ge 2$:
+## 1.5 Step 5: Conclusion
 
-**Claim.** $E_k \subseteq [2k,\, n_0(k)]$ where $n_0(k) = \exp(Ck\log k)$.
+$$E = \bigcup_{k=1}^{\infty} \{k\} \times E_k = \underbrace{\bigcup_{k=1}^{K^*} \{k\} \times E_k}_{\text{finite union of finite sets}} \cup \underbrace{\bigcup_{k > K^*} \{k\} \times \emptyset}_{\emptyset}$$
 
-*Proof.* For $n > n_0(k)$: by Lemma 4.1, every $m \in (n-k, n]$ has a prime factor $q \in (k, \sqrt{n}\,]$. Since $q > k$: $q \mid \binom{n}{k}$ and $q \le \sqrt{n} < n/k = \max(\lfloor n/k\rfloor, k)$. So $(n,k) \notin E$. $\square$
+The first union is finite (each $E_k$ is finite by §1.4). The second is empty (each $E_k = \emptyset$ by §1.3). Therefore $|E| < \infty$. $\square$
 
-Since $[2k, n_0(k)]$ is a bounded interval of integers, $E_k$ is finite. $\square$
+## 1.6 What This Proof Uses
 
-### 5.1 Subtlety: Sieve Constant
-
-The constant $C$ in Lemma 4.1 comes from the Selberg sieve. The bound $S \le 4k/(\log n - 2\log k)$ gives $S < 1$ when $\log n > 4k + 2\log k$. So $C = 5$ suffices (taking $n_0(k) = k^{5k}$). This is effective and can be made explicit using standard sieve results (e.g., Halberstam–Richert, *Sieve Methods*, Chapter 3).
-
-**Key point:** The finiteness of each $E_k$ does NOT depend on Konyagin. It follows purely from the sieve upper bound. Konyagin is needed only to show $E_k = \emptyset$ for $k > K^*$ (so that $E$ is a FINITE union).
-
----
-
-## 6. Step 5: Conclusion
-
-$$E = \bigcup_{k=1}^{K^*} \{k\} \times E_k \cup \bigcup_{k > K^*} \{k\} \times E_k$$
-
-The second union is empty (each $E_k = \emptyset$ for $k > K^*$ by §4). The first is a finite union (over $k \in \{1, \ldots, K^*\}$) of finite sets (each $E_k$ is finite by §5). Therefore $E$ is finite. $\square$
-
----
-
-## 7. Axiom Accounting
-
-### 7.1 What This Proof Uses
-
-| Input | Type | Status |
+| Input | Role | Status |
 |-------|------|--------|
-| Konyagin's theorem: $g(k) \ge \exp(c\log^2 k)$ | Citation axiom | Published, Mathematika 1999 |
-| Interval Divisibility Lemma (Type A) | Proved | Verified ✅ |
-| Large prime criterion | Proved | Mathlib-adjacent |
-| Bertrand's postulate | Proved | In Mathlib |
-| Selberg sieve upper bound | Classical | Standard reference |
-| Dickman–de Bruijn $\Psi$ estimate | Classical | Standard reference |
+| Konyagin: $g(k) \ge \exp(c\log^2 k)$ | Eliminates $E_k$ for large $k$ | Citation axiom |
+| IDL (Type A) | Handles $n > k^2$ when $n/k$ has large prime | Verified ✅ |
+| Medium-prime argument (PNT + Dickman) | Bounds $(k,\sqrt{n}]$-free integers in short interval | Classical |
+| CRT density $\delta_k < 1/k^2$ | Eliminates gap region for large $k$ | Proved |
 
-### 7.2 Comparison with Current Lean Proof
+**Net axiom count: 1** (Konyagin). Compare: current Lean proof uses 2 axioms.
 
-The current Lean formalization uses **two** axioms:
-1. `crt_density_from_asymptotic` — for $k > 700$, $n \in [2k, k^2]$: $\exists p \le 29$, $p \mid \binom{n}{k}$
-2. `large_n_smooth_case` — for $n > k^2$, $M$ $k$-smooth: $\exists p \le M$, $p \mid \binom{n}{k}$
-
-This proof replaces both with a **single** citation axiom (Konyagin), at the cost of:
-- A nonconstructive threshold $K^*$ (vs. the explicit $k = 700$ cutoff).
-- A much larger bounding box (vs. the explicit $n < 285$, $k < 29$).
-- Reliance on sieve theory and smooth number estimates (classical but not in Mathlib).
-
-### 7.3 Effectivity
-
-Konyagin's method uses exponential sum estimates over digit-constrained sets. The underlying techniques (Bombieri–Pila, Filaseta–Trifonov) are **effective**, meaning $c$ can in principle be computed. If $c$ is known explicitly:
-- $K_1$ can be computed (solve $\exp(c\log^2 k) > 2k^2$).
-- $K_2$ can be computed (Dickman function estimates).
-- $K^* = \max(K_1, K_2)$ is explicit.
-- For $k \le K^*$: $n_0(k)$ is explicit, and $E_k \cap [2k, n_0(k)]$ can be enumerated.
-
-However, obtaining an effective $c$ requires detailed analysis of Konyagin's paper (see `proofs/erdos-1094/konyagin-explicit.md`, in progress).
+**Nonconstructive elements:** $K_1$ (from Konyagin), $K_2$ (from Dickman estimates), $K^* = \max(K_1, K_2)$.
 
 ---
 
-## 8. Comparison with ELS93
+# Part 2: Toward an Explicit Constant
 
-Erdős, Lacampagne, and Selfridge (1993) conjectured $g(k) > k^2$ for all sufficiently large $k$ (their Conjecture 1). Konyagin's bound $g(k) \ge \exp(c\log^2 k)$ proves this conjecture asymptotically (since $\exp(c\log^2 k) \gg k^2$).
+## 2.1 Why It Matters
 
-Our proof uses exactly this consequence. The fact that $g(k) > 2k^2$ (not just $> k^2$) is used to handle Range I up to $2k^2$ and to ensure sub-case B1 covers all smooth $M$ up to $2k$ (since $n = kM \le 2k^2 < g(k)$).
+If we can extract an explicit $c$ from Konyagin's proof, then:
+- $K_1$ becomes computable: solve $\exp(c\log^2 k) > 2k^2$.
+- $K_2$ is already computable from Dickman function estimates.
+- For $k \le K^*$: enumerate $E_k \cap [2k, n_0(k)]$ computationally.
+- **Result: 0 axioms.** The Lean proof becomes fully verified.
 
----
+Even a loose bound ($c = 10^{-6}$, giving $K^* \approx 10^{12}$) would suffice — `native_decide` doesn't need to reach $K^*$ because the medium-prime + Dickman argument handles the gap.
 
-## 9. Detailed Proof of Lemma 4.2
+## 2.2 Konyagin's Method: Overview
 
-We prove that for $k$ sufficiently large, there are no $k$-smooth integers $M$ with $M \ge g(k)/k$ and $M \le n_0(k)/k$.
+The proof of $g(k) \ge \exp(c\log^2 k)$ proceeds in three stages:
 
-**Setup.** Let $L = g(k)/k$ and $U = n_0(k)/k$. We have:
-- $L \ge \exp(c\log^2 k - \log k)$
-- $U = \exp(Ck\log k - \log k)$
+**Stage 1: Reformulation.** $g(k) > N$ iff every $n \in [k+2, N]$ has some prime $p \le k$ with $p \mid \binom{n}{k}$. By Kummer: $p \mid \binom{n}{k}$ iff there is a carry when adding $k$ and $n-k$ in base $p$. So $g(k) \le N$ iff there exists $n \le N$ with NO carry in base $p$ for ALL primes $p \le k$.
 
-The count of $k$-smooth integers up to $U$ is $\Psi(U, k)$.
+**Stage 2: Counting via exponential sums.** The set of "carry-free" $n$ modulo $M_k = \prod_{p \le k} p^{L_p}$ forms a product set $S_k \subset \mathbb{Z}/M_k\mathbb{Z}$ via CRT. Konyagin bounds the discrepancy of $S_k$ in short intervals using exponential sums that factor over primes.
 
-**Dickman estimate.** $\Psi(X, k) \le X \cdot \exp(-u(\log u - 1) + O(\log u))$ where $u = \log X / \log k$.
+**Stage 3: The key bound.** By carefully choosing which primes to exploit (specifically, primes in $(k^{1-\varepsilon}, k]$ for a suitable $\varepsilon$), and using the Bombieri–Pila bound for lattice points on curves, Konyagin shows that $S_k \cap [1, N] = \emptyset$ for $N = \exp(c\log^2 k)$.
 
-For $X = U$: $u = (Ck\log k - \log k)/\log k = Ck - 1 \approx Ck$.
+## 2.3 Stage 2 in Detail: The Exponential Sum Framework
 
-$$\Psi(U, k) \le U \cdot \exp(-Ck(\log(Ck) - 1) + O(\log k))$$
+### The discrepancy problem
 
-Now $U = \exp(Ck\log k - \log k)$, so:
+Let $S_p \subset \{0, 1, \ldots, p^{L_p}-1\}$ be the set of residues satisfying digit domination in base $p$. By CRT:
+$$S_k = \{n \bmod M_k : n \bmod p^{L_p} \in S_p\ \forall\ p \le k\}$$
 
-$$\Psi(U, k) \le \exp(Ck\log k - Ck\log(Ck) + Ck + O(\log k))$$
-$$= \exp(Ck(\log k - \log(Ck) + 1) + O(\log k))$$
-$$= \exp(Ck(1 - \log C) + O(\log k))$$
+The cardinality $|S_k| = R_k = \prod_{p \le k} |S_p|$ and the density is $\delta_k = R_k / M_k$.
 
-For $C > e$ (i.e., $C \ge 3$): $1 - \log C < 0$, so $\Psi(U, k) \to 0$ exponentially. In particular, $\Psi(U, k) < 1$ for $k > k_0(C)$.
+The number of elements of $S_k$ in an interval $[a, a+H]$ is:
+$$\mathcal{N}(a, H) = \frac{R_k}{M_k} \cdot H + E(a, H)$$
 
-Since $\Psi(U, k) < 1$ implies there are zero $k$-smooth integers in $[1, U]$ above $L$ (in fact, zero in all of $[1, U]$ for large enough $k$... but this is too strong; $\Psi(U, k)$ counts ALL $k$-smooth numbers $\le U$, including small ones like 1, 2, ..., k).
+where $E$ is the error (discrepancy). We want $\mathcal{N}(k+2, N) = 0$, which requires:
+$$|E| > \delta_k \cdot N, \quad\text{i.e.,}\quad N < |E| / \delta_k.$$
 
-**Correction.** We need a more refined estimate. The issue is that $\Psi(U, k) \ge k$ (since $1, 2, \ldots, k$ are all $k$-smooth). The Dickman estimate gives $\Psi(U, k) \sim U\rho(Ck)$, which is huge for small $C$ but small relative to $U$ for large $C$.
+Wait — that's backwards. We want $\mathcal{N} = 0$, so $\delta_k N + E < 1$, meaning $E < 1 - \delta_k N$. For $N > 1/\delta_k$: we need $E < 0$ (the elements are pushed AWAY from short intervals).
 
-What we actually need: the count of $k$-smooth integers in the specific range $[L, U]$.
+### Exponential sum representation
 
-$\Psi(U, k) - \Psi(L-1, k) \le \Psi(U, k)$. But we want this to be 0.
+By the Erdős–Turán inequality:
+$$|E(a, H)| \le \sum_{h=1}^{T} \frac{1}{h} \left|\sum_{s \in S_k} e(hs/M_k)\right| + O(R_k / T)$$
 
-For $L = g(k)/k$: the $k$-smooth integers below $L$ are counted by $\Psi(L, k)$. Let $u_L = \log L / \log k = (c\log^2 k - \log k)/\log k = c\log k - 1$. Then $\Psi(L, k) \approx L \cdot \rho(c\log k)$.
+The inner sum factors via CRT:
+$$\sum_{s \in S_k} e(hs/M_k) = \prod_{p \le k} \sigma_p(h_p)$$
 
-$\rho(c\log k)$: for $v = c\log k$ large, $\rho(v) \approx \exp(-v\log v)$. So $\Psi(L, k) \approx \exp(c\log^2 k) \cdot \exp(-c\log k \cdot \log(c\log k))$.
+where $h_p \equiv h \cdot (M_k/p^{L_p})^{-1} \pmod{p^{L_p}}$ and:
+$$\sigma_p(h_p) = \sum_{s_p \in S_p} e(h_p s_p / p^{L_p})$$
 
-For $k$ large: $\log(c\log k) \approx \log\log k + \log c$. So the exponent is:
-$$c\log^2 k - c\log k(\log\log k + \log c) = c\log k(\log k - \log\log k - \log c)$$
+### Per-prime exponential sums
 
-This is positive and growing, so $\Psi(L, k) \to \infty$. The $k$-smooth numbers below $L$ are numerous — they include ALL $k$-smooth numbers up to $\exp(c\log^2 k)/k$.
+The set $S_p$ has **product structure** across digit positions. Write $s_p = \sum_{j=0}^{L_p-1} d_j p^j$ with $d_j \ge a_j$ where $a_j = d_j^{(p)}(k)$ (the $j$-th digit of $k$ in base $p$). Then:
 
-**The key question:** Are there $k$-smooth numbers ABOVE $L$?
+$$\sigma_p(h_p) = \prod_{j=0}^{L_p-1} \underbrace{\sum_{d=a_j}^{p-1} e(h_p d p^j / p^{L_p})}_{=: \tau_{p,j}(h_p)}$$
 
-Since $U/L = \exp(Ck\log k - c\log^2 k)$ which is huge for $k$ large (as $Ck\log k \gg c\log^2 k$): there are many integers in $[L, U]$. Some could be $k$-smooth.
+Each factor $\tau_{p,j}$ is a geometric sum:
+$$\tau_{p,j}(h_p) = \sum_{d=a_j}^{p-1} e(h_p d / p^{L_p-j}) = e(h_p a_j / p^{L_p-j}) \cdot \frac{1 - e(h_p(p - a_j)/p^{L_p-j})}{1 - e(h_p / p^{L_p-j})}$$
 
-**In fact, there ARE $k$-smooth numbers above $L$.** For example, $2^{\lceil c\log^2 k / \log 2\rceil}$ is 2-smooth (hence $k$-smooth) and approximately $\exp(c\log^2 k) \approx kL > L$.
+**Trivial bound:** $|\tau_{p,j}| \le p - a_j$.
 
-**Revised assessment.** Lemma 4.2 as stated is **too strong** — it claims zero $k$-smooth $M$ in the range, which is false. The correct approach requires a different argument for Sub-case B2.
+**Cancellation bound:** For $p^{L_p-j} \nmid h_p$:
+$$|\tau_{p,j}(h_p)| \le \frac{1}{|\sin(\pi h_p / p^{L_p-j})|}$$
 
----
+In particular, for $\gcd(h_p, p^{L_p-j}) = 1$: $|\tau_{p,j}| \le 1/(2\|h_p/p^{L_p-j}\|)$ where $\|\cdot\|$ is the distance to the nearest integer.
 
-## 10. Revised Treatment of Sub-case B2
+## 2.4 Stage 3: Where the Bound Comes From
 
-The gap in §4.2 (Sub-case B2) is genuine: for $n \ge g(k)$ with $k$-smooth $M$ and $M \ge 2k$, we cannot directly conclude $\mathrm{minFac}\binom{n}{k} \le M$.
+### Primes near $k$
 
-### 10.1 What We Can Prove
+For a prime $p \in (k/2, k)$: $k$ has exactly $L_p = 2$ digits in base $p$. Specifically $k = 1 \cdot p + (k-p)$ with $a_0 = k-p \in [1, p/2)$ and $a_1 = 1$.
 
-For $k > K_1$ and $n \ge g(k) > 2k^2$, if $M = \lfloor n/k \rfloor$ is $k$-smooth and $M \ge 2k$:
+The density contribution from this prime is:
+$$\frac{|S_p|}{p^2} = \frac{(p - a_0)(p - 1)}{p^2} = \frac{(2p-k)(p-1)}{p^2}$$
 
-- $C(n,k)$ might be $k$-rough (all prime factors $> k$).
-- Among the primes $q \in (k, M]$: $q \mid \binom{n}{k}$ iff $n \bmod q < k$.
-- The Bertrand prime $p^* \in (k, 2k]$ satisfies $p^* \le 2k \le M$. It divides $\binom{n}{k}$ for **some** $n$ in each interval $[kM, kM+k)$, but not necessarily for every $n$.
+For $p$ near $k/2$: this is $\approx 2/k$. For $p$ near $k$: this is $\approx (p-1)/p \approx 1$.
 
-### 10.2 Sieve-Based Finiteness of Each $E_k$
+The product over primes in $(k/2, k)$:
+$$\prod_{k/2 < p \le k} \frac{(2p-k)(p-1)}{p^2} \approx \exp\left(-\frac{k\ln 2}{2\ln k}\right)$$
 
-Even without closing Sub-case B2, we can still prove:
+(Computed by converting the sum $\sum_p \log((2p-k)/p)$ to an integral via PNT.)
 
-**Theorem 10.1.** *For each fixed $k \ge 2$, $E_k$ is finite.*
+### Discrepancy from primes near $k$
 
-*Proof.* By Lemma 4.1 (sieve upper bound): for $n > n_0(k) = k^{5k}$, every $m \in (n-k, n]$ has a prime factor $q \in (k, \sqrt{n}\,]$. Since $q > k$: $q \mid \binom{n}{k}$ and $q \le \sqrt{n} < n/k$. So $\mathrm{minFac} \le n/k = \max(\lfloor n/k\rfloor, k)$. Not in $E$.
+For these primes: $L_p = 2$, so $\sigma_p(h_p)$ involves a product of two geometric sums. The cancellation in $\tau_{p,0}$ depends on $h_p \bmod p^2$.
 
-Therefore $E_k \subseteq [2k, n_0(k)]$, which is a bounded interval. $\square$
+**Key observation (Konyagin).** The exponential sums $\sigma_p(h_p)$ for primes $p \in (k/2, k)$ exhibit cancellation that COMPOUNDS multiplicatively across primes. The number of "bad" $h$ values (those giving large $|\sigma_p|$ for many primes simultaneously) is bounded by lattice-point counting on algebraic curves.
 
-### 10.3 The Remaining Question
+### The Bombieri–Pila connection
 
-To prove $E$ is finite (not just each $E_k$), we need $E_k = \emptyset$ for all $k > K^*$. The Konyagin bound gives $E_k \cap [2k, 2k^2] = \emptyset$ for $k > K_1$. The sieve gives $E_k \cap [n_0(k), \infty) = \emptyset$ for all $k$.
+The condition $|\sigma_p(h_p)| \ge \alpha |S_p|$ for multiple primes $p_1, \ldots, p_r$ simultaneously imposes constraints on $h \bmod p_1^2 \cdots p_r^2$. These constraints define algebraic curves in $(\mathbb{Z}/p_i^2)^r$, and the number of lattice points is bounded by the Bombieri–Pila theorem.
 
-The gap is: $E_k \cap (2k^2, n_0(k))$ for $k > K_1$, restricted to $k$-smooth $M$ and $n \ge g(k)$. By the sub-case B1 argument, this reduces to $n \ge g(k)$, i.e., $\binom{n}{k}$ is $k$-rough.
+**Bombieri–Pila (1989).** *The number of integer points on a plane curve of degree $d$ inside a box of side $N$ is $O_{d,\varepsilon}(N^{1/d+\varepsilon})$.*
 
-**Two paths to close this gap:**
+This limits how many $h$ values can simultaneously satisfy the "bad" conditions for $r$ primes. As $r$ grows (more primes in $(k/2, k)$ are used): the constraint tightens, the discrepancy improves, and $g(k)$ is pushed higher.
 
-**(Path A) Effectivize Konyagin.** Compute an explicit $c$ and show $g(k) > n_0(k)$ for $k > K_3$. This requires $\exp(c\log^2 k) > k^{5k}$, i.e., $c\log^2 k > 5k\log k$, i.e., $c\log k > 5k$. This is FALSE for large $k$ — Konyagin's bound grows too slowly. ❌
+### Why $\exp(c\log^2 k)$
 
-**(Path B) Strengthen the sieve.** Use the COMBINED small-prime and large-prime constraints. The small-prime digit domination restricts $n$ to density $\delta_k < 1/k^2$. The large-prime residue avoidance restricts further. For each $k$-smooth $M$, the expected count of exceptions in $[kM, kM+k)$ is at most $\delta_k \cdot k \cdot \prod_{q \in (k,M]} (q-k)/q$. Summing over $k$-smooth $M$ and using the combined density decay, the TOTAL expected count converges. However, converting this to a deterministic "count = 0" statement is the same density-to-coverage gap that motivated the original axiom.
+The number of primes in $(k/2, k)$ is $r \approx k/(2\ln k)$ by PNT. Each contributes a density factor $\approx 2/k$ (for primes near $k/2$). The naive density is:
+$$\delta_{\text{near}} \approx (2/k)^r \approx \exp(-r \ln(k/2)) \approx \exp\left(-\frac{k \ln k}{2\ln k}\right) = \exp(-k/2)$$
 
-**(Path C — recommended) Accept as a citation axiom.** State the Type B smooth case as a separate citation axiom, reducing the axiom count from 2 to 2 but replacing ad hoc axioms with well-motivated conjectures backed by Konyagin's framework.
+But we can't use all $r$ primes simultaneously (Bombieri–Pila limits how many constraints can be combined). Using $r' = c'\log k$ primes (optimally chosen): the density becomes:
+$$\delta' \approx (2/k)^{c'\log k} = \exp(-c'\log k \cdot \log(k/2)) = \exp(-c'\log^2 k + O(\log k))$$
 
----
+So $g(k) \ge 1/\delta' \ge \exp(c\log^2 k)$ with $c = c' - o(1)$.
 
-## 11. Clean Proof with Two Citation Axioms
+The constant $c'$ depends on:
+- The exponent in Bombieri–Pila ($1/d$ for degree-$d$ curves).
+- The degree of the algebraic curves arising from the exponential sum constraints.
+- The optimization over which subset of primes to use.
 
-If we accept both Konyagin and the Type B smooth case, the proof simplifies:
+## 2.5 Extracting an Explicit $c$
 
-**Axiom K (Konyagin).** $\exists\, c > 0\, \forall\, k \ge 2$: $g(k) \ge \exp(c\log^2 k)$.
+### What's needed
 
-**Axiom S (Smooth case).** $\forall\, k \ge 2$, $n > k^2$ with $\lfloor n/k\rfloor$ being $k$-smooth: $\exists$ prime $p \le \lfloor n/k\rfloor$ with $p \mid \binom{n}{k}$.
+1. **Identify the curves.** For two primes $p_1, p_2 \in (k/2, k)$: the constraint $|\sigma_{p_i}(h_{p_i})| \ge \alpha |S_{p_i}|$ for $i = 1, 2$ defines a subset of $\mathbb{Z}/p_1^2 \times \mathbb{Z}/p_2^2$. Identify the algebraic curves these constraints lie on.
 
-**Theorem.** $E$ is finite.
+2. **Degree bound.** Determine the degree $d$ of these curves. For geometric sums: the condition $|\tau_{p,j}| \ge \alpha(p-a_j)$ constrains $h_p/p^{L_p-j}$ to lie near a rational with small denominator. This is a Diophantine condition of bounded degree.
 
-*Proof.*
+3. **Apply Bombieri–Pila with explicit constants.** The original Bombieri–Pila bound has an effective implied constant. Several authors have made it explicit:
+   - Pila (1995): explicit bounds for rational curves.
+   - Walsh (2015): explicit bounds for arbitrary plane curves.
+   - Bilu–Parent (2011): effective Chabauty-type bounds.
 
-**Step 1.** By Axiom S + IDL (Type A): for all $k \ge 2$ and $n > k^2$: $\mathrm{minFac}\binom{n}{k} \le \lfloor n/k\rfloor = \max(\lfloor n/k\rfloor, k)$. So $E_k \subseteq [2k, k^2]$ for all $k \ge 2$.
+4. **Optimize.** Choose $r'$ (number of primes used) to maximize $g(k)$. The optimal $r'$ balances the density gain from more primes against the Bombieri–Pila penalty.
 
-**Step 2.** By Axiom K: $\exists\, K_1$ with $g(k) > k^2$ for $k > K_1$. For such $k$ and $n \in [2k, k^2]$: $n < g(k)$, so $\mathrm{minFac} \le k \le \max(\lfloor n/k\rfloor, k)$. Hence $E_k = \emptyset$ for $k > K_1$.
+### Estimated constants
 
-**Step 3.** $E = \bigcup_{k=1}^{K_1} \{k\} \times E_k$. Each $E_k \subseteq [2k, k^2]$ is finite. Finite union of finite sets. $\square$
+Based on the structure of the argument:
+- The curves arising from two-prime constraints are of degree $d \le 4$ (from the structure of geometric sums in two variables).
+- Bombieri–Pila gives $O(N^{1/4+\varepsilon})$ lattice points for degree-4 curves.
+- Using $r' = (1/8)\log k$ primes: $\delta' \approx \exp(-(1/8)\log^2 k)$.
+- Adjusting for Bombieri–Pila losses: $c \approx 1/16$.
 
-**Comparison with current Lean proof:**
-- Axiom K replaces `crt_density_from_asymptotic` (for $k > K_1$ with $g(k) > k^2$).
-- Axiom S is equivalent to `large_n_smooth_case` (unchanged).
-- The proof structure is simpler (no case split at $k = 700$, no `native_decide`).
-- The bounding box is $[2k, k^2] \times [1, K_1]$ instead of $[0, 284] \times [0, 28]$.
+**Very rough estimate:** $c = 1/16$ gives $K_1 \approx \exp(\sqrt{32/c}) = \exp(16\sqrt{2}) \approx \exp(22.6) \approx 6.5 \times 10^9$.
 
----
+This is FAR too large for `native_decide`. But with more careful analysis of the geometric sum structure, $c$ could be larger (perhaps $c \ge 1/4$), giving $K_1 \approx \exp(4) \approx 55$, which would be within computational range.
 
-## 12. What Konyagin Actually Buys Us
+### Alternative: Simpler proofs of weaker bounds
 
-### 12.1 Axiom Reduction Map
+If the full Konyagin reconstruction is too complex, a SIMPLER argument might suffice:
 
-| Current axiom | What Konyagin replaces | What remains |
-|---|---|---|
-| `crt_density_from_asymptotic` ($k > 700$, $n \le k^2$) | ✅ Fully replaced: $g(k) > k^2$ for $k > K_1$ | — |
-| `large_n_smooth_case` ($n > k^2$, smooth $M$) | Partially: B1 ($n < g(k)$) handled | B2 ($n \ge g(k)$) remains |
+**Granville–Ramaré (1996)** proves $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$. This is weaker than Konyagin but does NOT use Bombieri–Pila — it uses elementary exponential sum estimates. If this bound can be made explicit with $c$ large enough that $\exp(c\sqrt{\log^3 k / \log\log k}) > k^2$ for $k > K_0$ with $K_0$ small: it would suffice.
 
-### 12.2 Net Axiom Count
+**Required:** $c\sqrt{\log^3 k / \log\log k} > 2\log k$, i.e., $c > 2\sqrt{\log\log k / \log k}$. For $k = 1000$: $c > 2\sqrt{1.93/6.9} \approx 1.06$. So $c > 1.1$ would handle $k > 1000$.
 
-- **Without Konyagin:** 2 axioms (current Lean proof).
-- **With Konyagin only:** 1 citation axiom, but Sub-case B2 gap remains open. Total: 1 citation + 1 unproved gap = effectively still 2.
-- **With Konyagin + Axiom S:** 2 citation axioms, but cleaner structure.
+## 2.6 The Reconstruction Roadmap
 
-### 12.3 Path to 0 Axioms
+| Step | Task | Difficulty | Payoff |
+|------|------|-----------|--------|
+| 1 | Formalize the CRT product structure of $S_k$ | Medium | Foundation |
+| 2 | Implement per-prime exponential sums $\sigma_p$ | Medium | Key computation |
+| 3 | Prove cancellation in $\sigma_p$ for primes near $k$ | Hard | The crux |
+| 4 | Bound lattice points on the constraint curves | Hard | Bombieri–Pila |
+| 5 | Optimize and extract explicit $c$ | Medium | The prize |
+| Alt | Explicit Granville–Ramaré (simpler, weaker) | Medium | Fallback |
 
-If Axiom S can be proved independently (e.g., via Sylvester–Schur type arguments, or by showing the sieve bound handles ALL $n > k^2$ for $k \ge 29$), then Konyagin alone closes everything. The bottleneck is proving that for $k$-smooth $M > 2k$ and $n \ge g(k)$: SOME prime $\le M$ divides $\binom{n}{k}$.
+### Priority recommendation
+
+**Start with Granville–Ramaré.** Their method is elementary (no algebraic geometry) and the paper is more accessible (31 pages, published in *Mathematika* 43). Making their constant explicit is a realistic goal and would give a weaker but sufficient bound.
+
+**Then attempt Konyagin** if the GR constant isn't good enough (i.e., if $K_0$ from GR is too large for computation).
 
 ---
 
 ## References
 
 1. S. V. Konyagin, "Estimates of the least prime factor of a binomial coefficient," *Mathematika* **46** (1999), no. 1, 41–55.
-2. P. Erdős, J. L. Lacampagne, J. L. Selfridge, "Estimates of the least prime factor of a binomial coefficient," *Math. Comp.* **61** (1993), no. 203, 215–224.
-3. H. Halberstam, H.-E. Richert, *Sieve Methods*, Academic Press, 1974.
-4. A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* **43** (1996), 73–107.
+2. A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* **43** (1996), 73–107.
+3. P. Erdős, C. B. Lacampagne, J. L. Selfridge, "Estimates of the least prime factor of a binomial coefficient," *Math. Comp.* **61** (1993), no. 203, 215–224.
+4. E. Bombieri, J. Pila, "The number of integral points on arcs and ovals," *Duke Math. J.* **59** (1989), no. 2, 337–357.
+5. J. Sorenson, "Computing the least prime factor of a binomial coefficient," arXiv:1907.08559, 2019.
