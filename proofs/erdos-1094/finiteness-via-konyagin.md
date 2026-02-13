@@ -149,6 +149,8 @@ If we can extract an explicit $c$ from Konyagin's proof, then:
 
 **Note:** The smooth-case axiom (`large_n_smooth_case`) remains regardless of $c$. It handles $n > k^2$ with $k$-smooth $M$ — a structural requirement independent of $g(k)$.
 
+**Empirical evidence:** From known $g(k)$ values (OEIS A003458, Sorenson 2019), the empirical constant $c_{\text{emp}}(k) = \log g(k) / \log^2 k$ ranges from $0.51$ (at $k = 28$, the last known exception) to $1.6$. For $k \ge 29$: $c_{\text{emp}} \ge 0.67$, giving $K_0 \le 20$. Even a theoretical $c = 0.5$ would give $K_0 \approx 75$, well within `native_decide` range.
+
 ## 2.2 Konyagin's Method: Overview
 
 The proof of $g(k) \ge \exp(c\log^2 k)$ proceeds in three stages:
