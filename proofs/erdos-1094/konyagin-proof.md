@@ -173,6 +173,28 @@ Computed for $n \in [2k, k^2]$ with the first $r$ primes (sorted by $c_i$):
 
 **The lattice point interpretation:** The CRT map $n \mapsto (n \bmod p_1, \ldots, n \bmod p_r)$ sends $[2k, k^2]$ to a LINE SEGMENT in the torus $(\mathbb{Z}/p_1) \times \cdots \times (\mathbb{Z}/p_r)$. The "bad" region is a product set $S_1 \times \cdots \times S_r$ with $|S_i| = c_i$. Proving the line misses the product set requires lattice-point counting beyond standard Fourier analysis.
 
+### §7.8. Additive Character Reformulation (mod $p$, not mod $p^2$)
+
+**Key insight:** The Kummer condition for $p \in (k/2, k)$ depends only on $n \bmod p$ (specifically: $p \mid \binom{n}{k}$ iff $n \bmod p \ge c$). So the counting problem lives in $\prod(\mathbb{Z}/p_i)$ with modulus $M' = \prod p_i$, NOT in $\prod(\mathbb{Z}/p_i^2)$ with modulus $M = \prod p_i^2$.
+
+Using additive characters of $\mathbb{Z}/p_i$:
+$$\mathbf{1}[n \bmod p_i < c_i] = \frac{c_i}{p_i} + \frac{1}{p_i}\sum_{a_i=1}^{p_i-1} G_i(a_i) \cdot e(a_i n/p_i)$$
+where $G_i(a_i) = \sum_{j=0}^{c_i-1} e(-a_i j/p_i)$ is a geometric sum with $|G_i| \le \min(c_i, 1/|2\sin(\pi a_i/p_i)|)$.
+
+The error decomposes over subsets $S \subseteq \{1,\ldots,r\}$:
+$$E = \sum_{S \ne \emptyset} E_S, \qquad E_S = \prod_{i \notin S} \frac{c_i}{p_i} \cdot \sum_{\mathbf{a}_S} \prod_{i \in S} \frac{G_i(a_i)}{p_i} \cdot D_N\!\left(\sum_{i \in S} \frac{a_i}{p_i}\right)$$
+
+By Parseval: $\sum_{a_i} |G_i(a_i)/p_i|^2 = c_i(p_i-c_i)/p_i^2 \approx c_i/p_i$.
+
+**CS bound (mod $p$):** $|E| \le \sqrt{\prod c_i \cdot N}$.
+
+**Comparison (k=200, r=4):**
+$$\underbrace{\sqrt{NR} \approx 1.2 \times 10^8}_{\text{CS mod }p^2} \quad\gg\quad \underbrace{\sqrt{\prod c_i \cdot N} \approx 10{,}943}_{\text{CS mod }p} \quad\gg\quad \underbrace{|E| \approx 1}_{\text{actual}}$$
+
+The mod-$p$ reformulation improves bounds by $\sqrt{\prod(p_i-1)} \approx (k/2)^{r/2}$, but the gap remains $\sim 10^4\times$.
+
+**Multiplicative characters and Kloosterman:** Expanding the indicator via Dirichlet characters $\chi$ mod $M'$, the Pólya–Vinogradov bound gives $|\sum_{n \in I} \chi(n)| \le \sqrt{M'}\log M'$. Combined with the character coefficients via CS: same $\sqrt{\prod c_i \cdot N}$ bound. Burgess improvements require $N \ll M'^{1/4}$ (i.e., $r \ge 9$), and even then, the character expansion coefficients overwhelm the savings. Kloosterman sums do not arise because the bilinear kernel $D_N(\alpha/p_1 + \beta/p_2)$ is *linear* in $(\alpha, \beta)$, not rational ($\alpha + \alpha^{-1}$).
+
 ### §8. Where Every Standard Technique Fails — and What Is Needed
 
 This section provides a precise inventory of all attempted error bounds, explains exactly where and why each fails, and characterises the gap that Konyagin's deep machinery (Bombieri–Pila) must bridge.
@@ -248,21 +270,33 @@ Applied to the counting problem: $|\text{count}| \le \delta N + O(\sqrt{N})$ (es
 
 ---
 
-**Technique 7: $r$-fold amplified sublattice (§7.6).**
+**Technique 7: Additive/multiplicative characters mod $p$ (§7.8).**
+
+Reformulate the problem mod $M' = \prod p_i$ (not $M = \prod p_i^2$). The CS bound improves to $\sqrt{\prod c_i \cdot N}$, a factor of $(k/2)^{r/2}$ better than mod-$p^2$. For $k=200$, $r=4$: bound $= 10{,}943$ vs $118 \times 10^6$. But this is STILL $\sim 10^4\times$ above the actual error.
+
+Multiplicative character expansion + Pólya–Vinogradov gives the SAME bound via a different route. Burgess bounds help only for $r \ge 9$ (when $N \ll M'^{1/4}$), and the savings are offset by the number of character terms ($\sim M'$). Kloosterman sums do not arise (kernel is linear, not rational).
+
+**Verdict:** Best standard bound, but still $10^4\times$ too large. **Fails.**
+
+---
+
+**Technique 8: $r$-fold amplified sublattice (§7.6).**
 
 Restrict the exponential sum to $h$ on the sublattice $M' \mid h$ (all primes amplified). By CRT factoring, this sum equals $M' \cdot \text{count}$. So CS on the sublattice just recovers CS on the count.
 
 **Verdict:** Circular — no new information. **Fails.**
 
+(Eight techniques tested. The best — mod-$p$ CS — reduces the gap to $\sim 10^4$, but none achieve $< 1$.)
+
 #### §8.3. Why Standard Methods Fail: The Cancellation Gap
 
 All seven techniques share a common failure mode: they bound the **absolute sum** $\sum|\sigma(h)||c(h)|$ when the actual quantity is the **signed sum** $\sum \sigma(h)\overline{c(h)}$. The ratio of absolute to signed is the **cancellation factor**:
 
-| $k$ | $r$ | $\delta N$ | Actual $|E|$ | $\sqrt{NR}$ | Cancellation factor |
-|-----|-----|-----------|-------------|------------|---------------------|
-| 200 | 4 | 0.99 | 0.99 | $1.2 \times 10^8$ | $1.2 \times 10^8$ |
-| 300 | 5 | 0.91 | 0.91 | $1.0 \times 10^{11}$ | $1.1 \times 10^{11}$ |
-| 500 | 5 | 0.23 | 0.23 | $5.9 \times 10^{11}$ | $2.5 \times 10^{12}$ |
+| $k$ | $r$ | $\delta N$ | Actual $|E|$ | $\sqrt{NR}$ (mod $p^2$) | $\sqrt{\prod c_i \cdot N}$ (mod $p$) | Gap (best) |
+|-----|-----|-----------|-------------|---------------------|--------------------------------------|-----------|
+| 200 | 4 | 0.99 | 0.99 | $1.2 \times 10^8$ | $10{,}943$ | $11{,}000\times$ |
+| 300 | 5 | 0.91 | 0.91 | $1.0 \times 10^{11}$ | $319{,}000$ | $350{,}000\times$ |
+| 500 | 5 | 0.23 | 0.23 | $5.9 \times 10^{11}$ | $538{,}000$ | $2{,}300{,}000\times$ |
 
 The signed sum achieves $10^8$–$10^{12}\times$ cancellation. This is not accidental: the phases of $\sigma(h)$ and $c(h)$ are **systematically misaligned** for most $h$, producing destructive interference. Capturing this interference requires structural information about the exponential sum — specifically, how the CRT line interacts with the Dirichlet kernel oscillations across the full torus.
 
@@ -345,8 +379,9 @@ However, BP is most powerful for curves of degree $\ge 2$. For *lines*, the latt
 | §7.1–7.4: Resonance curves | Complete ✅ (degree-4 curves identified) |
 | §7.5: First-zero truncation | ✅ Valid but captures only ~0.005% of error |
 | §7.6: Amplified sublattice | ✅ Proved circular (encodes the count) |
-| §7.7: Numerical verification | ✅ All 7 standard bounds fail by $10^5$–$10^{12}\times$ |
-| §8.1–8.3: Error bound inventory | Complete ✅ (7 techniques, all fail, reasons documented) |
+| §7.7: Numerical verification | ✅ All standard bounds fail by $10^4$–$10^{12}\times$ |
+| §7.8: Additive character reformulation | ✅ Best bound: $\sqrt{\prod c_i \cdot N}$ (gap $\sim 10^4$) |
+| §8.1–8.3: Error bound inventory | Complete ✅ (8 techniques, all fail, reasons documented) |
 | §8.4–8.5: What BP provides | Complete ✅ (geometric picture, lattice point framework) |
 | §8.6: Honest assessment | Complete ✅ |
 | BP application itself | **Gap** — requires Konyagin's paper [2] |
