@@ -226,6 +226,24 @@ theorem satisfies_consistency (params : Params V) (c : ℕ → V.Cfg)
       evalCNF_flatMap_true fun k _ =>
         stkLen_block_sat c params i k (h_depth i (by rw [mem_range] at hi; omega) k)
 
+/-! ## Step bridge lemmas (used by transition and frame proofs) -/
+
+private theorem step_getD_running_v2 {cfg : V.Cfg} {lbl : V.Λ} (h : cfg.l = some lbl) :
+    (V.step cfg).getD cfg = TM2.stepAux (V.m lbl) cfg.var cfg.stk := by
+  cases cfg with | mk l v S =>
+    simp at h; subst h
+    show (@FinTM2.step V { l := some lbl, var := v, stk := S }).getD { l := some lbl, var := v, stk := S }
+      = TM2.stepAux (V.m lbl) v S
+    simp [FinTM2.step, TM2.step]; congr 1; all_goals exact Subsingleton.elim _ _
+
+private theorem step_getD_halted_v2 {cfg : V.Cfg} (h : cfg.l = none) :
+    (V.step cfg).getD cfg = cfg := by
+  cases cfg with | mk l v S =>
+    simp at h; subst h
+    show (@FinTM2.step V { l := none, var := v, stk := S }).getD { l := none, var := v, stk := S }
+      = { l := none, var := v, stk := S }
+    simp [FinTM2.step, TM2.step]
+
 /-! ## Proved: Transition constraints
 
 The trace satisfies transition constraints. For each clause in the transition block
