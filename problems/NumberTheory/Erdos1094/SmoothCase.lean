@@ -126,4 +126,46 @@ theorem smooth_case_near_prime_nondivisor (n k s q : ℕ) (hk : 2 ≤ k)
   have hp_le_s : p ≤ s := le_trans (Nat.le_of_dvd hs (dvd_trans (dvd_pow_self p (by omega : e ≠ 0)) hpe_s)) le_rfl
   exact ⟨p, hp, le_trans (by omega : p ≤ k) (k_le_div_of_sq_lt n k hk hn), h_dvd⟩
 
+/-! ### B3a minFac version -/
+
+/-- **B3a (minFac):** Axiom-free `minFac(C(n,k)) ≤ n/k` when n = s·q
+with q prime > k and s ∤ k.
+
+Proof: s ∤ k gives a prime p with v_p(s) > v_p(k). Since s | n,
+v_p(n) ≥ v_p(s) > v_p(k). By `trailing_zero_carry`: p | C(n,k).
+Then p ≤ s = n/q < n/k (since q > k), so minFac ≤ p ≤ n/k. -/
+theorem near_prime_nondivisor_minFac_bound (n k s q : ℕ)
+    (hk : 2 ≤ k) (hn : k * k < n) (hkn : k ≤ n)
+    (hnsq : n = s * q) (hq : q.Prime) (hqk : k < q)
+    (hs0 : 0 < s) (hsk : ¬ (s ∣ k)) :
+    (n.choose k).minFac ≤ n / k := by
+  -- s ∤ k → ∃ prime p, e with p^e | s, p^e ∤ k
+  rw [Nat.dvd_iff_prime_pow_dvd_dvd] at hsk
+  push_neg at hsk
+  obtain ⟨p, e, hp, hpe_s, hpe_k⟩ := hsk
+  have he : 1 ≤ e := by
+    by_contra h; push_neg at h; interval_cases e; simp at hpe_k
+  have hp_fact : Fact p.Prime := ⟨hp⟩
+  -- v_p(n) ≥ v_p(s) > v_p(k): s | n gives p^e | n
+  have hpe_n : p ^ e ∣ n := hnsq ▸ dvd_mul_of_dvd_left hpe_s q
+  have hvn : e ≤ padicValNat p n :=
+    (@padicValNat_dvd_iff_le p hp_fact n e (by omega)).mp hpe_n
+  have hvk : padicValNat p k < e := by
+    rwa [← not_le, ← @padicValNat_dvd_iff_le p hp_fact k e (by omega)]
+  -- trailing_zero_carry: p | C(n,k)
+  have h_dvd := @trailing_zero_carry p hp_fact n k hkn (by omega) (by omega)
+  -- p ≤ s: p | s (from p^e | s with e ≥ 1)
+  have hp_le_s : p ≤ s :=
+    Nat.le_of_dvd hs0 (dvd_trans (dvd_pow_self p (by omega : e ≠ 0)) hpe_s)
+  -- s < n/k: since n = s*q and q > k, s = n/q < n/k
+  have hs_lt : s < n / k := by
+    have hq_pos : 0 < q := hq.pos
+    rw [hnsq, Nat.mul_div_cancel_left s hq_pos] at hn ⊢
+    -- Need: s < s * q / k, i.e., s * k < s * q (since q > k)
+    rw [Nat.lt_div_iff_mul_lt (by omega : 0 < k)]
+    calc s * k < s * q := Nat.mul_lt_mul_left hs0 hqk
+      _ = s * q := rfl
+  -- minFac ≤ p ≤ s < n/k
+  exact le_trans (Nat.minFac_le_of_dvd hp.two_le h_dvd) (by omega)
+
 end Erdos1094.SmoothCase
