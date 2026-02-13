@@ -1,218 +1,170 @@
-# Proof: $g(k) > k^2$ for All $k \ge 29$
+# Toward a Proof of $g(k) \ge \exp(c\log^2 k)$
 
-**Status:** Complete ✅  
-**Method:** Kummer's theorem + CRT density + Parseval–Cauchy-Schwarz discrepancy bound  
-**Key result:** No Bombieri–Pila required! Elementary Fourier analysis suffices.
-
----
-
-## Theorem
-
-For all $k \ge 29$: $g(k) > k^2$, where $g(k) = \min\{n > k+1 : \mathrm{minFac}\binom{n}{k} > k\}$.
-
-**Proof strategy:**
-- $k \in [29, 235]$: Direct computation (`native_decide` in Lean, or tabulation).
-- $k \ge 236$: Exponential sum argument below.
+**Status:** Draft ✏️ — Key gap at §7 (Bombieri–Pila application)  
+**Method:** Kummer's theorem + CRT density + exponential sums  
+**Correction:** An earlier version claimed Parseval+CS sufficed. This was WRONG (factor of $M$ dropped in Lemma 5.2). The elementary CS bound gives $|E| \le \sqrt{NR}$, which is exponentially large. **Bombieri–Pila IS required.**
 
 ---
 
-## Part 1: Setup (§1–3)
+## Theorem (Target)
+
+For all $k \ge k_0$: $g(k) \ge \exp(c\log^2 k)$ for explicit $c > 0$ and $k_0$.
+
+Combined with `native_decide` for $k \le 700$: this would give $g(k) > k^2$ for all $k \ge 29$.
+
+---
+
+## Part 1: Setup
 
 ### §1. Kummer's Reformulation
 
-**Theorem (Kummer, 1852).** $p \mid \binom{n}{k}$ iff there is a carry when adding $k$ and $n-k$ in base $p$.
+**Theorem (Kummer, 1852).** $p \mid \binom{n}{k}$ iff there is a carry when adding $k$ and $n-k$ in base $p$. Equivalently: $p \nmid \binom{n}{k}$ iff $n$ digit-dominates $k$ in base $p$.
 
-**Equivalently:** $p \nmid \binom{n}{k}$ iff $n$ **digit-dominates** $k$ in base $p$: every base-$p$ digit of $n$ is $\ge$ the corresponding digit of $k$.
-
-**Corollary.** $\mathrm{minFac}\binom{n}{k} > k$ iff $n$ digit-dominates $k$ in base $p$ for every prime $p \le k$.
-
-So $g(k) > k^2$ iff: for every $n \in [k+2, k^2]$, there exists a prime $p \le k$ such that $n$ does **not** digit-dominate $k$ in base $p$.
+So $g(k) \le N$ iff there exists $n \in [k+2, N]$ that digit-dominates $k$ for ALL primes $p \le k$.
 
 ### §2. Primes Near $k/2$
 
-For a prime $p$ with $k/2 < p < k$: $k$ has exactly 2 digits in base $p$:
-$$k = 1 \cdot p + (k-p), \quad \text{digits: } a_0 = k-p,\; a_1 = 1$$
+For prime $p \in (k/2, k)$: $k = 1 \cdot p + (k-p)$, two digits in base $p$.
 
-The **digit-domination set** modulo $p^2$:
-$$S_p = \{s \in \{0,\ldots,p^2-1\} : s \bmod p \ge k-p,\; \lfloor s/p \rfloor \ge 1\}$$
+Digit-domination set modulo $p^2$:
+$$S_p = \{s \in [0, p^2) : s \bmod p \ge k-p,\; \lfloor s/p \rfloor \ge 1\}$$
+$$|S_p| = (2p-k)(p-1), \qquad \delta_p = |S_p|/p^2$$
 
-Counting: digit $d_0 \in \{k-p, \ldots, p-1\}$ ($c_0 := 2p-k$ values), digit $d_1 \in \{1, \ldots, p-1\}$ ($p-1$ values).
-$$|S_p| = c_0(p-1), \qquad \delta_p = \frac{c_0(p-1)}{p^2}$$
+### §3. CRT Product Set
 
-### §3. The CRT Product Set
+Let $\mathcal{P}$ = all primes in $(k/2, k)$, $r = |\mathcal{P}|$. Set $M = \prod p_i^2$, $R = \prod |S_{p_i}|$, $\delta = R/M$.
 
-Let $\mathcal{P} = \{p_1, \ldots, p_r\}$ be ALL primes in $(k/2, k)$. Set:
-$$M = \prod_{i=1}^r p_i^2, \qquad R = \prod_{i=1}^r |S_{p_i}|, \qquad \delta = R/M = \prod_{i=1}^r \delta_{p_i}$$
+By CRT: $S = \{n \bmod M : n \bmod p_i^2 \in S_{p_i}\;\forall\, i\}$ has $|S| = R$.
 
-By CRT (since $p_i$ are distinct primes), the product set
-$$S = \{n \bmod M : n \bmod p_i^2 \in S_{p_i} \text{ for all } i\}$$
-has exactly $|S| = R$ elements.
-
-**Key property:** If $\mathrm{minFac}\binom{n}{k} > k$, then $n \bmod p_i^2 \in S_{p_i}$ for all $p_i \in \mathcal{P}$, hence $n \bmod M \in S$.
+If $\mathrm{minFac}\binom{n}{k} > k$ then $n \bmod M \in S$.
 
 ---
 
-## Part 2: The Discrepancy Bound (§4–6)
+## Part 2: Exponential Sum Framework
 
-### §4. Exact Counting Formula
+### §4. Counting Formula
 
-For any $N \ge 1$:
-$$|S \cap [1, N]| = \frac{1}{M}\sum_{h=0}^{M-1} \sigma(h) \cdot \overline{c(h)}$$
+$$|S \cap [1,N]| = \frac{RN}{M} + E(N), \qquad E(N) = \frac{1}{M}\sum_{h=1}^{M-1} \sigma(h)\,\overline{c(h)}$$
 
-where $\sigma(h) = \sum_{s \in S} e(hs/M)$ and $c(h) = \sum_{n=1}^{N} e(hn/M)$, with $e(x) = e^{2\pi i x}$.
+where $\sigma(h) = \sum_{s \in S} e(hs/M)$ and $c(h) = \sum_{n=1}^N e(hn/M)$.
 
-The $h=0$ term gives the main term: $\sigma(0) \cdot \overline{c(0)} / M = R \cdot N / M = \delta N$.
+### §5. Why Elementary Bounds Fail
 
-**Error term:**
-$$E(N) := |S \cap [1, N]| - \delta N = \frac{1}{M}\sum_{h=1}^{M-1} \sigma(h) \cdot \overline{c(h)}$$
+**Parseval identity.** $\sum_{h=0}^{M-1}|\sigma(h)|^2 = MR$ and $\sum_{h=0}^{M-1}|c(h)|^2 = MN$.
 
-### §5. Parseval + Cauchy–Schwarz Bound
+**Cauchy–Schwarz on the error:**
+$$|E(N)|^2 \le \frac{1}{M^2}(MR - R^2)(MN - N^2) = \underbrace{NR(1-\delta)(1-N/M)}_{\text{note: this is } NR, \text{ not } N\delta}$$
 
-**Lemma 5.1 (Parseval identity).**
-$$\sum_{h=0}^{M-1} |\sigma(h)|^2 = M \cdot R, \qquad \sum_{h=0}^{M-1} |c(h)|^2 = M \cdot N$$
+For $N = k^2$: $|E| \le \sqrt{NR} = k\sqrt{R}$, where $R = \prod|S_{p_i}|$ is **exponentially large** in $r$.
 
-*Proof.* Standard: $\sum_h |\sum_s e(hs/M)|^2 = \sum_{s,s'} \sum_h e(h(s-s')/M) = M \cdot |\{(s,s') : s = s'\}| = MR$. Similarly for $c(h)$. $\square$
+*Example:* $k = 236$, $r = 24$ primes: $\log R \approx 205$, so $k\sqrt{R} \approx 10^{46}$. The CS bound is useless.
 
-**Lemma 5.2 (Discrepancy bound).**
-$$|E(N)|^2 \le N\delta(1 - N/M)(1 - \delta) \le N\delta$$
+**Root cause:** CS treats $\sigma(h)$ as unstructured. But $\sigma(h) = \prod f_i(h_i)$ has multiplicative structure — most $h$ have at least one small factor $|f_i(h_i)| \ll |S_{p_i}|$.
 
-*Proof.* By Cauchy–Schwarz on the error sum:
-$$|E(N)|^2 = \left|\frac{1}{M}\sum_{h=1}^{M-1} \sigma(h)\overline{c(h)}\right|^2 \le \frac{1}{M^2}\left(\sum_{h=1}^{M-1}|\sigma(h)|^2\right)\left(\sum_{h=1}^{M-1}|c(h)|^2\right)$$
+### §6. Per-Prime Exponential Sums
 
-Using Parseval (Lemma 5.1), subtracting the $h=0$ terms:
-$$= \frac{(MR - R^2)(MN - N^2)}{M^2} = \frac{R(M-R)}{M} \cdot \frac{N(M-N)}{M} = N\delta(1-\delta)(1-N/M) \le N\delta$$
+$f_p(h) = \tau_0(h) \cdot \tau_1(h)$ where:
+- $\tau_1(h) = \begin{cases} p-1 & p \mid h \\ -1 & p \nmid h\end{cases}$
+- $|\tau_0(h)| \le \min(2p-k,\; 1/(2\sin(\pi h/p^2)))$ for $p^2 \nmid h$
 
-$\square$
+For $p \nmid h$ (the generic case): $|f_p(h)| = |\tau_0(h)|$, bounded by the trivial bound $2p - k$ or the geometric sum bound $\sim p^2/h$.
 
-**Theorem 5.3.** $|S \cap [1, N]| \le \delta N + \sqrt{N\delta}$.
-
-*Proof.* $|S \cap [1,N]| = \delta N + E(N) \le \delta N + |E(N)| \le \delta N + \sqrt{N\delta}$. $\square$
-
-### §6. Application to $g(k) > k^2$
-
-Set $N = k^2$. If $|S \cap [1, k^2]| < 1$, then $S \cap [k+2, k^2] = \emptyset$ (since $|S \cap [1,k^2]| = 0$ as it is an integer), and hence $g(k) > k^2$.
-
-By Theorem 5.3: $|S \cap [1, k^2]| \le k^2\delta + k\sqrt{\delta}$.
-
-**Sufficient condition:** $k^2\delta + k\sqrt{\delta} < 1$.
-
-Let $x = k^2\delta$. Then $k\sqrt{\delta} = \sqrt{x}$. The condition becomes:
-$$x + \sqrt{x} < 1 \qquad \Longleftrightarrow \qquad x < \left(\frac{\sqrt{5}-1}{2}\right)^2 \approx 0.382$$
-
-**So: $g(k) > k^2$ whenever $k^2 \cdot \prod_{p \in (k/2,k)} \delta_p < 0.382$.**
+**Per-prime Parseval:** $\sum_{h=0}^{p^2-1} |f_p(h)|^2 = p^2 \cdot |S_p|$, so the mean-square $|f_p|$ is $|S_p|$ and the RMS is $\sqrt{|S_p|}$.
 
 ---
 
-## Part 3: Verification (§7–8)
+## Part 3: The Bombieri–Pila Approach (Sketch)
 
-### §7. Computational Verification for $k \ge 236$
+### §7. Resonance and Lattice Points on Curves
 
-For each $k$, the product $\delta = \prod_{p \in (k/2,k),\, p\text{ prime}} \frac{(2p-k)(p-1)}{p^2}$ can be computed exactly.
+**Definition.** Call $h$ **$\alpha$-resonant for $p_i$** if $|f_i(h_i)| \ge \alpha\sqrt{|S_{p_i}|}$.
 
-**Claim.** For all $k \ge 236$: $k^2\delta + k\sqrt{\delta} < 1$.
+By Parseval/Markov: at most $p_i^2/\alpha^2$ values of $h_i$ are $\alpha$-resonant.
 
-*Verification method:* Direct computation for $k \in [236, 1000]$ confirms $k^2\delta + k\sqrt{\delta} < 1$ for every $k$ in this range. (See §9 for selected values.)
+For a PAIR of primes $(p_1, p_2)$: the simultaneously $\alpha$-resonant $h$ values in $[1, M]$ correspond to pairs $(h_1, h_2) \in (\mathbb{Z}/p_1^2) \times (\mathbb{Z}/p_2^2)$ where both $|f_1|$ and $|f_2|$ are large. 
 
-For $k > 1000$: we prove the bound analytically.
+**Naive bound (CRT independence):** At most $p_1^2 p_2^2/\alpha^4$ such pairs.
 
-### §8. Asymptotic Analysis for Large $k$
+**BP improvement:** The large-$|f|$ condition constrains $(h_1, h_2)$ to lie on algebraic curves of degree $\le 2c_0$ (arising from the structure of $\tau_0$ as a geometric sum). By the Bombieri–Pila theorem:
 
-**Lemma 8.1.** For all sufficiently large $k$: $\log(1/\delta) \ge \frac{1}{4}\log^2 k$.
+$$|\Gamma \cap \mathbb{Z}^2 \cap [0,B]^2| \le C_d \cdot B^{1/d + \epsilon}$$
 
-*Proof sketch.* By PNT, the number of primes in $(k/2, k/2 + T]$ is $\sim T/\log k$ for $T = o(k)$. For each such prime $p = k/2 + t$:
-$$\log(1/\delta_p) = \log\frac{p^2}{(2t)(p-1)} \ge \log\frac{k}{4t} - O(1/k)$$
+for a curve $\Gamma$ of degree $d$. This gives FEWER lattice points than the naive bound when $d$ is small relative to $\log B$.
 
-Summing over primes with $t \le T = \log^2 k$:
-$$\log(1/\delta) \ge \sum_{\substack{p \text{ prime} \\ k/2 < p \le k/2 + T}} \left(\log k - \log(4t) - O(1/k)\right)$$
+**⚠️ GAP:** The precise identification of these curves and the extraction of explicit constants from BP requires Konyagin's full paper. This is the key missing step.
 
-The number of such primes is $\ge T/(2\log k) = \log k / 2$ (by PNT, for $k$ large). The average value of $\log(4t)$ over $t \in [1, T]$ is $\le \log(4T) = 2\log\log k + O(1)$. So:
-$$\log(1/\delta) \ge \frac{\log k}{2}\left(\log k - 2\log\log k - O(1)\right) \ge \frac{1}{4}\log^2 k$$
+### §8. Expected Result (Conditional on §7)
 
-for $k$ large enough that $\log k > 4\log\log k + O(1)$. $\square$
+With BP applied pairwise to $\binom{r}{2}$ pairs, using $r$ primes with $c_{0,i} \approx 2t$ (where $t = p - k/2 \approx \alpha\log^2 k$):
 
-**Corollary 8.2.** For large $k$: $k^2\delta \le k^2 \cdot \exp(-\frac{1}{4}\log^2 k) = \exp(2\log k - \frac{1}{4}\log^2 k) \to 0$.
+- Density: $\delta \approx (4t/k)^r \approx \exp(-r\log(k/(4t)))$
+- For $r \approx t/\log k$: $\log(1/\delta) \approx r\log(k/(4t))$
 
-The condition $k^2\delta < 0.382$ holds when $2\log k < \frac{1}{4}\log^2 k - \log(1/0.382)$, i.e., $\log k > 8 + o(1)$, i.e., $k \ge 2981 + o(1)$.
+Optimizing $t$ gives $\log(1/\delta) \sim c\sqrt{\log^3 k / \log\log k}$ (the **Granville–Ramaré** form).
 
-Combined with the direct computation for $k \in [236, 3000]$: the condition holds for all $k \ge 236$.
+Konyagin's improvement to $c\log^2 k$ uses **higher-dimensional BP** (bounding lattice points on varieties in $r$ dimensions simultaneously, rather than pairwise).
 
----
+### §9. What Konyagin's Proof Likely Does
 
-## Part 4: Combining Both Cases (§9)
+Instead of pairwise BP, bound the number of $h \in [1, M]$ where ALL $r$ factors $|f_i(h_i)|$ are simultaneously large. The resonance set lives on a variety of dimension $\le r-1$ in $(\mathbb{Z}/p_1^2) \times \cdots \times (\mathbb{Z}/p_r^2)$.
 
-### §9. The Full Proof
+A higher-dimensional lattice point theorem (extending BP) bounds:
+$$|\mathcal{V} \cap \mathbb{Z}^r \cap [0, B^2]^r| \le C \cdot B^{2r/(d+1) + \epsilon}$$
 
-**Theorem.** For all $k \ge 29$: $g(k) > k^2$.
-
-*Proof.*
-
-**Case 1: $k \in [29, 235]$.** By direct computation. (In the Lean formalization: `crt_verified_700` covers $k \in [29, 700]$ via `native_decide`, which includes this range.)
-
-**Case 2: $k \ge 236$.** Let $\mathcal{P}$ be the set of all primes in $(k/2, k)$, $M = \prod_{p \in \mathcal{P}} p^2$, $S$ the CRT product set, $\delta = \prod_{p \in \mathcal{P}} \delta_p$.
-
-By Theorem 5.3: $|S \cap [1, k^2]| \le k^2\delta + k\sqrt{\delta}$.
-
-By §7–8: $k^2\delta + k\sqrt{\delta} < 1$ for all $k \ge 236$.
-
-Since $|S \cap [1, k^2]|$ is a nonnegative integer $< 1$, it equals $0$.
-
-Therefore $S \cap [k+2, k^2] = \emptyset$. Since every $n$ with $\mathrm{minFac}\binom{n}{k} > k$ must lie in $S$, no such $n$ exists in $[k+2, k^2]$. Hence $g(k) > k^2$. $\square$
-
-### Selected Computed Values
-
-| $k$ | Primes in $(k/2,k)$ | $\log(1/\delta)$ | $k^2\delta$ | $k^2\delta + k\sqrt{\delta}$ |
-|-----|---------------------|-------------------|-------------|-------------------------------|
-| 236 | 24 | 12.4 | 0.224 | 0.697 |
-| 300 | 27 | 20.6 | $1.0 \times 10^{-4}$ | 0.010 |
-| 500 | 42 | 31.5 | $5.3 \times 10^{-9}$ | $7.3 \times 10^{-5}$ |
-| 700 | 55 | 38.7 | $7.4 \times 10^{-12}$ | $2.7 \times 10^{-6}$ |
-| 1000 | 73 | 49.8 | $2.3 \times 10^{-16}$ | $1.5 \times 10^{-8}$ |
+For the discrepancy to be $< 1$: need $B^{2r/(d+1)} < M/R$, which determines the balance between $r$ and $t$ that yields $\exp(c\log^2 k)$.
 
 ---
 
-## Part 5: Implications (§10)
+## Part 4: Current Status
 
-### §10. Axiom Elimination
+### What IS Proved (this document)
 
-**Before this proof:** The Lean formalization used axiom `crt_density_from_asymptotic` asserting that for $k > 700$ and $n \in [2k, k^2]$: $\exists p \le 29$, $p \mid \binom{n}{k}$.
+| Component | Status |
+|-----------|--------|
+| §1–3: Kummer + CRT setup | Complete ✅ |
+| §4: Counting formula | Complete ✅ |
+| §5: Elementary CS fails | Proved ✅ (and verified: earlier "breakthrough" was an algebra error) |
+| §6: Per-prime exponential sums | Complete ✅ |
+| §7: BP curve identification | **Gap** — needs Konyagin's paper |
+| §8–9: Assembly and constants | **Sketch only** |
 
-**After this proof:** The CRT density bound with Parseval–CS discrepancy proves $g(k) > k^2$ for $k \ge 236$. Combined with `native_decide` for $k \in [29, 700]$: **axiom 1 is eliminated.**
+### What This Means for the Lean Formalization
 
-**Remaining axiom:** `large_n_smooth_case` (handles $n > k^2$ with $k$-smooth quotient). This is a separate structural claim not addressed by the $g(k)$ bound.
+**Axiom 1 (`crt_density_from_asymptotic`):** NOT yet eliminated by this document. The density argument alone cannot prove $g(k) > k^2$ without either:
+- (a) An explicit BP-based discrepancy bound, or
+- (b) A citation axiom for Konyagin's theorem.
 
-**Current axiom count: $2 \to 1$.**
+**Recommended path:** Citation axiom:
+```
+axiom konyagin_1999 (k : ℕ) (hk : k ≥ K₀) :
+    g k > k ^ 2
+```
+where $K_0$ is the effective threshold from Konyagin's explicit constant.
+
+**Current axiom count: still 2** (unchanged from before this analysis).
 
 ---
 
-## Appendix A: Per-Prime Exponential Sum (Details)
+## Appendix: The Algebra Error
 
-For completeness, the CRT factorization of $\sigma(h)$:
-$$\sigma(h) = \sum_{s \in S} e(hs/M) = \prod_{i=1}^r f_i(h_i)$$
-where $h_i \equiv h \cdot (M/p_i^2)^{-1} \pmod{p_i^2}$ and:
-$$f_i(h_i) = \underbrace{\sum_{d_0 = a_{0,i}}^{p_i - 1} e\!\left(\frac{h_i d_0}{p_i^2}\right)}_{\tau_0(h_i)} \cdot \underbrace{\sum_{d_1=1}^{p_i-1} e\!\left(\frac{h_i d_1}{p_i}\right)}_{\tau_1(h_i)}$$
+An earlier version of this proof (committed and then corrected) claimed:
 
-**Fact:** $\tau_1(h_i) = p_i - 1$ if $p_i \mid h_i$, else $\tau_1(h_i) = -1$.
+$$|E(N)|^2 \le N\delta(1-\delta)(1-N/M) \le N\delta$$
 
-**Note:** While this factorization is used to understand the structure, the proof above does NOT require evaluating individual exponential sums. The Parseval identity handles everything in one step.
+This is **wrong by a factor of $M$**. The correct computation:
 
----
+$$(MR - R^2)(MN - N^2)/M^2 = R(M-R) \cdot N(M-N) / M^2$$
+$$= \frac{R(M-R)}{M} \cdot \frac{N(M-N)}{M} = R(1-\delta) \cdot N(1-N/M) = NR(1-\delta)(1-N/M)$$
 
-## Appendix B: Why Bombieri–Pila Is Not Needed
+Note: $R(1-\delta) = \delta M(1-\delta) \ne \delta(1-\delta)$. The missing factor is $M$.
 
-Previous approaches (including Konyagin 1999) used the Bombieri–Pila theorem to bound lattice points on algebraic curves arising from the exponential sum structure. This was needed because those approaches estimated the discrepancy via the Erdős–Turán inequality with explicit exponential sum bounds, giving:
-$$|E(N)| \le \frac{1}{M}\sum_{h=1}^{M-1} |\sigma(h)| \cdot \min\!\left(N, \frac{1}{2\|h/M\|}\right)$$
-
-Bounding this sum requires individual control of $|\sigma(h)|$, which leads to the resonance analysis and BP.
-
-Our approach instead uses the **global Parseval identity** directly via Cauchy–Schwarz:
-$$|E(N)|^2 \le \frac{1}{M^2}\left(\sum|\sigma(h)|^2\right)\left(\sum|c(h)|^2\right) = N\delta(1-\delta)(1-N/M)$$
-
-This bypasses all individual exponential sum estimates. The key: the Parseval identity provides the EXACT mean-square, and for $\delta \ll 1/k^2$, the C-S bound is already tight enough.
+The correct bound is $|E| \le \sqrt{NR}$, not $\sqrt{N\delta}$.
 
 ---
 
 ## References
 
-1. E. E. Kummer, "Über die Ergänzungssätze zu den allgemeinen Reciprocitätsgesetzen," *J. Reine Angew. Math.* **44** (1852), 93–146.
-2. S. V. Konyagin, "Estimates of the least prime factor of a binomial coefficient," *Mathematika* **46** (1999), 41–55.
-3. A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* **43** (1996), 73–107.
+1. E. E. Kummer, *J. Reine Angew. Math.* **44** (1852), 93–146.
+2. S. V. Konyagin, *Mathematika* **46** (1999), 41–55.
+3. A. Granville, O. Ramaré, *Mathematika* **43** (1996), 73–107.
+4. E. Bombieri, J. Pila, *Duke Math. J.* **59** (1989), 337–357.
