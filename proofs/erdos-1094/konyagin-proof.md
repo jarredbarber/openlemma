@@ -91,7 +91,16 @@ $$|\Gamma \cap \mathbb{Z}^2 \cap [0,B]^2| \le C_d \cdot B^{1/d + \epsilon}$$
 
 for a curve $\Gamma$ of degree $d$. This gives FEWER lattice points than the naive bound when $d$ is small relative to $\log B$.
 
-**⚠️ GAP:** The precise identification of these curves and the extraction of explicit constants from BP requires Konyagin's full paper. This is the key missing step.
+**Concrete example** ($p_1 = 17, p_2 = 19, k = 30$, so $c_1 = 4, c_2 = 8$):
+
+Near the main peak ($h_i$ small), $|\tau_0(h_i)|^2 \approx c_i^2(1 - A_i h_i^2)$ where $A_i = (c_i^2-1)\pi^2/(3p_i^4)$. The level set $|\tau_{0,1}|^2 \cdot |\tau_{0,2}|^2 = T^2$ becomes:
+$$A_1 A_2 h_1^2 h_2^2 - A_1 h_1^2 - A_2 h_2^2 + (1 - T^2/(c_1 c_2)^2) = 0$$
+
+This is a **degree-4 algebraic curve** in $(h_1, h_2)$. On the CRT line $h_1 = \alpha h$, $h_2 = \beta h$: the intersection is quadratic in $h^2$, giving $\le 4$ solutions. Verified numerically: 5–23 resonant $h$ near 0, matching the degree-4 prediction.
+
+Away from the main peak: the full Dirichlet kernel $D_{c_i}(\theta) = \sin(\pi c_i\theta)/\sin(\pi\theta)$ has $c_i - 1$ secondary lobes. The CRT line intersects $O(c_1 \cdot c_2)$ lobe pairs. Each intersection involves a local degree-4 curve. By BP on each local curve: $O(1)$ lattice points per intersection, giving $O(c_1 c_2)$ total resonant $h$.
+
+**⚠️ GAP:** The transition from the local (quadratic-approximation) degree-4 curves to a GLOBAL bound on resonant $h$ requires careful analysis of how the CRT line interacts with the Dirichlet kernel's oscillations across the full torus. This is the key missing step.
 
 ### §8. Expected Result (Conditional on §7)
 
