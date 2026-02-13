@@ -121,6 +121,23 @@ When $p_i \mid h_i$: $\tau_1(h_i) = p_i - 1$ instead of $-1$, amplifying $|\sigm
 
 **Implication for BP strategy:** The target for lattice-point counting should be the **sublattice** $h_1 \in p_1\mathbb{Z}$, $h_2 \in p_2\mathbb{Z}$ (the $\tau_1$-amplified points), not the secondary peaks of the Dirichlet kernel. These form a periodic sublattice of period $p_1 p_2$ in the CRT torus.
 
+**UPDATE — Error dominated by first-zero truncation, not amplification:**
+
+The doubly-amplified $h$ show **95% signed cancellation** (absolute sum 2.76, signed sum -0.15). The actual error (1.10) comes almost entirely from the **first $h_{\mathrm{zero}} \approx 9$ generic $h$ values** where:
+- All $|\tau_0|$ are near their maxima (before the first Dirichlet kernel zero)
+- All $\tau_1 = -1$ (no amplification)
+- $|c(h)| \approx N$ (small $h$)
+
+The first zero occurs at $h \approx p_2^2/(c_2 \cdot |\beta|) = 361/(8 \cdot 5) = 9.0$ (where $h_2 = 5h$ reaches the first zero of $D_{c_2}$ at $\theta_2 = 1/(2c_2) = 1/16$, i.e., $h_2/p_2^2 = 1/16$, $h_2 = 22.6$, $h = 22.6/5 = 4.5$... the actual zero is at $h_2 = 45 \approx 361/8$ giving $h = 9$).
+
+The error bound from the first-zero truncation:
+$$|E| \lesssim \frac{N}{M} \cdot h_{\mathrm{zero}} \cdot \prod c_i = \frac{N \cdot \prod c_i \cdot \min_i(p_i^2/c_i)}{M} = N \cdot \frac{\prod_{j \neq i^*} c_j}{\prod_{j \neq i^*} p_j^2}$$
+
+For $r$ primes with $c_j \approx C$ and $p_j \approx k/2$:
+$$|E| \lesssim k^2 \cdot \left(\frac{2C}{k^2}\right)^{r-1}$$
+
+For Konyagin's choice $C = \alpha \log^2 k$, $r = \alpha \log k$: the dominant term is $\exp(-2\alpha(\log k)^2)$, which vanishes super-exponentially.
+
 ### §8. Expected Result (Conditional on §7)
 
 With BP applied pairwise to $\binom{r}{2}$ pairs, using $r$ primes with $c_{0,i} \approx 2t$ (where $t = p - k/2 \approx \alpha\log^2 k$):
