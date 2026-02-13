@@ -111,4 +111,33 @@ theorem large_n_minFac_bound (n k : ℕ) (hk : 2 ≤ k) (hn : k * k < n) (hkn : 
     push_neg at hA
     obtain ⟨p, hp, hp_le, hp_dvd⟩ := large_n_smooth_case n k hk hn hA
     exact le_trans (Nat.minFac_le_of_dvd hp.two_le hp_dvd) hp_le
+/-- **Axiom-free** version of `large_n_minFac_bound` when k | n.
+Type A (n/k has a prime factor > k) uses interval divisibility.
+Type B (n/k is k-smooth) uses `divisible_smooth_quotient_has_small_factor`:
+since k | n, n = k · (n/k) is k-smooth, so Kummer gives a prime ≤ k < n/k.
+
+The remaining gap for full axiom elimination is n > k² with k ∤ n and n/k k-smooth. -/
+theorem large_n_minFac_bound_divisible (n k : ℕ) (hk : 2 ≤ k) (hn : k * k < n)
+    (hkn : k ≤ n) (hdvd : k ∣ n) :
+    (n.choose k).minFac ≤ n / k := by
+  have hM_pos : 0 < n / k := by
+    have : k ≤ n / k := by rw [Nat.le_div_iff_mul_le (by omega : 0 < k)]; omega
+    omega
+  by_cases hA : ∃ p, Nat.Prime p ∧ p ∣ n / k ∧ k < p
+  · -- Type A: n/k has a prime factor > k
+    obtain ⟨p, hp, hpM, hpk⟩ := hA
+    have hmod : n % p < k := mod_lt_of_prime_dvd_div n k p (by omega) hp hpk hpM
+    have hpn : p ∣ n.choose k := (large_prime_dvd_choose p n k hp hpk hkn).mpr hmod
+    exact le_trans (Nat.minFac_le_of_dvd hp.two_le hpn) (Nat.le_of_dvd hM_pos hpM)
+  · -- Type B: n/k is k-smooth — axiom-free via divisible_smooth_quotient_has_small_factor
+    push_neg at hA
+    have hk_lt_n : k < n := lt_trans (by nlinarith : k < k * k) hn
+    obtain ⟨q, hq, hq_le, hq_dvd⟩ :=
+      OpenLemma.Kummer.divisible_smooth_quotient_has_small_factor n k hk hk_lt_n hdvd hA
+    have hk_lt_M : k < n / k := by
+      have h_eq : k * (n / k) = n := Nat.mul_div_cancel' hdvd
+      exact lt_of_mul_lt_mul_left (h_eq.symm ▸ hn) (Nat.zero_le k)
+    exact le_trans (Nat.minFac_le_of_dvd hq.two_le hq_dvd)
+      (le_of_lt (lt_of_le_of_lt hq_le hk_lt_M))
+
 end Erdos1094
