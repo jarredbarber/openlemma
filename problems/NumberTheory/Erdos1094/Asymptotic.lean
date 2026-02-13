@@ -239,8 +239,8 @@ theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
   exact card_filter_digits_le p (digits p k).length k hp_one
 
 /-- Density bound for k ∈ [2, 700], proved by verified computation.
-For k > 700, the density bound is not needed directly — the proof uses
-`crt_density_from_asymptotic` (KGe29.lean) which bridges to deterministic coverage. -/
+This is a standalone axiom-free result. The main theorem now uses the
+Konyagin (1999) citation (`konyagin_1999` in Konyagin.lean) for the n ≤ k² case. -/
 theorem erdos_asymptotic_density_bound (k : ℕ) (h_large : k ≥ 2) (h_small : k ≤ 700) :
     total_density k < 1 / (k : ℝ) ^ 2 :=
   densityRangeCheck_sound 2 700 (by norm_num) density_verified_700 k h_large h_small
