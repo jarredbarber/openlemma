@@ -129,43 +129,63 @@ But the proof that the intersection of "uncaught" sets is empty requires
 precisely the structural argument (BP or equivalent) that we cannot supply
 by elementary methods.
 
-## §6. Structural Observations
+## §6. Equidistribution of Bad CRT Representatives
 
-### 6.1 Trivial cluster
-n = 0, 1, ..., c_min − 1 always satisfy all Kummer constraints
-(since each c_i ≥ c_min ≥ 2). These form the "trivial bad cluster" near 0.
-The interval [2k, k²] starts well above this cluster (at n = 2k ≥ 58).
+### 6.1 n₀ is NOT always > k²
 
-### 6.2 Post-trivial gap
-After n = c_min − 1, the next bad representative is determined by CRT
-interactions between all primes. For k=200: gap = 46,661 > k² = 40,000.
+**Tested:** 280 values of k ∈ [140, 1000] where δN < 1 is achievable.
 
-The gap size depends on the **specific arithmetic** of the primes (not just
-their density). The margin can be as small as 3 (n=5253 for k=200).
+**Result:** 59/280 (21.1%) have n₀ < k² — the smallest non-trivial bad CRT
+representative falls INSIDE [2k, k²].
 
-### 6.3 The gap IS the density
-We have the exact relationship: avg_gap = 1/δ = Πp/Πc.
-The interval length is k² − 2k ≈ k². So gap > k² iff δ < 1/k², i.e., δN < 1.
-No additional algebraic structure was found beyond this CRT density.
+| Statistic | n₀/avg\_gap | n₀/k² |
+|-----------|------------|-------|
+| Mean | 0.983 | 1.662 |
+| Median | 0.899 | 1.453 |
+| Min | 0.093 | 0.126 |
+| Max | 2.677 | — |
 
-### 6.4 Kummer failures cluster near 0
-For k=100: the 3 Kummer failures are n = 2014, 2015, 2016 — consecutive!
-These satisfy n mod p < 2p−k for all 10 primes in (50, 100), meaning
-n has "small residues" modulo all big primes. By CRT, such n must be
-close to 0 modulo M' = Π p ≈ 6 × 10¹⁷. Since n < 10⁴ ≪ M', this
-means n is in the CRT "neighborhood of 0."
+### 6.2 Bad reps are equidistributed
 
-### 6.5 Small primes catch CRT-small n
-Values near 0 (mod M') tend to have simple factorizations (small absolute
-value or small prime factors). The carry structure in base 2 is particularly
-favorable: C(n, k) is even for ~87.5% of n when k has 3 one-bits.
+n₀/avg\_gap has mean ≈ 1, consistent with the minimum of Πc i.i.d.
+exponential random variables. There is **no algebraic avoidance** of [2k, k²].
+
+The 21% failure rate matches the Poisson prediction:
+P(n₀ < k²) = 1 − exp(−δN) ≈ δN for δN small.
+
+### 6.3 Counterexamples
+
+| k | n₀ | k² | n₀/k² | Caught by |
+|-----|--------|---------|-------|-----------|
+| 140 | 18,177 | 19,600 | 0.93 | p = 2 |
+| 217 | 9,047 | 47,089 | 0.19 | p = 2 |
+| 340 | 113,488 | 115,600 | 0.98 | p = 2 |
+| 360 | 37,648 | 129,600 | 0.29 | p = 2 |
+| 907 | 106,030 | 822,649 | 0.13 | p = 2 |
+
+All counterexamples are caught by p = 2 (Kummer carries in binary).
+Adding 1–3 more big primes also clears the interval in every case.
+
+### 6.4 The gap IS the density
+
+avg\_gap = M'/Πc = N/δN. Gap > k² ⟺ δN < 1. No additional
+algebraic structure beyond CRT density. The combinatorial and
+analytic viewpoints are exactly dual.
+
+### 6.5 Two-layer redundancy
+
+For k ∈ [29, 500]: **every** Kummer sieve failure is caught by a
+small prime p ≤ k. The dominant catcher is p = 2 (80–95% of failures),
+because C(n, k) is even for ≈ 1 − 2^{−s₂(k)} of all n, where s₂(k)
+is the number of 1-bits of k. For k with 3 one-bits: 87.5% even.
 
 ## §7. Conclusion
 
 The combinatorial approach provides:
-- **Visualization**: the problem is about a line in a torus missing a product set
-- **Confirmation**: gap structure exactly mirrors CRT density
-- **New angle**: two-layer sieve catches everything computationally
+- **Visualization**: the problem is a line in a torus missing a product set
+- **Progressive elimination**: 786 → 42 → 1 → 0 for k=200 (margin of 3)
+- **Equidistribution**: n₀ ≈ avg\_gap, no algebraic avoidance of [2k, k²]
+- **Two-layer sieve**: small primes catch all failures computationally
 - **No shortcut**: the density-to-deterministic gap persists in all formulations
 
 The combinatorial analysis does NOT bypass the need for Bombieri–Pila
