@@ -73,20 +73,20 @@ reduced to the Boolean satisfiability problem.
 
 | File | Lines | Axioms | Sorrys | Theorems |
 |------|-------|--------|--------|----------|
-| Correctness.lean | 158 | 0 | 0 | 8 |
+| Correctness.lean | 262 | 0 | 0 | 12 |
 | Tableau.lean | 186 | 0 | 0 | 0 |
 | PolyTime.lean | 30 | 1 | 0 | 0 |
 | Completeness.lean | 740 | 1 | 0 | 46 |
-| Soundness.lean | 768 | 0 | 1 | 40 |
+| Soundness.lean | 816 | 0 | 1 | 40 |
 | CookLevin.lean (hub) | ~52 | 1 | 0 | 3 |
-| **Total** | **~1934** | **3** | **1** | **97** |
+| **Total** | **~2076** | **3** | **1** | **101** |
 
 ### Remaining gaps:
 1. `step_tracks_stacks'` (Completeness axiom) — mechanical stack invariant
 2. ~~`trace_base_stacks'`~~ — **PROVED** (was axiom)
 3. `tableauFormula_is_polytime` (PolyTime axiom) — citation axiom
 4. `SAT_is_NP_hard_citation` (CookLevin axiom) — assembly from components
-5. `satisfies_transition` running stack consequents (Soundness sorry) — halted case done, running label/state done
+5. `satisfies_transition` running stkElem consequents (Soundness sorry) — halted done, running label/state done, running stkLen done
 
 ## Design Decisions
 - Build on Mathlib's TM2/FinTM2 (matches existing Lean ecosystem)
