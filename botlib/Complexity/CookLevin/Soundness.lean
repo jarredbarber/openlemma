@@ -27,6 +27,16 @@ namespace CookLevinTableau
 
 open Turing List OpenLemma.Complexity.SAT Encodable
 
+/-! ## Instance diamond helpers -/
+
+-- Prove without extra Fintype/DecidableEq section variables to avoid instance diamond
+-- between FinTM2's bundled instances and section-variable instances.
+theorem stmtReadDepth_le_maxReadDepth {V : FinTM2} (k : V.K) (lbl : V.Λ) :
+    stmtReadDepth k (V.m lbl) ≤ maxReadDepth V k := by
+  unfold maxReadDepth
+  rw [Finset.le_fold_max]
+  right; exact ⟨lbl, Finset.mem_univ _, le_refl _⟩
+
 variable {V : FinTM2} [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
   [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
   [DecidableEq V.Λ] [DecidableEq V.σ] [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
@@ -220,11 +230,97 @@ axiom satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
     (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i)) :
     evalCNF (traceAssignment c) (transitionConstraints params) = true
 
-/-- Citation axiom: the trace satisfies the frame preservation constraints.
-    Reference: Cook (1971), Arora & Barak (2009), Theorem 2.10. -/
-axiom satisfies_frame (params : Params V) (c : ℕ → V.Cfg)
+/-! ## Proved: Frame preservation constraints
+
+The trace satisfies frame preservation. Each clause says: if a stack element is
+below the read depth at time i, it's preserved at time i+1. This follows from
+`stepAux_preservation_elem` (Correctness.lean) when the TM is running, or is
+trivial when halted. -/
+
+private theorem step_getD_running {cfg : V.Cfg} {lbl : V.Λ} (h : cfg.l = some lbl) :
+    (V.step cfg).getD cfg = TM2.stepAux (V.m lbl) cfg.var cfg.stk := by
+  cases cfg with | mk l v S =>
+    simp at h; subst h
+    show (@FinTM2.step V { l := some lbl, var := v, stk := S }).getD { l := some lbl, var := v, stk := S }
+      = TM2.stepAux (V.m lbl) v S
+    simp [FinTM2.step, TM2.step]; congr 1; all_goals exact Subsingleton.elim _ _
+
+private theorem step_getD_halted {cfg : V.Cfg} (h : cfg.l = none) :
+    (V.step cfg).getD cfg = cfg := by
+  cases cfg with | mk l v S =>
+    simp at h; subst h
+    show (@FinTM2.step V { l := none, var := v, stk := S }).getD { l := none, var := v, stk := S }
+      = { l := none, var := v, stk := S }
+    simp [FinTM2.step, TM2.step]
+
+-- Bridge DecidableEq instance: V.decidableEqK (from FinTM2) vs section's DecidableEq V.K
+private theorem stmtRD_inst_eq (k : V.K) (lbl : V.Λ) :
+    @stmtReadDepth V.K V.Γ V.Λ V.σ k V.decidableEqK (V.m lbl)
+    = stmtReadDepth k (V.m lbl) := by
+  congr 1
+
+private theorem stk_elem_preserved (c : ℕ → V.Cfg) (i : ℕ) (k : V.K) (j : ℕ)
+    (h_step : c (i + 1) = (V.step (c i)).getD (c i))
+    (hj_depth : j < ((c i).stk k).length - maxReadDepth V k) :
+    ((c (i + 1)).stk k).reverse[j]? = ((c i).stk k).reverse[j]? := by
+  cases h_lbl : (c i).l with
+  | none => rw [h_step, step_getD_halted h_lbl]
+  | some lbl =>
+    rw [h_step, step_getD_running h_lbl]
+    have h_rd : stmtReadDepth k (V.m lbl) ≤ maxReadDepth V k := by
+      rw [← stmtRD_inst_eq]; exact stmtReadDepth_le_maxReadDepth k lbl
+    have h1 : j + maxReadDepth V k < ((c i).stk k).length := Nat.add_lt_of_lt_sub hj_depth
+    exact stepAux_preservation_elem (V.m lbl) (c i).var (c i).stk k j
+      (Nat.lt_sub_of_add_lt (Nat.lt_of_le_of_lt (Nat.add_le_add_left h_rd _) h1))
+
+private theorem getElem_of_getElem?_eq_some {α : Type*} {l : List α} {j : ℕ} {v : α}
+    (h : l[j]? = some v) (hj : j < l.length) : l[j] = v := by
+  rw [getElem?_eq_getElem hj] at h; exact Option.some.inj h
+
+private theorem frame_clause_sat (c : ℕ → V.Cfg) (i : ℕ) (k : V.K) (j : ℕ) (γ : V.Γ k)
+    (len : ℕ) (h_guard : j + maxReadDepth V k < len)
+    (h_step : c (i + 1) = (V.step (c i)).getD (c i)) :
+    evalClause (traceAssignment c)
+      [tLit V (TableauVar.stkLen i k len) false,
+       tLit V (TableauVar.stkElem i k j γ) false,
+       tLit V (TableauVar.stkElem (i + 1) k j γ) true] = true := by
+  simp only [evalClause, any_cons, any_nil, Bool.or_false, Bool.or_eq_true,
+             evalTLit_trace]
+  by_cases h_len : traceValuation c (.stkLen i k len) = true
+  · by_cases h_elem : traceValuation c (.stkElem i k j γ) = true
+    · -- Both antecedents match: element preserved
+      right; right
+      simp only [traceValuation, decide_eq_true_eq] at h_len
+      have hj : j < ((c i).stk k).length := by omega
+      simp only [traceValuation, dif_pos hj, decide_eq_true_eq, List.get_eq_getElem] at h_elem
+      have h_pres := stk_elem_preserved c i k j h_step (by omega)
+      conv at h_pres => rhs; rw [getElem?_eq_getElem (by rw [length_reverse]; exact hj)]
+      have hj' : j < ((c (i + 1)).stk k).length := by
+        by_contra h_neg
+        push_neg at h_neg
+        have : ((c (i + 1)).stk k).reverse[j]? = none :=
+          getElem?_eq_none (by rw [length_reverse]; exact h_neg)
+        rw [this] at h_pres; simp at h_pres
+      simp only [traceValuation, dif_pos hj', List.get_eq_getElem, ite_true, decide_eq_true_eq]
+      exact (getElem_of_getElem?_eq_some h_pres (by rw [length_reverse]; exact hj')).trans h_elem
+    · right; left; simp [h_elem]
+  · left; simp [h_len]
+
+/-- The trace satisfies frame preservation constraints (PROVED). -/
+theorem satisfies_frame (params : Params V) (c : ℕ → V.Cfg)
     (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i)) :
-    evalCNF (traceAssignment c) (framePreservation params) = true
+    evalCNF (traceAssignment c) (framePreservation params) = true := by
+  unfold framePreservation
+  apply evalCNF_flatMap_true; intro i hi; rw [mem_range] at hi
+  apply evalCNF_flatMap_true; intro k _
+  apply evalCNF_flatMap_true; intro j _
+  apply evalCNF_flatMap_true; intro γ _
+  simp only [evalCNF, all_eq_true, mem_filterMap, mem_range]
+  intro cl ⟨len, _, h_ite⟩
+  split at h_ite
+  · simp only [Option.some.injEq] at h_ite; subst h_ite
+    rename_i h_guard; exact frame_clause_sat c i k j γ len h_guard (h_step i hi)
+  · simp at h_ite
 
 /-! ## Proved: Initial configuration constraints
 
@@ -253,7 +349,7 @@ private theorem satisfies_initial_stkLen (inputContents : List (V.Γ V.k₀)) (c
     (h_init : c 0 = { l := some V.main, var := V.initialState,
                        stk := fun k => if h : k = V.k₀ then h ▸ inputContents else [] }) :
     evalCNF (traceAssignment c) [[tLit V (TableauVar.stkLen 0 V.k₀ inputContents.length) true]] = true := by
-  simp [evalCNF, evalClause, evalLit_pos, traceValuation, h_init, dite_true]
+  simp [evalCNF, evalClause, evalLit_pos, traceValuation, h_init]
 
 private theorem satisfies_initial_stkElem (inputContents : List (V.Γ V.k₀)) (c : ℕ → V.Cfg)
     (h_init : c 0 = { l := some V.main, var := V.initialState,
@@ -264,7 +360,7 @@ private theorem satisfies_initial_stkElem (inputContents : List (V.Γ V.k₀)) (
   simp only [evalCNF, List.all_eq_true, List.mem_map]
   intro cl ⟨p, hp, hcl⟩
   obtain ⟨γ, j⟩ := p; subst hcl
-  have hstk : (c 0).stk V.k₀ = inputContents := by rw [h_init]; simp [dite_true]
+  have hstk : (c 0).stk V.k₀ = inputContents := by rw [h_init]; simp
   have hzip := List.mem_zipIdx hp
   have hj : j < inputContents.length := by rw [length_reverse] at hzip; omega
   have hγ : γ = inputContents.reverse[j]'(by rwa [length_reverse]) := hzip.2.2
