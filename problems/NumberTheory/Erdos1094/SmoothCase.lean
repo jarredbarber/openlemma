@@ -157,14 +157,11 @@ theorem near_prime_nondivisor_minFac_bound (n k s q : ℕ)
   -- p ≤ s: p | s (from p^e | s with e ≥ 1)
   have hp_le_s : p ≤ s :=
     Nat.le_of_dvd hs0 (dvd_trans (dvd_pow_self p (by omega : e ≠ 0)) hpe_s)
-  -- s < n/k: since n = s*q and q > k, s = n/q < n/k
+  -- s < n/k: since n = s*q and q > k, we have s*k < s*q = n, so s < n/k
   have hs_lt : s < n / k := by
-    have hq_pos : 0 < q := hq.pos
-    rw [hnsq, Nat.mul_div_cancel_left s hq_pos] at hn ⊢
-    -- Need: s < s * q / k, i.e., s * k < s * q (since q > k)
     rw [Nat.lt_div_iff_mul_lt (by omega : 0 < k)]
     calc s * k < s * q := Nat.mul_lt_mul_left hs0 hqk
-      _ = s * q := rfl
+      _ = n := hnsq.symm
   -- minFac ≤ p ≤ s < n/k
   exact le_trans (Nat.minFac_le_of_dvd hp.two_le h_dvd) (by omega)
 
