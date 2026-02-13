@@ -270,6 +270,31 @@ private theorem evalClause_tail {σ : Assignment} {x : Literal} {rest : List Lit
   simp [evalClause, Bool.or_eq_true] at h ⊢; right; exact h
 
 
+-- Helpers for the matching case of satisfies_transition
+private theorem all_false_of_not_clause {σ : Assignment} {cl : List Literal}
+    (h : ¬ evalClause σ cl = true) :
+    ∀ lit ∈ cl, evalLiteral σ lit = false := by
+  intro lit h_mem
+  rcases Bool.eq_false_or_eq_true (evalLiteral σ lit) with h_t | h_f
+  · exfalso; apply h; rw [evalClause, any_eq_true]; exact ⟨lit, h_mem, h_t⟩
+  · exact h_f
+
+private theorem clause_sat_from_last {σ : Assignment} {rest : List Literal} {lit : Literal}
+    (h : evalLiteral σ lit = true) : evalClause σ (rest ++ [lit]) = true := by
+  simp only [evalClause, any_append, Bool.or_eq_true, any_cons, any_nil, Bool.or_false]
+  right; exact h
+
+private theorem head_from_reverse_last' {α : Type*} {hd : α} {tl : List α} {len : ℕ} {γ : α}
+    (h_len : (hd :: tl).length = len + 1)
+    (h_elem : (hd :: tl).reverse[len]'(by rw [length_reverse]; omega) = γ) :
+    γ = hd := by
+  have hn : len = tl.length := by simp at h_len; omega
+  subst hn
+  simp only [reverse_cons] at h_elem
+  rw [show (tl.reverse ++ [hd])[tl.length]'(by simp) = [hd][tl.length - tl.reverse.length]'(by simp)
+    from getElem_append_right (by simp)] at h_elem
+  simp at h_elem; exact h_elem.symm
+
 /-- The trace satisfies transition constraints (PROVED). -/
 theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
     (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i))
@@ -330,11 +355,129 @@ theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
           · simp only [evalCNF, all_eq_true, mem_map]
             intro cl ⟨_, _, hcl⟩; subst hcl; exact h_ante_sat _ _ _
     · -- No stkLit evaluates to true → topsInfo fully matches actual stacks
-      -- This means: for every k, stkLen and stkElem match.
-      -- → topsInfo correctly describes the actual stack tops.
-      -- → stkVals agrees with actual on top 1 element.
-      -- → With BRD, stepAux_soundness applies.
-      sorry -- TODO: verify consequents when topsInfo matches
+      have h_all_false := all_false_of_not_clause h_stk
+      -- Per-stack facts
+      have h_stk_empty : ∀ k, topsInfo k = none → (c i).stk k = [] := by
+        intro k hk
+        have : tLit V (TableauVar.stkLen i k 0) false ∈ stkLits := by
+          rw [stkLits_def, mem_flatMap]
+          exact ⟨k, Finset.mem_toList.mpr (Finset.mem_univ k), by simp [hk]⟩
+        have := h_all_false _ this
+        rw [evalTLit_trace] at this; simp [traceValuation] at this; exact this
+      have h_stk_len : ∀ k len (γ : V.Γ k), topsInfo k = some (len, γ) →
+          ((c i).stk k).length = len.val + 1 := by
+        intro k len γ hk
+        have : tLit V (TableauVar.stkLen i k (len.val + 1)) false ∈ stkLits := by
+          rw [stkLits_def, mem_flatMap]
+          exact ⟨k, Finset.mem_toList.mpr (Finset.mem_univ k), by simp [hk]⟩
+        have := h_all_false _ this
+        rw [evalTLit_trace] at this; simp [traceValuation] at this; exact this
+      have h_stk_elem_raw : ∀ k len (γ : V.Γ k), topsInfo k = some (len, γ) →
+          evalLiteral (traceAssignment c) (tLit V (TableauVar.stkElem i k len.val γ) false) = false := by
+        intro k len γ hk
+        exact h_all_false _ (by rw [stkLits_def, mem_flatMap]; exact ⟨k,
+          Finset.mem_toList.mpr (Finset.mem_univ k), by simp [hk]⟩)
+      cases h_l : (c i).l with
+      | none =>
+        -- Halted: c(i+1) = c(i)
+        have h_eq : c (i + 1) = c i := by rw [h_step i hi]; exact step_getD_halted_v2 h_l
+        apply evalCNF_append_true
+        · simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
+          exact ⟨clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation, h_eq, h_l]),
+                 clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation, h_eq])⟩
+        · apply evalCNF_flatMap_true; intro k _
+          cases h_ti : topsInfo k with
+          | none =>
+            have h_e := h_stk_empty k h_ti
+            simp only [evalCNF, all_cons, all_nil, Bool.and_true]
+            exact clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation, h_eq, h_e])
+          | some p =>
+            obtain ⟨len, γ⟩ := p
+            have h_len := h_stk_len k len γ h_ti
+            have h_raw := h_stk_elem_raw k len γ h_ti
+            simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
+            refine ⟨clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation, h_eq, h_len]),
+                   clause_sat_from_last ?_⟩
+            -- stkElem at i+1 = stkElem at i (halted, c(i+1)=c(i))
+            -- The negative literal at i being false means the positive at i is true.
+            -- Since c(i+1)=c(i), the positive literal at i+1 is also true.
+            -- h_raw: literal(stkElem i, false) = false
+            -- Goal: literal(stkElem (i+1), true) = true
+            -- Both reduce to traceValuation, which is the same since c(i+1)=c(i)
+            -- Negative literal false → positive literal true, bridged by h_eq
+            rw [evalTLit_trace] at h_raw; rw [evalTLit_trace]
+            simp at h_raw ⊢
+            rw [show traceValuation c (TableauVar.stkElem (i+1) k (↑len) γ)
+              = traceValuation c (TableauVar.stkElem i k (↑len) γ) from by
+                simp [traceValuation, h_eq]]
+            exact h_raw
+      | some lbl =>
+        -- Running: use stepAux_soundness for label/state
+        have h_actual : c (i + 1) = TM2.stepAux (V.m lbl) (c i).var (c i).stk := by
+          rw [h_step i hi]; exact step_getD_running_v2 h_l
+        set stkVals := (fun k => match topsInfo k with
+          | none => ([] : List (V.Γ k)) | some (_, γ) => [γ]) with stkVals_def
+        -- stkVals agrees with actual on read depth (BRD ≤ 1)
+        have h_agree : ∀ k, (stkVals k).take (stmtReadDepth k (V.m lbl)) =
+            ((c i).stk k).take (stmtReadDepth k (V.m lbl)) := by
+          intro k
+          have hrd : stmtReadDepth k (V.m lbl) ≤ 1 := by
+            have := hBRD lbl k
+            rwa [show @stmtReadDepth V.K V.Γ V.Λ V.σ k V.decidableEqK (V.m lbl)
+              = stmtReadDepth k (V.m lbl) from by congr 1] at this
+          cases h_rd : stmtReadDepth k (V.m lbl) with
+          | zero => simp [take]
+          | succ n =>
+            have hn : n = 0 := by omega
+            subst hn
+            cases h_ti : topsInfo k with
+            | none =>
+              have : stkVals k = [] := by simp [stkVals_def, h_ti]
+              rw [this]; simp; rw [h_stk_empty k h_ti]
+            | some p =>
+              obtain ⟨len, γ⟩ := p
+              have : stkVals k = [γ] := by simp [stkVals_def, h_ti]
+              rw [this]; simp
+              have h_len := h_stk_len k len γ h_ti
+              -- Extract reverse[len] = γ from the raw stkElem literal
+              have h_raw := h_stk_elem_raw k len γ h_ti
+              rw [evalTLit_trace] at h_raw
+              simp only [traceValuation, h_len,
+                show len.val < len.val + 1 from by omega, dite_true,
+                List.get_eq_getElem] at h_raw
+              -- h_raw : ((c i).stk k).reverse[len] = γ
+              rcases h_sk : (c i).stk k with _ | ⟨hd, tl⟩
+              · simp [h_sk] at h_len
+              · simp only [take, cons.injEq, and_true]
+                -- Use simp only [h_sk] to handle dependent types
+                -- h_raw still in evalLiteral form; fully simplify
+                simp only [h_sk] at h_len h_raw
+                simp at h_raw
+                -- h_raw : (tl.reverse ++ [hd])[len] = γ
+                have h_tl : tl.length = len.val := by simp at h_len; exact h_len
+                rw [show (tl.reverse ++ [hd])[len.val]'(by simp; omega)
+                  = [hd][len.val - tl.reverse.length]'(by simp [h_tl])
+                  from getElem_append_right (by simp [h_tl])] at h_raw
+                simp [h_tl] at h_raw
+                exact h_raw.symm
+        have h_sound := stepAux_soundness (V.m lbl) (c i).var stkVals (c i).stk h_agree
+        have h_res_l : (TM2.stepAux (V.m lbl) (c i).var stkVals).l = (c (i + 1)).l := by
+          rw [h_actual]; exact h_sound.1
+        have h_res_var : (TM2.stepAux (V.m lbl) (c i).var stkVals).var = (c (i + 1)).var := by
+          rw [h_actual]; exact h_sound.2
+        apply evalCNF_append_true
+        · simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
+          exact ⟨clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation]; exact h_res_l.symm),
+                 clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation]; exact h_res_var.symm)⟩
+        · -- Stack consequents for running case
+          -- Need: for each k, the stkLen and stkElem consequent literals at time i+1
+          -- are satisfied by traceValuation. The clauses encode
+          -- res.stk k = stepAux (V.m lbl) s stkVals |>.stk k
+          -- but the actual next config uses (c i).stk, not stkVals.
+          -- Need stepAux_stack_soundness: res.stk k agrees with actual on
+          -- new stack length and elements at indices encoded in the clauses.
+          -- This is the dual of step_tracks_stacks' in Completeness.lean.
+          sorry
   · -- Label matches, state doesn't: second literal is true
     have h_lit : evalLiteral (traceAssignment c) (tLit V (TableauVar.state i s) false) = true := by
       rw [evalTLit_trace]; simp [traceValuation, Ne.symm hs]
