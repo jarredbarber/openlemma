@@ -2,12 +2,14 @@
 Copyright (c) 2026. All rights reserved.
 Released under Apache 2.0 license.
 -/
-import Erdos.CarryInfra
+import botlib.NumberTheory.CarryInfra
 import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Data.Nat.ModEq
 import Mathlib.Data.Nat.Log
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+
+open OpenLemma.CarryInfra
 
 namespace Erdos1094
 
