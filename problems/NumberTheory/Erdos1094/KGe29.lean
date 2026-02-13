@@ -27,7 +27,7 @@ factor > k. The smooth subcase (Type B) is axiomatized.
 - `large_n_smooth_case` — Sylvester-Schur type for n > k² with k-smooth n/k
   (computational evidence for k ≤ 10^6; gap is extracting small factor from smooth quotient)
 
-Both are supported by the proved density bound `small_prime_kummer_density` (Asymptotic.lean)
+Both are supported by the verified density bound `density_verified_700` (Asymptotic.lean, native_decide)
 and exhaustive computation `crt_verified_700` (native_decide for k ∈ [29, 700]).
 -/
 
@@ -72,7 +72,7 @@ private theorem crt_verified_700 : crtRangeCheck 700 = true := by native_decide
 For k > 700 and n ∈ [2k, k²], some prime p ≤ 29 divides C(n,k).
 
 **What IS proved:**
-- `small_prime_kummer_density`: total_density k < 1/k² for k ≥ 2
+- `density_verified_700`: total_density k < 1/k² for k ∈ [2, 700] (proved by native_decide)
 - `card_KummerValid`: exact cardinality of Kummer-valid residue sets
 - `crt_verified_700`: exhaustive native_decide for k ∈ [29, 700]
 

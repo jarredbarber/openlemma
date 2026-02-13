@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import botlib.NumberTheory.Kummer
 import Mathlib.Data.Nat.Digits.Lemmas
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 
 namespace Erdos1094
 
@@ -31,8 +32,71 @@ noncomputable def density_p (p k : ℕ) : ℝ :=
 noncomputable def total_density (k : ℕ) : ℝ :=
   P_S.prod (fun p => density_p p k)
 
-axiom small_prime_kummer_density (k : ℕ) (hk : k ≥ 2) :
-  total_density k < 1 / (k : ℝ)^2
+/-! ### Computational Density Verification -/
+
+/-- Computable integer check: k² · ∏ card(KummerValid p k) < ∏ p^L_p(k).
+This is equivalent to total_density k < 1/k² (see `densityCheck_sound`). -/
+def densityCheck (k : ℕ) : Bool :=
+  k * k * P_S.prod (fun p => (KummerValid p k).card) < P_S.prod (fun p => p ^ L_p p k)
+
+/-- Range check: densityCheck holds for all k in [lo, hi]. -/
+def densityRangeCheck (lo hi : ℕ) : Bool :=
+  (List.range (hi - lo + 1)).all fun i => densityCheck (lo + i)
+
+/-- total_density equals the ratio of nat products cast to ℝ. -/
+private lemma total_density_eq_ratio (k : ℕ) :
+    total_density k = ↑(P_S.prod (fun p => (KummerValid p k).card)) /
+                      ↑(P_S.prod (fun p => p ^ L_p p k)) := by
+  unfold total_density density_p
+  rw [prod_div_distrib]
+  congr 1
+  · rw [← Nat.cast_prod]
+  · have : (∏ x ∈ P_S, (↑x : ℝ) ^ L_p x k) = ∏ x ∈ P_S, (↑(x ^ L_p x k) : ℝ) := by
+      apply prod_congr rfl; intro x _; push_cast; ring
+    rw [this, ← Nat.cast_prod]
+
+/-- Soundness: the integer check implies the real density bound. -/
+theorem densityCheck_sound (k : ℕ) (hk : k ≥ 2) (h : densityCheck k = true) :
+    total_density k < 1 / (k : ℝ) ^ 2 := by
+  unfold densityCheck at h
+  simp only [decide_eq_true_eq] at h
+  have h_cast : (↑(k * k * P_S.prod (fun p => (KummerValid p k).card)) : ℝ) <
+                 ↑(P_S.prod (fun p => p ^ L_p p k)) := by exact_mod_cast h
+  rw [total_density_eq_ratio]
+  have h_denom : (0 : ℝ) < ↑(P_S.prod (fun p => p ^ L_p p k)) := by
+    have : 0 < P_S.prod (fun p => p ^ L_p p k) := by
+      apply prod_pos; intro p hp
+      exact Nat.pos_of_ne_zero (by
+        intro h0; simp [Nat.pow_eq_zero] at h0
+        have : p ∈ P_S := hp; unfold P_S at this; simp at this; omega)
+    exact_mod_cast this
+  have hk2_pos : (0 : ℝ) < (k : ℝ) ^ 2 := by
+    have : (2 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
+    nlinarith
+  rw [div_lt_div_iff₀ h_denom hk2_pos, one_mul, sq]
+  push_cast at h_cast ⊢
+  linarith
+
+/-- Range check soundness. -/
+theorem densityRangeCheck_sound (lo hi : ℕ) (hlo : lo ≥ 2)
+    (h : densityRangeCheck lo hi = true) :
+    ∀ k, lo ≤ k → k ≤ hi → total_density k < 1 / (k : ℝ) ^ 2 := by
+  intro k hk_lo hk_hi
+  apply densityCheck_sound k (by omega)
+  unfold densityRangeCheck at h
+  rw [List.all_eq_true] at h
+  have hk_sub : lo + (k - lo) = k := by omega
+  have hm : k - lo ∈ List.range (hi - lo + 1) := by
+    simp only [List.mem_range]; omega
+  have := h _ hm
+  simp only [hk_sub] at this
+  exact this
+
+-- Exhaustive verification for k ∈ [2, 700]. Compile time: ~3 min.
+set_option maxHeartbeats 4000000 in
+set_option linter.style.nativeDecide false in
+set_option linter.style.maxHeartbeats false in
+private theorem density_verified_700 : densityRangeCheck 2 700 = true := by native_decide
 
 /-! ### Helper Lemmas -/
 
@@ -174,8 +238,11 @@ theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
   rw [this]
   exact card_filter_digits_le p (digits p k).length k hp_one
 
-theorem erdos_asymptotic_density_bound (k : ℕ) (h_large : k ≥ 2) :
+/-- Density bound for k ∈ [2, 700], proved by verified computation.
+For k > 700, the density bound is not needed directly — the proof uses
+`crt_density_from_asymptotic` (KGe29.lean) which bridges to deterministic coverage. -/
+theorem erdos_asymptotic_density_bound (k : ℕ) (h_large : k ≥ 2) (h_small : k ≤ 700) :
     total_density k < 1 / (k : ℝ) ^ 2 :=
-  small_prime_kummer_density k h_large
+  densityRangeCheck_sound 2 700 (by norm_num) density_verified_700 k h_large h_small
 
 end Erdos1094

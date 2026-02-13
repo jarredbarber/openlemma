@@ -19,10 +19,12 @@ contained in `{(n,k) : n < 285 ∧ k < 29}`.
 - `large_n_minFac_bound` Type A — interval divisibility when n/k has large prime factor
 - All arithmetic lemmas and wiring
 
-**Axiom inventory (3 total, down from 5 + 1 sorry):**
-1. `small_prime_kummer_density` (Asymptotic.lean) — density < 1/k², computationally verified
-2. `crt_density_from_asymptotic` (KGe29.lean) — density→coverage bridge for k > 700
-3. `large_n_smooth_case` (KGe29.lean) — smooth quotient case for n > k²
+**Axiom inventory (2 total, down from 5 axioms + 1 sorry):**
+1. `crt_density_from_asymptotic` (KGe29.lean) — density→coverage bridge for k > 700
+2. `large_n_smooth_case` (KGe29.lean) — smooth quotient case for n > k²
+
+**Previously axiom, now proved:**
+- `density_verified_700` (Asymptotic.lean) — density < 1/k² for k ∈ [2,700], native_decide
 
 See KGe29.lean for detailed documentation of each axiom's status and evidence.
 -/
