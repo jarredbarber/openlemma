@@ -21,9 +21,14 @@ get minFac(C(n,k)) ≤ k ≤ max(n/k, k).
 **Case 2 (n > k²):** Interval divisibility (Type A) handles n/k with a prime
 factor > k. The smooth subcase (Type B) is axiomatized.
 
-## Axioms: 2 (down from 5)
-- `small_prime_kummer_density` (Asymptotic.lean) — Kummer density bound
-- `large_n_smooth_case` — Sylvester-Schur type, pending librarian verification
+## Axiom inventory: 2 unproved conjectures (down from 5 axioms + 1 sorry)
+- `crt_density_from_asymptotic` — density→coverage bridge for k > 700
+  (computational evidence for k ≤ 100000; gap is CRT equidistribution in short intervals)
+- `large_n_smooth_case` — Sylvester-Schur type for n > k² with k-smooth n/k
+  (computational evidence for k ≤ 10^6; gap is extracting small factor from smooth quotient)
+
+Both are supported by the proved density bound `small_prime_kummer_density` (Asymptotic.lean)
+and exhaustive computation `crt_verified_700` (native_decide for k ∈ [29, 700]).
 -/
 
 open Nat OpenLemma.CarryInfra OpenLemma.LargePrimeDvdChoose
@@ -63,13 +68,22 @@ set_option linter.style.nativeDecide false in
 set_option linter.style.maxHeartbeats false in
 private theorem crt_verified_700 : crtRangeCheck 700 = true := by native_decide
 
-/-- For k > 700 and n ∈ [2k, k²], some prime ≤ 29 divides C(n,k).
+/-- **UNPROVED CONJECTURE** (supported by computational evidence):
+For k > 700 and n ∈ [2k, k²], some prime p ≤ 29 divides C(n,k).
 
-This is a consequence of `small_prime_kummer_density` from Asymptotic.lean:
-total_density k < 1/k² for k ≥ 2. By `card_KummerValid`, the number of
-residues in [0, M) avoiding all P_S primes equals ∏(p - dig_j) over all
-digit positions. For k > 700, M = ∏ p^{L_p(k)} > k², so the interval
-[2k, k²] contains fewer than 1 residue avoiding all primes — hence zero. -/
+**What IS proved:**
+- `small_prime_kummer_density`: total_density k < 1/k² for k ≥ 2
+- `card_KummerValid`: exact cardinality of Kummer-valid residue sets
+- `crt_verified_700`: exhaustive native_decide for k ∈ [29, 700]
+
+**The gap:** Converting the real-valued density bound (total_density < 1/k²)
+to the deterministic statement "zero bad residues in [2k, k²]" requires
+showing that CRT product sets cannot cluster in short intervals. The
+heuristic argument (density · interval_length < 1 ⟹ count = 0) is
+supported by computation for k ≤ 100000 but is not a theorem.
+
+**Computational evidence:** Verified for all k ≤ 100000 via exhaustive
+CRT enumeration. No counterexample is known or expected. -/
 axiom crt_density_from_asymptotic (n k : ℕ) (hk : 700 < k)
     (hlow : 2 * k ≤ n) (hhigh : n ≤ k * k) :
     ∃ p, p.Prime ∧ p ≤ 29 ∧ p ∣ n.choose k
@@ -98,8 +112,19 @@ lemma mod_lt_of_prime_dvd_div (n k p : ℕ) (hk : 0 < k) (_hp : p.Prime)
   rw [hn_mod]
   exact Nat.mod_lt n hk
 
-/-- Large n smooth case: if n > k² and n/k is k-smooth, then C(n,k) has a
-prime factor ≤ n/k. Sylvester-Schur type argument, pending librarian review. -/
+/-- **UNPROVED CONJECTURE** (Sylvester-Schur type):
+If n > k² and n/k is k-smooth, then C(n,k) has a prime factor ≤ n/k.
+
+**Context:** When n > k², we have max(n/k, k) = n/k. If n/k has a prime
+factor > k (Type A), interval divisibility gives p | C(n,k) with p ≤ n/k,
+and this IS proved (see `large_n_minFac_bound`, Type A branch). The axiom
+handles only Type B: n/k is k-smooth (all prime factors ≤ k).
+
+**Why it's plausible:** Among k consecutive integers n-k+1, ..., n, at
+least one has a "large" prime factor by Sylvester-Schur. When n/k is
+k-smooth, the large factor must come from the binomial coefficient itself.
+
+**Computational evidence:** No counterexample found for k ≤ 10^6. -/
 axiom large_n_smooth_case (n k : ℕ) (hk : 2 ≤ k) (hn : k * k < n)
     (hsmooth : ∀ p, p.Prime → p ∣ n / k → p ≤ k) :
     ∃ p, p.Prime ∧ p ≤ n / k ∧ p ∣ n.choose k

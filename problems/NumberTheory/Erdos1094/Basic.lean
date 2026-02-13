@@ -10,10 +10,21 @@ import problems.NumberTheory.Erdos1094.KLe28
 The set of exceptions to `minFac(C(n,k)) ≤ max(n/k, k)` is finite,
 contained in `{(n,k) : n < 285 ∧ k < 29}`.
 
-## Axiom inventory (2 total, down from 5 + 1 sorry)
-- `small_prime_kummer_density` — Kummer density bound, computationally verified for k ≤ 100000
-  (used via `crt_density_from_asymptotic` in KGe29.lean)
-- `large_n_smooth_case` — Sylvester-Schur type, pending librarian verification
+## What's proved vs conjectured
+
+**Proved (compiler-verified, no axioms):**
+- `card_KummerValid` — exact Kummer residue cardinality (Asymptotic.lean)
+- `crt_verified_700` — exhaustive check for k ∈ [29, 700] (KGe29.lean, native_decide)
+- `case_b_finite` — exhaustive check for k ∈ [17, 28], n ∈ [285, k²] (KLe28.lean)
+- `large_n_minFac_bound` Type A — interval divisibility when n/k has large prime factor
+- All arithmetic lemmas and wiring
+
+**Axiom inventory (3 total, down from 5 + 1 sorry):**
+1. `small_prime_kummer_density` (Asymptotic.lean) — density < 1/k², computationally verified
+2. `crt_density_from_asymptotic` (KGe29.lean) — density→coverage bridge for k > 700
+3. `large_n_smooth_case` (KGe29.lean) — smooth quotient case for n > k²
+
+See KGe29.lean for detailed documentation of each axiom's status and evidence.
 -/
 
 open Nat
