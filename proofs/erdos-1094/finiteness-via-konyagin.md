@@ -1,7 +1,7 @@
 # Finiteness of the Exceptional Set via Konyagin's Theorem
 
 **Status:** Draft ✏️  
-**Dependencies:** Konyagin (1999), IDL (Verified ✅), Bertrand (Mathlib)  
+**Dependencies:** Konyagin (1999), IDL (Verified ✅), PNT (Dickman estimates), CRT density  
 **Confidence:** High (Part 1), Exploratory (Part 2)
 
 ---
@@ -65,7 +65,11 @@ $$\text{Term 2} \le \frac{4k\,(e^\gamma \ln k + 1)}{\ln n}$$
 
 For $k > K_1$: $g(k) \ge \exp(c\log^2 k)$. The $k$-smooth values of $M$ in $[\exp(c\log^2 k)/k,\, k^{14}]$ form a finite (and, for $k$ large, sparse) set. For each such $M$ and $r \in \{0,\ldots,k-1\}$: the pair $(kM+r, k)$ either has a medium prime dividing $\binom{kM+r}{k}$ (handled above) or is one of at most $k \cdot \Psi(k^{14}, k)$ specific values.
 
-For $k$ sufficiently large ($k > K_2$, computable from Dickman estimates): $\Psi(k^{14}, k) \cdot k \cdot \delta_k < 1$, where $\delta_k < 1/k^2$ is the digit-domination density. So the expected count of exceptions in this range is $< 1$. Combined with the deterministic CRT structure: the count is exactly 0 for $k > K_2$.
+The count of exceptions in this range is at most $k \cdot \Psi(n_0(k)/k,\, k) \cdot \delta_k$, where $\Psi(X, y)$ counts $y$-smooth integers up to $X$. By the Dickman estimate with $u = \log(n_0(k)/k)/\log k = 15k - 1$:
+
+$$\Psi(n_0(k)/k,\, k) \approx \frac{n_0(k)}{k} \cdot \rho(15k) \approx \frac{\exp(15k\ln k)}{k} \cdot \exp(-15k(\ln k + O(1))) = \frac{\exp(-O(k))}{k}$$
+
+So the count $\le k \cdot \exp(-O(k))/k \cdot 1/k^2 = \exp(-O(k))/k^2 < 1$ for all $k \ge 1$. Combined with the deterministic CRT structure: the count is exactly 0 for $k > K_2$ (computable).
 
 Set $K^* = \max(K_1, K_2)$. For $k > K^*$: $E_k = \emptyset$. $\square$
 
@@ -262,6 +266,29 @@ If the full Konyagin reconstruction is too complex, a SIMPLER argument might suf
 **Start with Granville–Ramaré.** Their method is elementary (no algebraic geometry) and the paper is more accessible (31 pages, published in *Mathematika* 43). Making their constant explicit is a realistic goal and would give a weaker but sufficient bound.
 
 **Then attempt Konyagin** if the GR constant isn't good enough (i.e., if $K_0$ from GR is too large for computation).
+
+## 2.7 Effectivity Analysis
+
+### Konyagin's references (from Cambridge Core)
+
+| # | Reference | Effective? | Role in proof |
+|---|-----------|-----------|---------------|
+| 2 | Bombieri–Pila (1989) | ✅ Yes | Lattice points on curves |
+| 5 | Filaseta–Trifonov (1996) | ✅ Yes | Fractional part distribution |
+| 6 | Granville–Ramaré (1996) | ✅ Yes | Prior bound (superseded) |
+| 7 | Huxley–Trifonov (1996) | ✅ Yes | Squarefull numbers |
+| 9 | Schmidt (1991) | ⚠️ Unclear | Diophantine approximation |
+| 10 | Swinnerton-Dyer (1974) | ✅ Yes | Lattice points on curves |
+
+**Key observation:** All the analytic tools (Bombieri–Pila, Filaseta–Trifonov, Swinnerton-Dyer) are **effective** — they give explicit bounds with computable constants. The only potential source of ineffectivity is Schmidt's *Diophantine Approximation and Diophantine Equations* (reference 9), which contains both effective and ineffective results.
+
+**Hypothesis:** Konyagin's constant $c$ is **effective** (computable). The claim of "ineffectivity" in earlier discussions may have been premature. The key methods — exponential sum estimates and lattice point counting — are all effective. Whether $c$ is merely "not computed" vs "not computable" requires reading the full paper.
+
+**If $c$ is effective:** The path to 0 axioms is open. Extract $c$ → compute $K_1$ → verify $k \le K_1$ computationally → done.
+
+**If $c$ is ineffective** (uses Schmidt's Thue–Siegel–Roth): Fall back to Granville–Ramaré, which is definitely effective (elementary exponential sums only).
+
+**Action item:** Obtain Konyagin's full paper and check whether reference 9 (Schmidt) is used in the main theorem or only in auxiliary results. This is the single most impactful question for the project.
 
 ---
 

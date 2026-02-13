@@ -110,11 +110,13 @@ So the only danger case is j ∈ [k, p*-k] with p* ≥ 2k. Since p* ≤ 2k (by B
 - If p* = 2k: impossible (2k is even for k ≥ 2).
 - If p* = 2k+1: this can happen (e.g., k = 14, p* = 29). Then [k, p*-k] = [k, k+1], which has 2 elements. But p* = 2k+1 > 2k, so this p* is in (k, 2k+1], not (k, 2k]. Bertrand gives prime in (k, 2k], so p* ≤ 2k.
 
-**Conclusion for M ≥ 2k:** For any Bertrand prime p* ∈ (k, 2k], since p* < 2k (p* ≤ 2k and p* is odd for k ≥ 2, so p* ≤ 2k-1), the range [k, p*-k] is empty (as p*-k < k). Therefore the interval [kM, kM+k) ALWAYS contains an n with n mod p* < k, hence p* | C(n,k).
+**Conclusion for M ≥ 2k:** For any Bertrand prime p* ∈ (k, 2k], since p* < 2k (p* ≤ 2k and p* is odd for k ≥ 2, so p* ≤ 2k-1), the range [k, p*-k] is empty (as p*-k < k). Therefore the interval [kM, kM+k) ALWAYS contains **some** n with n mod p* < k, hence p* | C(n,k).
 
-This means: **for M ≥ 2k and any n ∈ [kM, kM+k), C(n,k) has a prime factor p* ≤ 2k ≤ M.** 
+**⚠️ CORRECTION (2026-02-12):** The original text below this line stated "for M ≥ 2k and **any** n ∈ [kM, kM+k), C(n,k) has a prime factor p*." This universal (∀) claim does NOT follow from the existential (∃) result proved above. The pigeonhole argument shows SOME element of the window {kM, ..., kM+k-1} has residue < k mod p*, but this does not mean EVERY element has this property.
 
-This handles ALL smooth M ≥ 2k, completely and deterministically! 🎉
+**Counterexample:** k=3, p*=5, n=18, M=6=2k. Window {16,17,18}, residues mod 5 = {1,2,3}. Residues 1,2 are < 3 (pigeonhole satisfied ✓). But n=18 has 18 mod 5 = 3 ≥ 3, so 5 ∤ C(18,3)=816. Verified: 816 mod 5 = 1. In fact, 40% of all n (those with n mod 5 ∈ {3,4}) have 5 ∤ C(n,3).
+
+**Correct statement:** For M ≥ 2k, there EXISTS n ∈ [kM, kM+k) with p* | C(n,k). This is existential, not universal. The downstream consequence: the Bertrand chain does NOT by itself eliminate Axiom 2's Type B case for all n with M ≥ 2k. See `finiteness-via-konyagin.md` for the medium-prime + Dickman argument that handles this case.
 
 ### 3.2 Remaining Case: k-smooth M ∈ (k, 2k)
 
@@ -370,7 +372,7 @@ Then kM mod p = k · (M mod p) mod p ≠ 0. The residues of n ∈ [kM, kM+k) mod
 
 The question: does the window of k consecutive residues starting at kM mod p contain a value < k?
 
-As shown in Strategy B (§3.1): for p ∈ (k, 2k) (specifically p < 2k), the window of k consecutive residues ALWAYS contains a value < k. This is because the "bad" range [k, p-k] (where the entire window could avoid values < k) is empty when p < 2k.
+As shown in Strategy B (§3.1): for p ∈ (k, 2k) (specifically p < 2k), the window of k consecutive residues ALWAYS contains a value < k. This is because the "bad" range [k, p-k] is empty when p < 2k. **However (see §3.1 correction), this only proves SOME n in the interval has p | C(n,k), not ALL n.** The condition p | C(n,k) requires n mod p < k (specifically for the given n), not merely that some window element has residue < k.
 
 ### 8.2 Application to Axiom 2
 
@@ -417,7 +419,7 @@ But again, this is a density argument. For SPECIFIC n, we can't rule it out.
 | Strategy | Closes Axiom 1? | Closes Axiom 2? | Practicality |
 |----------|-----------------|-----------------|--------------|
 | A (Smooth parts) | No | Partially | Low |
-| B (Bertrand chain) | No | **Yes for M ≥ 2k** | High |
+| B (Bertrand chain) | No | **∃ (not ∀) for M ≥ 2k** | Medium |
 | C (Sieve) | Maybe (large k) | Reduces to Axiom 1 | Medium |
 | D (Baker-Stewart) | Theoretically | Reduces to Axiom 1 | Low |
 | E (Computation) | Extends range | Extends range | **High** |
@@ -436,7 +438,7 @@ No known analytical tool provides (2) at the required precision. The Baker-Stewa
 ### 9.3 Recommended Path Forward
 
 **Short term (days):**
-1. **Write the Bertrand chain proof for M ≥ 2k** (Strategy B, §3.1) as a standalone verified proof. This closes half of Axiom 2 with a clean, structural argument.
+1. **⚠️ CORRECTED:** The Bertrand chain proof (Strategy B, §3.1) only gives an EXISTENTIAL result: for each M ≥ 2k, SOME n in [kM, kM+k) has p* | C(n,k). It does NOT close Axiom 2 for all n. See §3.1 correction and `finiteness-via-konyagin.md` for the medium-prime + Dickman argument that handles n > exp(15k ln k).
 2. **Formally reduce Axiom 2 (M ∈ (k, 2k) case) to Axiom 1.** Show that for k-smooth M ∈ (k, 2k) and n ∈ [kM, kM+k), the condition "no prime ≤ k divides C(n,k)" implies "n digit-dominates k for all primes ≤ k." Then Axiom 2's smooth case follows from Axiom 1.
 
 **Medium term (weeks):**
@@ -455,7 +457,7 @@ This would require significant number-theoretic work and is likely publishable i
 
 **Honest answer: No, not with current mathematical technology.** Every approach to Axiom 1 eventually reduces to: "the CRT residues satisfying digit-domination for all primes ≤ 29 are too spread out to hit the interval [2k, k²]." This is inherently a statement about the DISTRIBUTION of these residues, which is a form of density/equidistribution.
 
-The Bertrand chain argument (Strategy B) is the ONE case where we have a genuinely non-density proof — and it only works for Axiom 2 with M ≥ 2k, where the residue-counting argument gives an EXACT zero (the "bad range" is empty), not just an expected-value bound.
+**⚠️ CORRECTED:** The Bertrand chain argument (Strategy B) was previously claimed to be a non-density proof for M ≥ 2k. However, this is incorrect (see §3.1 correction): the pigeonhole only proves SOME n per interval has p* | C(n,k), not ALL n. The confusion arose from conflating "some element of the window has residue < k" with "a multiple of p* lies in the window." The correct non-density argument for large n is the medium-prime + Dickman analysis in `finiteness-via-konyagin.md`.
 
 **For Axiom 1, the best realistic path is computation** (extending the verified range) **plus an axiom for the tail**, clearly documented as computationally supported but not analytically proved.
 
