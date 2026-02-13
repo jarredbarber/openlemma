@@ -38,11 +38,17 @@ theorem iterate_stepOrHalt_of_halted {cfg : V.Cfg} (h : cfg.l = none) (n : ℕ) 
   | zero => rfl
   | succ n ih => simp [Function.comp, ih, stepOrHalt_of_halted h]
 
-/-! ## Bounded read depth -/
+/-! ## Bounded read depth
 
-/-- Bounded read depth: each statement reads at most 1 element from each stack. -/
-def BoundedReadDepth (V : Turing.FinTM2) [DecidableEq V.K] : Prop :=
-  ∀ (lbl : V.Λ) (k : V.K), stmtReadDepth k (V.m lbl) ≤ 1
+BoundedReadDepth is defined in Tableau.lean (uses V.decidableEqK). -/
+
+-- Bridge: BoundedReadDepth uses V.decidableEqK, but section uses [DecidableEq V.K].
+-- These are equal by Subsingleton.
+private theorem brd_section (hBRD : BoundedReadDepth V) (lbl : V.Λ) (k : V.K) :
+    stmtReadDepth k (V.m lbl) ≤ 1 := by
+  have := hBRD lbl k
+  rwa [show @stmtReadDepth V.K V.Γ V.Λ V.σ k V.decidableEqK (V.m lbl)
+    = stmtReadDepth k (V.m lbl) from by congr 1] at this
 
 /-! ## Basic infrastructure -/
 
@@ -469,7 +475,7 @@ private theorem step_tracks_running {params : Params V} {input : List (V.Γ V.k�
         (stmtReadDepth k (V.m lbl)) =
       ((cfgAt V input t).stk k).take (stmtReadDepth k (V.m lbl)) := by
     intro k
-    have hrd := hBRD lbl k
+    have hrd := brd_section hBRD lbl k
     -- readDepth = 0 or 1
     cases h_rd : stmtReadDepth k (V.m lbl) with
     | zero => rfl

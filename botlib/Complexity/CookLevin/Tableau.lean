@@ -37,6 +37,11 @@ def stmtReadDepth {K : Type*} {Γ : K → Type*} {Λ : Type*} {σ : Type*} (k : 
 noncomputable def maxReadDepth (V : Turing.FinTM2) (k : V.K) : ℕ :=
   (Finset.univ (α := V.Λ)).fold max 0 (fun l => stmtReadDepth k (V.m l))
 
+/-- A FinTM2 has bounded read depth when every instruction reads ≤ 1 stack element.
+    Note: uses the FinTM2's bundled DecidableEq instance for stmtReadDepth. -/
+def BoundedReadDepth (V : Turing.FinTM2) : Prop :=
+  ∀ (lbl : V.Λ) (k : V.K), stmtReadDepth (inst := V.decidableEqK) k (V.m lbl) ≤ 1
+
 /-! ## Tableau Variables -/
 
 /-- Propositional variables for the Cook-Levin reduction. -/

@@ -254,7 +254,8 @@ private theorem evalClause_tail {σ : Assignment} {x : Literal} {rest : List Lit
 
 /-- The trace satisfies transition constraints (PROVED). -/
 theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
-    (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i)) :
+    (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i))
+    (hBRD : BoundedReadDepth V) :
     evalCNF (traceAssignment c) (transitionConstraints params) = true := by
   unfold transitionConstraints
   apply evalCNF_flatMap_true; intro i hi; rw [mem_range] at hi
@@ -266,7 +267,51 @@ theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
   by_cases hl : l = (c i).l <;> by_cases hs : s = (c i).var
   · -- Both match: verify consequents
     subst hl; subst hs
-    sorry -- The matching case: needs stepAux_soundness and stack lemmas
+    -- The stkLits portion of the antecedent: stkLen/stkElem negations for each k.
+    -- If ANY evaluates to true → antecedent is satisfied → all clauses trivially true.
+    -- If NONE evaluates to true → topsInfo fully matches actual → verify consequents.
+    set stkLits := (Finset.univ : Finset V.K).toList.flatMap (fun k => match topsInfo k with
+      | none => [tLit V (TableauVar.stkLen i k 0) false]
+      | some (len, γ) => [tLit V (TableauVar.stkLen i k (len.val + 1)) false,
+                         tLit V (TableauVar.stkElem i k len.val γ) false]) with stkLits_def
+    -- Check if any stkLit evaluates to true
+    by_cases h_stk : evalClause (traceAssignment c) stkLits = true
+    · -- Some stkLit is true → antecedent has a true literal → all clauses satisfied
+      -- The antecedent is [labelLit, stateLit] ++ stkLits
+      -- labelLit and stateLit evaluate to false (they match).
+      -- But some stkLit evaluates to true → evalClause ante = true
+      have h_ante : ∀ rest, evalClause (traceAssignment c)
+          ([tLit V (TableauVar.label i (c i).l) false,
+            tLit V (TableauVar.state i (c i).var) false] ++ stkLits ++ rest) = true := by
+        intro rest
+        rw [evalClause, any_append, Bool.or_eq_true]
+        left; rw [any_append, Bool.or_eq_true]; right; exact h_stk
+      -- Now show all clauses are satisfied using h_ante
+      cases (c i).l with
+      | none =>
+        apply evalCNF_append_true
+        · simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
+          exact ⟨h_ante _, h_ante _⟩
+        · apply evalCNF_flatMap_true; intro k _
+          cases topsInfo k with
+          | none => simp only [evalCNF, all_cons, all_nil, Bool.and_true]; exact h_ante _
+          | some p => simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
+                      exact ⟨h_ante _, h_ante _⟩
+      | some lbl =>
+        apply evalCNF_append_true
+        · simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
+          exact ⟨h_ante _, h_ante _⟩
+        · apply evalCNF_flatMap_true; intro k _
+          apply evalCNF_append_true
+          · simp only [evalCNF, all_cons, all_nil, Bool.and_true]; exact h_ante _
+          · simp only [evalCNF, all_eq_true, mem_map]
+            intro cl ⟨_, _, hcl⟩; subst hcl; exact h_ante _
+    · -- No stkLit evaluates to true → topsInfo fully matches actual stacks
+      -- This means: for every k, stkLen and stkElem match.
+      -- → topsInfo correctly describes the actual stack tops.
+      -- → stkVals agrees with actual on top 1 element.
+      -- → With BRD, stepAux_soundness applies.
+      sorry -- TODO: verify consequents when topsInfo matches
   · -- Label matches, state doesn't: second literal is true
     have h_lit : evalLiteral (traceAssignment c) (tLit V (TableauVar.state i s) false) = true := by
       rw [evalTLit_trace]; simp [traceValuation, Ne.symm hs]
@@ -540,7 +585,8 @@ theorem reduction_sound (params : Params V) (inputContents : List (V.Γ V.k₀))
                        stk := fun k => if h : k = V.k₀ then h ▸ inputContents else [] })
     (h_step : ∀ i < params.timeBound, c (i + 1) = (V.step (c i)).getD (c i))
     (h_depth : ∀ i ≤ params.timeBound, ∀ k, ((c i).stk k).length ≤ params.maxStackDepth)
-    (h_halt : ∃ i ≤ params.timeBound, (c i).l = none) :
+    (h_halt : ∃ i ≤ params.timeBound, (c i).l = none)
+    (hBRD : BoundedReadDepth V) :
     Satisfiable (tableauFormula params inputContents) := by
   use traceAssignment c
   show evalCNF (traceAssignment c) (tableauFormula params inputContents) = true
@@ -549,7 +595,7 @@ theorem reduction_sound (params : Params V) (inputContents : List (V.Γ V.k₀))
   simp only [Bool.and_eq_true]
   exact ⟨⟨⟨⟨satisfies_consistency params c h_depth,
            satisfies_initial params inputContents c h_init⟩,
-          satisfies_transition params c h_step⟩,
+          satisfies_transition params c h_step hBRD⟩,
          satisfies_frame params c h_step⟩,
         satisfies_acceptance params c h_halt⟩
 
