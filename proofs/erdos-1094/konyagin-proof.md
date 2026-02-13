@@ -138,6 +138,16 @@ $$|E| \lesssim k^2 \cdot \left(\frac{2C}{k^2}\right)^{r-1}$$
 
 For Konyagin's choice $C = \alpha \log^2 k$, $r = \alpha \log k$: the dominant term is $\exp(-2\alpha(\log k)^2)$, which vanishes super-exponentially.
 
+**CAUTION (§7.6): The $r$-fold amplified sum encodes the count itself.**
+
+By CRT factoring over the sublattice $h = M' j$ (where $M' = \prod p_i$):
+$$\sum_j \sigma_{\mathrm{amp}}(j) \cdot D_N(j; M') = \sum_{n=1}^{N} \prod_i g_i(n) = M' \cdot \#\{n \in [1,N] : n \bmod p_i \in T_i\ \forall i\}$$
+where $g_i(n) = p_i \cdot \mathbf{1}[n \bmod p_i \in T_i]$ for a shifted carry set $T_i$ of size $c_i$.
+
+So bounding the $r$-fold amplified sum is **equivalent to bounding the count** — no new information is obtained from this sublattice. CS on the reduced modulus $M'$ just recovers CS on the count itself.
+
+The genuine error information lives in the **partial amplifications** (subsets $S \subsetneq \{1, \ldots, r\}$) and the **generic terms** ($S = \emptyset$).
+
 ### §8. Expected Result (Conditional on §7)
 
 With BP applied pairwise to $\binom{r}{2}$ pairs, using $r$ primes with $c_{0,i} \approx 2t$ (where $t = p - k/2 \approx \alpha\log^2 k$):
