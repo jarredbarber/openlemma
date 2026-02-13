@@ -44,10 +44,18 @@ reduced to the Boolean satisfiability problem.
 - [x] Implement `stepAux_soundness` in `Correctness.lean` (Fully proved axiom-free)
 - [x] Implement `stepAux_preservation_elem` in `Correctness.lean` (Fully proved axiom-free)
 - [x] Prove `trace_tracks_label` in `Completeness.lean` (Inductive structure proved)
+- [x] Prove `step_tracks_running` crux in `Completeness.lean` (PROVED — was key theorem)
+- [x] Prove `trace_tracks_full` in `Completeness.lean` (Full invariant induction)
 - [x] Prove `satisfies_initial` in `Soundness.lean` (Fully proved axiom-free)
 - [x] Prove `satisfies_consistency` in `Soundness.lean` (Fully proved axiom-free)
-- [ ] Eliminate `step_tracks_running` crux in `Completeness.lean`
-- [ ] Eliminate remaining `Soundness.lean` axioms (satisfies_transition, satisfies_frame)
+- [x] Prove `satisfies_frame` in `Soundness.lean` (Fully proved axiom-free)
+- [x] Prove `satisfies_transition` in `Soundness.lean` (3/4 cases proved, 1 sorry for matching case)
+- [x] Move `BoundedReadDepth` to `Tableau.lean` (required for transition soundness)
+- [ ] Close `satisfies_transition` matching-case sorry (assigned to formalize)
+- [ ] Eliminate `step_tracks_stacks'` axiom in `Completeness.lean` (mechanical)
+- [ ] Eliminate `trace_base_stacks'` axiom in `Completeness.lean` (mechanical)
+- [ ] Eliminate `tableauFormula_is_polytime` axiom in `PolyTime.lean` (citation)
+- [ ] Assemble `SAT_is_NP_hard` from components (replace citation axiom)
 
 ### Phase 4: Extensions
 - [x] SAT → 3-SAT reduction (verified)
@@ -60,6 +68,25 @@ reduced to the Boolean satisfiability problem.
 - [x] VERTEX COVER → DOMINATING SET reduction (verified)
 - [x] 3-SAT → EXACT COVER reduction (verified)
 - [x] Basic NP-completeness results (follows from reductions)
+
+## Current Stats (as of 2026-02-12)
+
+| File | Lines | Axioms | Sorrys | Theorems |
+|------|-------|--------|--------|----------|
+| Correctness.lean | 158 | 0 | 0 | 8 |
+| Tableau.lean | 186 | 0 | 0 | 0 |
+| PolyTime.lean | 30 | 1 | 0 | 0 |
+| Completeness.lean | 647 | 2 | 0 | 36 |
+| Soundness.lean | 607 | 0 | 1 | 37 |
+| CookLevin.lean (hub) | ~52 | 1 | 0 | 3 |
+| **Total** | **~1680** | **4** | **1** | **84** |
+
+### Remaining gaps:
+1. `step_tracks_stacks'` (Completeness axiom) — mechanical stack invariant
+2. `trace_base_stacks'` (Completeness axiom) — mechanical base case
+3. `tableauFormula_is_polytime` (PolyTime axiom) — citation axiom
+4. `SAT_is_NP_hard_citation` (CookLevin axiom) — assembly from components
+5. `satisfies_transition` matching case (Soundness sorry) — in progress
 
 ## Design Decisions
 - Build on Mathlib's TM2/FinTM2 (matches existing Lean ecosystem)
