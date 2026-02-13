@@ -17,6 +17,8 @@ coefficients by a prime, derived from Kummer's theorem (1852).
 ## Main Results
 
 * `kummer_criterion`: `p ∣ C(n, k) ↔ ∃ i, digit_i(k) > digit_i(n)` in base `p`.
+* `trailing_zero_carry`: `v_p(n) > v_p(k) → p ∣ C(n, k)`.
+* `smooth_n_has_small_factor`: If `n` is `k`-smooth and `n > k`, then `∃ p ≤ k, p | C(n, k)`.
 
 The proof strategy uses Lucas' theorem (already in Mathlib as
 `Choose.choose_modEq_choose_mod_mul_choose_div_nat`) combined with strong induction.
@@ -159,5 +161,65 @@ theorem minFac_choose_multiple_le (r k : ℕ) (hr : 2 ≤ r) (hk : 0 < k) :
   calc ((r * k).choose k).minFac
       ≤ r.minFac := Nat.minFac_le_of_dvd hr_mf.two_le h_dvd
     _ ≤ r := Nat.minFac_le (by omega)
+
+/-! ## Trailing Zero Lemma and Smooth Factor -/
+
+/-- If v_p(n) > v_p(k) and k ≤ n and k ≠ 0, then p | C(n,k).
+
+The base-p digit of k at position v_p(k) is nonzero (by definition of the
+p-adic valuation), while the digit of n at that position is zero (since
+p^(v_p(k)+1) | n). By Kummer's digit-domination criterion, p | C(n,k). -/
+theorem trailing_zero_carry (n k : ℕ) (hk : k ≤ n) (hk0 : k ≠ 0)
+    (hv : padicValNat p n > padicValNat p k) :
+    p ∣ n.choose k := by
+  set v := padicValNat p k
+  -- p^(v+1) | n (since v+1 ≤ v_p(n))
+  have h_pow_n : p ^ (v + 1) ∣ n := by
+    rw [padicValNat_dvd_iff_le (by omega : n ≠ 0)]; omega
+  have h_pv_n : p ^ v ∣ n := (pow_dvd_pow p (Nat.le_succ v)).trans h_pow_n
+  -- Digit of n at position v is zero: p | n/p^v
+  have hn_digit : n / p ^ v % p = 0 := by
+    have : p ∣ n / p ^ v := by rwa [Nat.dvd_div_iff_mul_dvd h_pv_n, ← pow_succ]
+    exact Nat.dvd_iff_mod_eq_zero.mp this
+  -- Digit of k at position v is nonzero: p^(v+1) ∤ k
+  have hk_digit : 0 < k / p ^ v % p := by
+    rw [Nat.pos_iff_ne_zero]
+    intro h_eq
+    have : p ^ (v + 1) ∣ k := by
+      rw [pow_succ]
+      exact Nat.mul_dvd_of_dvd_div pow_padicValNat_dvd (Nat.dvd_of_mod_eq_zero h_eq)
+    have := (padicValNat_dvd_iff_le hk0).mp this; omega
+  -- Apply Kummer: digit domination fails at position v
+  rw [kummer_criterion p n k hk]
+  exact ⟨v, by simp_rw [Nat.getD_digits _ _ pp.two_le]; omega⟩
+
+/-- If n is k-smooth (all prime factors ≤ k), n > k, and k ≥ 2,
+then some prime p ≤ k divides C(n, k).
+
+If no prime p ≤ k divided C(n,k), then v_p(n) ≤ v_p(k) for all p | n,
+forcing n | k. But n > k, contradiction. -/
+theorem smooth_n_has_small_factor (n k : ℕ) (hk : 2 ≤ k) (hn : k < n)
+    (hsmooth : ∀ q, q.Prime → q ∣ n → q ≤ k) :
+    ∃ q, q.Prime ∧ q ≤ k ∧ q ∣ n.choose k := by
+  have hn0 : n ≠ 0 := by omega
+  have hk0 : k ≠ 0 := by omega
+  have hkn : k ≤ n := le_of_lt hn
+  by_contra h_none
+  push_neg at h_none
+  suffices n ∣ k from absurd (Nat.le_of_dvd (by omega) this) (by omega)
+  rw [Nat.dvd_iff_prime_pow_dvd_dvd]
+  intro q e hq hqe_n
+  rcases e with _ | e
+  · simp
+  · have hq_dvd_n : q ∣ n := (dvd_pow_self q (by omega : e + 1 ≠ 0)).trans hqe_n
+    have hq_le : q ≤ k := hsmooth q hq hq_dvd_n
+    have hq_fact : Fact q.Prime := ⟨hq⟩
+    have hv_le : padicValNat q n ≤ padicValNat q k := by
+      by_contra hv_gt
+      push_neg at hv_gt
+      exact h_none q hq hq_le (@trailing_zero_carry q hq_fact n k hkn hk0 hv_gt)
+    have he_le : e + 1 ≤ padicValNat q n :=
+      (@padicValNat_dvd_iff_le q hq_fact n (e + 1) hn0).mp hqe_n
+    exact (@padicValNat_dvd_iff_le q hq_fact k (e + 1) hk0).mpr (le_trans he_le hv_le)
 
 end OpenLemma.Kummer
