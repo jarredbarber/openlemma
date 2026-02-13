@@ -748,13 +748,15 @@ private theorem step_tracks_stacks'
       cases h_rd : stmtReadDepth k (V.m lbl) with
       | zero => rfl
       | succ n =>
-        have hn : n = 0 := by omega; subst hn
+        have hn : n = 0 := by omega
+        subst hn
         have h_k := h_stks k
         split at h_k
         · rename_i h_none
           have h_len0 := consistency_stkLen_unique hC (by omega) k h_k (h_stkLen k) (by omega) (h_depth k)
           have h_nil : (cfgAt V input t).stk k = [] := List.eq_nil_iff_length_eq_zero.mpr h_len0.symm
-          simp [h_nil]
+          have : stkVals k = [] := by simp [stkVals, h_none]
+          simp [h_nil, this]
         · rename_i len γ h_some_ti
           obtain ⟨h_len_v, h_elem_v⟩ := h_k
           have h_len_eq := consistency_stkLen_unique hC (by omega) k h_len_v (h_stkLen k)
@@ -772,28 +774,216 @@ private theorem step_tracks_stacks'
           simp only [h_stk_eq, reverse_cons] at h_eq
           rw [getElem_append_right (by simp : rest.reverse.length ≤ rest.length)] at h_eq
           simp at h_eq
-          exact h_eq
+          -- h_eq : γ = head. Need: (stkVals k).take 1 = (head :: rest).take 1
+          -- stkVals k = [γ] (from topsInfo)
+          rename_i h_some_ti
+          have h_sv : stkVals k = [γ] := by simp [stkVals, h_some_ti]
+          simp [h_sv, h_eq]
     -- Stack consequents from transition clause
     refine ⟨?_, ?_, ?_⟩
     · -- stkLen at t+1
+      -- Key relationships needed for all three goals
+      have h_oldLen_k : ∀ k, (match topsInfo k with | none => 0 | some (len, _) => len.val + 1 : ℕ) =
+          ((cfgAt V input t).stk k).length := by
+        intro k'
+        have h_stk_k' := h_stks k'
+        cases h_ti : topsInfo k' with
+        | none => rw [h_ti] at h_stk_k'; exact consistency_stkLen_unique hC (by omega) k' h_stk_k' (h_stkLen k') (Nat.zero_le _) (h_depth k')
+        | some p =>
+          obtain ⟨len, γ⟩ := p; rw [h_ti] at h_stk_k'
+          exact consistency_stkLen_unique hC (by omega) k' h_stk_k'.1 (h_stkLen k') len.isLt (h_depth k')
+      have h_sv_len_k : ∀ k, (stkVals k).length = (if Option.isSome (topsInfo k) then 1 else 0) := by
+        intro k'; cases h_ti : topsInfo k' <;> simp [stkVals, h_ti]
       intro k; rw [h_next]
       have h_k := evalCNF_flatMap_mem h_stk_block
         (Finset.mem_toList.mpr (Finset.mem_univ k))
-      -- Navigate to stkLen clause
-      set ns := res.stk k
+      have h_len_delta := stepAux_stk_len_delta (V.m lbl) (cfgAt V input t).var
+        stkVals (cfgAt V input t).stk h_agree k
+      -- Extract stkLen consequent
       have h_stkLen_block := evalCNF_append_left h_k
       simp only [evalCNF, all_cons, all_nil, Bool.and_true] at h_stkLen_block
       have h_lenC := consequent_of_clause h_stkLen_block h_af
-      -- h_lenC : varTrue σ (stkLen (t+1) k newLen) where newLen = oldLen + ns.length - adj
-      -- Show actual length = newLen
-      have h_len_delta := stepAux_stk_len_delta (V.m lbl) (cfgAt V input t).var
-        stkVals (cfgAt V input t).stk h_agree k
-      -- Compute newLen = actual length
-      -- This follows the same pattern as Soundness stkLen proof
-      sorry
+      -- Show newLen = actual length
+      have h_eq_len : (match topsInfo k with | none => 0 | some (len, _) => ↑len + 1) +
+          (res.stk k).length - (if (topsInfo k).isSome = true then 1 else 0) =
+          ((TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk).stk k).length := by
+        have h1 := h_oldLen_k k
+        have h2 := h_sv_len_k k
+        -- h1: match = stk.length, h2: stkVals.length = if ...
+        -- h_len_delta: res.stk.length + stk.length = stepAux(stk).stk.length + stkVals.length
+        -- Need: match + res.stk.length - if = stepAux(stk).stk.length
+        -- Subst: stk.length + res.stk.length - stkVals.length = stepAux(stk).stk.length
+        have h_svl : (stkVals k).length ≤ ((cfgAt V input t).stk k).length := by
+          rw [h2, ← h1]; cases topsInfo k <;> simp
+        have h_ld := h_len_delta
+        -- Manual arithmetic with explicit lengths
+        have hA := h1  -- match = stk.length
+        have hB := h2  -- stkVals.length = if ...
+        -- Goal: match + res.length - if = stepAux.length
+        -- i.e.: stk.length + res.length - sv.length = stepAux.length (after subst)
+        -- From h_ld: res.length + stk.length = stepAux.length + sv.length
+        -- Need: stk.length + res.length - sv.length = stepAux.length
+        -- This is true when sv.length ≤ stk.length + res.length
+        -- Avoid truncating subtraction: prove equality via Nat.sub_eq_of_eq_add
+        rw [hA, ← hB]
+        apply Nat.sub_eq_of_eq_add
+        linarith
+      -- h_lenC has the computed newLen; goal has actual length
+      -- Use congr to match
+      have : ((TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk).stk k).length =
+          (match topsInfo k with | none => 0 | some (len, _) => ↑len + 1) +
+          (res.stk k).length - (if (topsInfo k).isSome = true then 1 else 0) := h_eq_len.symm
+      rw [this]
+      exact h_lenC
     · -- stkElem at t+1
-      sorry
+      -- Establish decomposition
+      have h_stkVals_take1 : ∀ k, stkVals k = ((cfgAt V input t).stk k).take 1 := by
+        intro k'
+        cases h_ti' : topsInfo k' with
+        | none =>
+          simp [stkVals, h_ti']
+          have h_stk_k' := h_stks k'; rw [h_ti'] at h_stk_k'
+          have h_len0 := consistency_stkLen_unique hC (by omega) k' h_stk_k' (h_stkLen k')
+            (Nat.zero_le _) (h_depth k')
+          rw [List.eq_nil_iff_length_eq_zero.mpr h_len0.symm]
+        | some p =>
+          obtain ⟨len', γ'⟩ := p
+          have h_sv' : stkVals k' = [γ'] := by simp [stkVals, h_ti']
+          rw [h_sv']
+          have h_stk_k' := h_stks k'; rw [h_ti'] at h_stk_k'
+          have h_len_eq := consistency_stkLen_unique hC (by omega) k' h_stk_k'.1 (h_stkLen k')
+            len'.isLt (h_depth k')
+          rcases h_sk : (cfgAt V input t).stk k' with _ | ⟨hd, tl⟩
+          · simp [h_sk] at h_len_eq
+          · simp only [take, cons.injEq, and_true]
+            have h_elem_v := h_stk_k'.2
+            have h_hj : len'.val < ((cfgAt V input t).stk k').length := by
+              rw [h_sk]; simp; rw [h_sk] at h_len_eq; simp at h_len_eq; omega
+            have h_elem_actual := h_stkElem k' len'.val h_hj
+            have h_γ_eq := consistency_stkElem_unique hC (by omega) k' len'.val (by omega)
+              h_elem_v h_elem_actual
+            simp only [h_sk, reverse_cons] at h_γ_eq
+            rw [getElem_append_right (by simp; simp [h_sk] at h_len_eq; omega)] at h_γ_eq
+            simp [show tl.length = len'.val from by simp [h_sk] at h_len_eq; omega] at h_γ_eq
+            exact h_γ_eq
+      have h_rd_le : ∀ k, stmtReadDepth k (V.m lbl) ≤ 1 := by
+        intro k'
+        have : @stmtReadDepth V.K V.Γ V.Λ V.σ k' V.decidableEqK (V.m lbl)
+          = stmtReadDepth k' (V.m lbl) := by congr 1
+        rw [← this]; exact hBRD lbl k'
+      have h_maxRD_le : ∀ k, maxReadDepth V k ≤ 1 := by
+        intro k'; unfold maxReadDepth; rw [Finset.fold_max_le]
+        exact ⟨by omega, fun lbl' _ => by exact le_of_eq_of_le (by congr 1) (hBRD lbl' k')⟩
+      intro k₂ j hj
+      simp only [h_next] at hj ⊢
+      -- Decomposition: stepAux.stk k₂ = ns ++ bottom
+      set ns := (TM2.stepAux (V.m lbl) (cfgAt V input t).var stkVals).stk k₂
+      set bottom := ((cfgAt V input t).stk k₂).drop 1
+      have h_decomp : (TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk).stk k₂ =
+          ns ++ bottom := by
+        have h_d := stepAux_stk_decomp (K := V.K) (Γ := V.Γ)
+          (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk
+          (fun _ => 1) h_rd_le k₂
+        simp only [show (fun k' => ((cfgAt V input t).stk k').take 1) = stkVals from
+          (funext h_stkVals_take1).symm] at h_d
+        exact h_d
+      -- Split: frame region vs transition region
+      by_cases h_frame_guard : j < bottom.length
+      · -- Frame region: bottom element preserved by frame clauses + computation
+        have h_j_lt_t : j < ((cfgAt V input t).stk k₂).length := by
+          simp [bottom] at h_frame_guard; omega
+        have h_frame_cond : j + maxReadDepth V k₂ < ((cfgAt V input t).stk k₂).length := by
+          have := h_maxRD_le k₂; simp [bottom] at h_frame_guard; omega
+        -- Element equality: actual.reverse[j] = stk(t).reverse[j]
+        -- Proved via list decomposition: actual = ns ++ bottom, reverse = bottom.reverse ++ ns.reverse
+        -- j < bottom.length → reverse[j] is in bottom.reverse part
+        -- bottom = stk(t).drop 1, so elements below the top are preserved
+        have h_prev := frame_preserves_elem hsat ht h_frame_cond (h_depth k₂) (h_stkLen k₂) (h_stkElem k₂ j h_j_lt_t)
+        -- h_prev: varTrue σ (stkElem (t+1) k₂ j (stk(t).reverse[j]))
+        -- Goal: varTrue σ (stkElem (t+1) k₂ j (cfgAt(t+1).reverse[j]))
+        -- Show the γ arguments are equal
+        suffices h_eq : ((TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk).stk k₂).reverse[j]'(by rw [length_reverse]; exact hj) =
+            ((cfgAt V input t).stk k₂).reverse[j]'(by rw [length_reverse]; exact h_j_lt_t) by
+          rw [h_eq]; exact h_prev
+        -- actual = ns ++ bottom, reverse = bottom.reverse ++ ns.reverse
+        -- j < bottom.length → access bottom.reverse part
+        -- bottom = stk(t).drop 1 → bottom.reverse = stk(t).reverse.take ...
+        simp only [h_decomp, reverse_append]
+        rw [getElem_append_left (by rw [length_reverse]; exact h_frame_guard)]
+        simp only [bottom, List.reverse_drop, List.getElem_take]
+      · -- Transition region: new top element from transition clause
+        push_neg at h_frame_guard
+        -- j ≥ bottom.length: access ns.reverse part
+        have h_k₂ := evalCNF_flatMap_mem h_stk_block
+          (Finset.mem_toList.mpr (Finset.mem_univ k₂))
+        have h_elem_block := evalCNF_append_right h_k₂
+        -- h_elem_block: evalCNF σ (map ...) = true for stkElem clauses
+        simp only [evalCNF, all_eq_true, mem_map] at h_elem_block
+        -- Index in ns.reverse
+        have h_idx_in_ns : j - bottom.length < ns.reverse.length := by
+          rw [h_decomp, length_append] at hj
+          rw [length_reverse]; omega
+        -- base = bottom.length
+        have h_base_eq : (match topsInfo k₂ with | none => 0 | some (len, _) => ↑len + 1) -
+            (if Option.isSome (topsInfo k₂) = true then 1 else 0) = bottom.length := by
+          cases h_ti' : topsInfo k₂ with
+          | none =>
+            simp [bottom]
+            have h_stk_k' := h_stks k₂; rw [h_ti'] at h_stk_k'
+            have h_len0 := consistency_stkLen_unique hC (by omega) k₂ h_stk_k' (h_stkLen k₂)
+              (Nat.zero_le _) (h_depth k₂)
+            rw [show (cfgAt V input t).stk k₂ = [] from List.eq_nil_iff_length_eq_zero.mpr h_len0.symm]; simp
+          | some p =>
+            obtain ⟨len', γ'⟩ := p
+            simp only [Option.isSome]; norm_num
+            have h_stk_k' := h_stks k₂; rw [h_ti'] at h_stk_k'
+            have h_len_eq := consistency_stkLen_unique hC (by omega) k₂ h_stk_k'.1 (h_stkLen k₂)
+              len'.isLt (h_depth k₂)
+            simp [bottom]; omega
+        -- The stkElem clause for (γ_elem, j') gives consequent
+        set j' := j - bottom.length
+        set γ_elem := ns.reverse[j']'h_idx_in_ns
+        -- (γ_elem, j') ∈ ns.reverse.zipIdx
+        have h_mem : (γ_elem, j') ∈ ns.reverse.zipIdx := by
+          rw [List.mem_iff_getElem]
+          refine ⟨j', by simp [length_reverse] at h_idx_in_ns; simp; exact h_idx_in_ns, ?_⟩
+          rw [List.getElem_zipIdx]; simp [γ_elem, j']
+        -- The clause for (γ_elem, j') has the form: antecedent ++ [stkElem (t+1) k₂ (base + j') γ_elem true]
+        -- h_elem_block gives us it's satisfied. Antecedent is all-false, so consequent is true.
+        -- First, construct the clause
+        set base := (match topsInfo k₂ with | none => 0 | some (len, _) => ↑len + 1) -
+            (if Option.isSome (topsInfo k₂) = true then 1 else 0)
+        have h_clause_sat := h_elem_block
+          (_ ++ [tLit V (TableauVar.stkElem (t + 1) k₂ (base + j') γ_elem) true])
+          ⟨⟨γ_elem, j'⟩, h_mem, rfl⟩
+        have h_consq := consequent_of_clause h_clause_sat h_af
+        -- h_consq: varTrue σ (stkElem (t+1) k₂ (base + j') γ_elem)
+        -- Need: base + j' = j
+        have h_idx_eq : base + j' = j := by
+          show _ = j; rw [h_base_eq]; simp [j']; omega
+        -- Need: γ_elem = actual.reverse[j]
+        -- γ_elem = ns.reverse[j'] by definition
+        -- actual.reverse[j] = ns.reverse[j'] by decomposition (j ≥ bottom.length)
+        -- actual = ns ++ bottom, so actual.reverse = bottom.reverse ++ ns.reverse
+        -- actual.reverse[j] at j ≥ bottom.length accesses ns.reverse[j - bottom.length] = ns.reverse[j']
+        rw [h_idx_eq] at h_consq
+        -- h_consq: varTrue σ (stkElem (t+1) k₂ j γ_elem)
+        -- Goal: varTrue σ (stkElem (t+1) k₂ j actual.reverse[j])
+        -- Show γ_elem = actual.reverse[j]
+        suffices h_γ : γ_elem = ((TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk).stk k₂).reverse[j]'(by rw [length_reverse]; exact hj) by
+          rw [h_γ] at h_consq; exact h_consq
+        -- γ_elem = ns.reverse[j'] = actual.reverse[j]
+        -- actual.reverse = bottom.reverse ++ ns.reverse, j ≥ bottom.length
+        simp only [h_decomp, reverse_append]
+        rw [getElem_append_right (by rw [length_reverse]; exact h_frame_guard)]
+        simp [length_reverse, γ_elem, j']
     · -- Depth bound at t+1
+      intro k; rw [h_next]
+      -- The actual length at t+1 = newLen, which was derived from transition clause.
+      -- newLen = oldLen + |ns| - adj
+      -- From h_eq_len: newLen = actual step length
+      -- From stkLen correctness + consistency: the encoded length ≤ maxStackDepth
+      -- (The consistency constraint only generates values in Fin (maxStackDepth + 1))
       sorry
 
 -- CNF helpers (local copies, also in Soundness.lean)
