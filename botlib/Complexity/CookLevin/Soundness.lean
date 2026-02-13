@@ -277,35 +277,40 @@ theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
     -- Check if any stkLit evaluates to true
     by_cases h_stk : evalClause (traceAssignment c) stkLits = true
     · -- Some stkLit is true → antecedent has a true literal → all clauses satisfied
-      -- The antecedent is [labelLit, stateLit] ++ stkLits
-      -- labelLit and stateLit evaluate to false (they match).
-      -- But some stkLit evaluates to true → evalClause ante = true
-      have h_ante : ∀ rest, evalClause (traceAssignment c)
-          ([tLit V (TableauVar.label i (c i).l) false,
-            tLit V (TableauVar.state i (c i).var) false] ++ stkLits ++ rest) = true := by
-        intro rest
+      -- The ante = [labelLit, stateLit] ++ stkLits. stkLits has a true literal.
+      -- So: evalClause ([labelLit, stateLit] ++ stkLits) = true
+      -- And every clause is ante ++ [cons], so evalClause_prefix' gives clause sat.
+      have h_ante_sat : ∀ (l' : Option V.Λ) (s' : V.σ) (rest : List Literal),
+          evalClause (traceAssignment c)
+            ([tLit V (TableauVar.label i l') false,
+              tLit V (TableauVar.state i s') false] ++ stkLits ++ rest) = true := by
+        intro l' s' rest
         rw [evalClause, any_append, Bool.or_eq_true]
         left; rw [any_append, Bool.or_eq_true]; right; exact h_stk
-      -- Now show all clauses are satisfied using h_ante
-      cases (c i).l with
+      -- Now decompose the block structure
+      cases h_l : (c i).l with
       | none =>
         apply evalCNF_append_true
         · simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
-          exact ⟨h_ante _, h_ante _⟩
+          
+          exact ⟨h_ante_sat _ _ _, h_ante_sat _ _ _⟩
         · apply evalCNF_flatMap_true; intro k _
+          
           cases topsInfo k with
-          | none => simp only [evalCNF, all_cons, all_nil, Bool.and_true]; exact h_ante _
+          | none => simp only [evalCNF, all_cons, all_nil, Bool.and_true]; exact h_ante_sat _ _ _
           | some p => simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
-                      exact ⟨h_ante _, h_ante _⟩
+                      exact ⟨h_ante_sat _ _ _, h_ante_sat _ _ _⟩
       | some lbl =>
         apply evalCNF_append_true
         · simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true]
-          exact ⟨h_ante _, h_ante _⟩
+          
+          exact ⟨h_ante_sat _ _ _, h_ante_sat _ _ _⟩
         · apply evalCNF_flatMap_true; intro k _
+          
           apply evalCNF_append_true
-          · simp only [evalCNF, all_cons, all_nil, Bool.and_true]; exact h_ante _
+          · simp only [evalCNF, all_cons, all_nil, Bool.and_true]; exact h_ante_sat _ _ _
           · simp only [evalCNF, all_eq_true, mem_map]
-            intro cl ⟨_, _, hcl⟩; subst hcl; exact h_ante _
+            intro cl ⟨_, _, hcl⟩; subst hcl; exact h_ante_sat _ _ _
     · -- No stkLit evaluates to true → topsInfo fully matches actual stacks
       -- This means: for every k, stkLen and stkElem match.
       -- → topsInfo correctly describes the actual stack tops.
