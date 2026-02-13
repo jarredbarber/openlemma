@@ -533,6 +533,43 @@ private theorem step_tracks_running {params : Params V} {input : List (V.Γ V.k�
 
 /-! ### Stack invariant maintenance -/
 
+/-- Frame preservation extraction: if the assignment satisfies the formula and correctly
+    encodes stkLen and stkElem at time t, then elements below the read depth are
+    preserved at t+1. -/
+private theorem frame_preserves_elem {params : Params V} {input : List (V.Γ V.k₀)}
+    {σ : Assignment} (hsat : evalCNF σ (tableauFormula params input) = true)
+    {t : ℕ} (ht : t < params.timeBound) {k : V.K} {j : ℕ} {γ : V.Γ k}
+    {len : ℕ} (h_guard : j + maxReadDepth V k < len)
+    (h_len_bound : len ≤ params.maxStackDepth)
+    (h_stkLen : varTrue σ (TableauVar.stkLen (V := V) t k len))
+    (h_stkElem : varTrue σ (TableauVar.stkElem (V := V) t k j γ)) :
+    varTrue σ (TableauVar.stkElem (V := V) (t + 1) k j γ) := by
+  unfold tableauFormula at hsat
+  have hF := evalCNF_append_right (evalCNF_append_left hsat)
+  unfold framePreservation at hF
+  have h1 := evalCNF_flatMap_mem hF (mem_range.mpr ht)
+  have h2 := evalCNF_flatMap_mem h1 (Finset.mem_toList.mpr (Finset.mem_univ k))
+  have h3 := evalCNF_flatMap_mem h2 (mem_range.mpr (by omega : j < params.maxStackDepth))
+  have h4 := evalCNF_flatMap_mem h3 (Finset.mem_toList.mpr (Finset.mem_univ γ))
+  simp only [evalCNF, all_eq_true] at h4
+  have h_clause_in : [tLit V (TableauVar.stkLen t k len) false,
+                       tLit V (TableauVar.stkElem t k j γ) false,
+                       tLit V (TableauVar.stkElem (t + 1) k j γ) true] ∈
+      (List.range (params.maxStackDepth + 1)).filterMap (fun len' =>
+        if j + maxReadDepth V k < len' then
+          some [tLit V (TableauVar.stkLen t k len') false,
+                tLit V (TableauVar.stkElem t k j γ) false,
+                tLit V (TableauVar.stkElem (t + 1) k j γ) true]
+        else none) := by
+    rw [mem_filterMap]; exact ⟨len, by rw [mem_range]; omega, by simp [h_guard]⟩
+  have h5 := h4 _ h_clause_in
+  have h_neg1 : evalLiteral σ (tLit V (TableauVar.stkLen t k len) false) = false := by
+    simp [tLit, evalLiteral, varTrue] at h_stkLen ⊢; exact h_stkLen
+  have h_neg2 : evalLiteral σ (tLit V (TableauVar.stkElem t k j γ) false) = false := by
+    simp [tLit, evalLiteral, varTrue] at h_stkElem ⊢; exact h_stkElem
+  simp only [evalClause, any_cons, any_nil, Bool.or_false, h_neg1, h_neg2, Bool.false_or] at h5
+  simp [tLit, evalLiteral, varTrue] at h5 ⊢; exact h5
+
 /-- Citation axiom: stack tracking maintenance.
     If the full invariant holds at time t, then σ also correctly tracks
     stkLen and stkElem at time t+1.
