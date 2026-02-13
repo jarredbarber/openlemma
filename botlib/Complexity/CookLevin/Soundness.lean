@@ -470,14 +470,62 @@ theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
           exact ⟨clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation]; exact h_res_l.symm),
                  clause_sat_from_last (by rw [evalTLit_trace]; simp [traceValuation]; exact h_res_var.symm)⟩
         · -- Stack consequents for running case
-          -- Need: for each k, the stkLen and stkElem consequent literals at time i+1
-          -- are satisfied by traceValuation. The clauses encode
-          -- res.stk k = stepAux (V.m lbl) s stkVals |>.stk k
-          -- but the actual next config uses (c i).stk, not stkVals.
-          -- Need stepAux_stack_soundness: res.stk k agrees with actual on
-          -- new stack length and elements at indices encoded in the clauses.
-          -- This is the dual of step_tracks_stacks' in Completeness.lean.
-          sorry
+          have h_len_delta : ∀ k₂, ((TM2.stepAux (V.m lbl) (c i).var stkVals).stk k₂).length
+              + ((c i).stk k₂).length =
+              ((TM2.stepAux (V.m lbl) (c i).var (c i).stk).stk k₂).length
+              + (stkVals k₂).length :=
+            fun k₂ => CookLevinTableau.stepAux_stk_len_delta (V.m lbl) (c i).var
+              stkVals (c i).stk h_agree k₂
+          apply evalCNF_flatMap_true; intro k₂ _
+          set ns := (TM2.stepAux (V.m lbl) (c i).var stkVals).stk k₂
+          -- Actual new length via h_len_delta
+          have h_actual_len : ((c (i + 1)).stk k₂).length =
+              (match topsInfo k₂ with | none => 0 | some (len, _) => len.val + 1) +
+              ns.length - (if (topsInfo k₂).isSome then 1 else 0) := by
+            have h_d := h_len_delta k₂
+            -- h_d relates res.stk and actual.stk via length equation
+            -- (c(i+1)).stk k₂ = (stepAux ... (c i).stk).stk k₂
+            rw [show ((c (i + 1)).stk k₂).length =
+              ((TM2.stepAux (V.m lbl) (c i).var (c i).stk).stk k₂).length from by
+                rw [h_actual]]
+            cases h_ti : topsInfo k₂ with
+            | none =>
+              have h_sv : stkVals k₂ = [] := by simp [stkVals_def, h_ti]
+              have h_e := h_stk_empty k₂ h_ti
+              simp only [h_sv, h_e, length_nil, Nat.add_zero] at h_d
+              simp only [h_ti, Option.isSome]; norm_num
+              -- h_d : ns.length = actual.length; goal: actual.length = ns.length
+              exact h_d.symm
+            | some p =>
+              obtain ⟨len, γ⟩ := p
+              have h_sv : stkVals k₂ = [γ] := by simp [stkVals_def, h_ti]
+              have h_len := h_stk_len k₂ len γ h_ti
+              -- Just omega with all relevant facts
+              have h_sv_len : (stkVals k₂).length = 1 := by simp [h_sv]
+              -- h_d : ns.length + |(c i).stk k₂| = |actual| + |stkVals k₂|
+              -- h_sv_len : |stkVals k₂| = 1
+              -- h_len : |(c i).stk k₂| = ↑len + 1
+              -- → |actual| = ns.length + ↑len
+              have h_actual_eq : ((TM2.stepAux (V.m lbl) (c i).var (c i).stk).stk k₂).length =
+                  ns.length + len.val := by
+                have : ns.length + (len.val + 1) =
+                  ((TM2.stepAux (V.m lbl) (c i).var (c i).stk).stk k₂).length + 1 := by
+                  rw [← h_len, ← h_sv_len]; exact h_d
+                omega
+              rw [h_actual_eq]; simp [h_ti]; omega
+          apply evalCNF_append_true
+          · -- stkLen consequent
+            simp only [evalCNF, all_cons, all_nil, Bool.and_true]
+            apply clause_sat_from_last
+            rw [evalTLit_trace]; simp only [ite_true]
+            -- Goal should be: traceValuation c (stkLen (i+1) k₂ newLen) = true
+            -- traceValuation for stkLen checks length equality
+            -- h_actual_len gives us the length
+            simp only [traceValuation]
+            -- Goal: decide (((c (i+1)).stk k₂).length = ...) = true
+            simp only [decide_eq_true_eq]; exact h_actual_len
+          · -- stkElem consequents — needs top element agreement theorem
+            sorry
   · -- Label matches, state doesn't: second literal is true
     have h_lit : evalLiteral (traceAssignment c) (tLit V (TableauVar.state i s) false) = true := by
       rw [evalTLit_trace]; simp [traceValuation, Ne.symm hs]
