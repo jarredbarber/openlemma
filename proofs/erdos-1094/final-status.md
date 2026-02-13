@@ -5,23 +5,39 @@
 
 ## What Is Proved (axiom-free, compiler-verified)
 
-### Lean formalization (via `native_decide`)
+### Lean formalization
 
-1. **k ≤ 28:** For all k ∈ {1,...,28} and n ∈ [2k, k²]: exhaustive verification
-   that minFac(C(n,k)) ≤ max(n/k, k). (`KLe28.lean`, `native_decide`)
+The axiom-free content covers the **n ≤ k² half** of the problem completely,
+plus partial results for n > k².
 
-2. **k ∈ [29, 700], n ∈ [2k, k²]:** For every such (n,k): some prime p ≤ 29
+1. **k ∈ [29, 700], n ∈ [2k, k²]:** For every such (n,k): some prime p ≤ 29
    divides C(n,k). (`crt_verified_700` in `KGe29.lean`, `native_decide`)
 
-3. **n > k², Type A:** When n/k has a prime factor > k, interval divisibility
-   gives p | C(n,k) with p ≤ n/k. (`large_n_minFac_bound` Type A branch,
-   fully proved)
+2. **k ∈ [17, 28], n ∈ [285, k²]:** Exhaustive verification.
+   (`case_b_finite` in `KLe28.lean`, `native_decide`)
 
-4. **Density bound:** total\_density(k) < 1/k² for all k ∈ [2, 700].
+3. **k ≤ 16, n > 284:** Impossible — k² ≤ 256 < 285 ≤ n forces n > k²,
+   and the only remaining gap is the smooth case (Axiom 2 below).
+
+4. **n > k², Type A (n/k has prime factor > k):** Interval divisibility
+   gives p | C(n,k) with p ≤ n/k. (`large_n_minFac_bound` Type A branch,
+   fully proved, no axioms)
+
+5. **Density bound:** total\_density(k) < 1/k² for all k ∈ [2, 700].
    (`density_verified_700` in `Asymptotic.lean`, `native_decide`)
 
-5. **Kummer cardinality:** Exact formula for |KummerValid(k, p)|.
+6. **Kummer cardinality:** Exact formula for |KummerValid(k, p)|.
    (`card_KummerValid` in `Asymptotic.lean`, proved)
+
+### What "axiom-free" actually covers
+
+**Precisely:** For n ≤ k², the Erdős 1094 exceptional set is contained
+in {(n,k) : k ≤ 28, n ≤ 284}. This is fully proved with no axioms.
+
+**NOT proved axiom-free:** ANY (n,k) with n > k² and n/k being k-smooth
+requires Axiom 2, regardless of how small k is. For example, k = 30,
+n = 1000 (n/k = 33 = 3 × 11, both ≤ 30) invokes the smooth axiom.
+The `native_decide` checks cover only n ≤ k².
 
 ### Natural language proofs (all verified ✅)
 
@@ -84,14 +100,17 @@ valuations.
 
 | Component | Status | Method |
 |-----------|--------|--------|
-| k ≤ 28 | ✅ Proved | `native_decide` |
-| k ∈ [29, 700], n ≤ k² | ✅ Proved | `native_decide` (CRT check) |
-| k > 700, n ≤ k² | ❌ Axiom 1 | Density gap (needs BP) |
-| n > k², Type A | ✅ Proved | Interval divisibility |
-| n > k², Type B | ❌ Axiom 2 | Sylvester–Schur variant |
-| All n, all k ≤ 700 | ✅ Proved | Combination of above |
+| k ∈ [29,700], n ∈ [2k, k²] | ✅ Proved | `native_decide` (CRT check) |
+| k ∈ [17,28], n ∈ [285, k²] | ✅ Proved | `native_decide` |
+| k > 700, n ∈ [2k, k²] | ❌ Axiom 1 | Density gap (needs BP) |
+| n > k², n/k has prime > k | ✅ Proved | Interval divisibility |
+| n > k², n/k is k-smooth | ❌ Axiom 2 | Sylvester–Schur variant |
 
-**Verified partial result:** Erdős 1094 holds for all k ≤ 700.
+**Verified partial result (axiom-free):**
+For n ≤ k²: the exceptional set E ∩ {n ≤ k²} ⊆ {k ≤ 28, n ≤ 284}.
+
+**NOT proved axiom-free:** "Erdős 1094 for all k ≤ 700" — this would
+require Axiom 2 for the n > k² smooth case, which applies to all k.
 
 **Full result:** Requires Konyagin (1999) [Axiom 1] + Sylvester–Schur
 variant [Axiom 2], neither of which we can formalize.
@@ -158,9 +177,10 @@ strategy, which uses BP as the key ingredient.
 
 ## Recommendation
 
-**Accept as a partial formalization.** The result "Erdős 1094 for k ≤ 700"
-is fully proved in Lean with no axioms. The gap for k > 700 is precisely
-located and thoroughly documented. The 2 remaining axioms are:
+**Accept as a partial formalization.** The n ≤ k² half of Erdős 1094 is
+fully proved in Lean with no axioms (the exceptional set restricted to
+n ≤ k² is contained in {k ≤ 28, n ≤ 284}). The two remaining gaps are
+precisely located and thoroughly documented. The 2 remaining axioms are:
 - Well-justified by computational evidence (k ≤ 10⁵ and k ≤ 10⁶)
 - Supported by the literature (consequences of Konyagin 1999)
 - Shown to be irreducible by 8 independent elementary approaches
