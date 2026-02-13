@@ -40,14 +40,14 @@ reduced to the Boolean satisfiability problem.
 - [x] Prove: formula is satisfiable ↔ TM accepts (Skeleton in `Soundness.lean` and `Completeness.lean`)
 - [x] Prove: reduction is polynomial-time (verified NL)
 
-### Phase 4: Axiom Elimination
+### Phase 4: Axiom Elimination (Current)
 - [x] Implement `stepAux_soundness` in `Correctness.lean` (Fully proved axiom-free)
 - [x] Implement `stepAux_preservation_elem` in `Correctness.lean` (Fully proved axiom-free)
-- [x] Prove `trace_tracks_label` in `Completeness.lean` (Inductive structure proved; narrowed to `step_tracks`)
-- [x] Refactor `Soundness.lean` to resolve build timeouts (Optimized with `evalCNF_append`)
-- [ ] Prove `satisfies_initial` in `Soundness.lean` (Axiom-free proof pending)
-- [ ] Implement induction for `step_tracks` in `Completeness.lean`
-- [ ] Eliminate `satisfies_transition` axiom in `Soundness.lean`
+- [x] Prove `trace_tracks_label` in `Completeness.lean` (Inductive structure proved)
+- [x] Prove `satisfies_initial` in `Soundness.lean` (Fully proved axiom-free)
+- [x] Prove `satisfies_consistency` in `Soundness.lean` (Fully proved axiom-free)
+- [ ] Eliminate `step_tracks_running` crux in `Completeness.lean`
+- [ ] Eliminate remaining `Soundness.lean` axioms (satisfies_transition, satisfies_frame)
 
 ### Phase 4: Extensions
 - [x] SAT → 3-SAT reduction (verified)
