@@ -136,7 +136,7 @@ v_p(n) ≥ v_p(s) > v_p(k). By `trailing_zero_carry`: p | C(n,k).
 Then p ≤ s = n/q < n/k (since q > k), so minFac ≤ p ≤ n/k. -/
 theorem near_prime_nondivisor_minFac_bound (n k s q : ℕ)
     (hk : 2 ≤ k) (hn : k * k < n) (hkn : k ≤ n)
-    (hnsq : n = s * q) (hq : q.Prime) (hqk : k < q)
+    (hnsq : n = s * q) (_hq : q.Prime) (hqk : k < q)
     (hs0 : 0 < s) (hsk : ¬ (s ∣ k)) :
     (n.choose k).minFac ≤ n / k := by
   -- s ∤ k → ∃ prime p, e with p^e | s, p^e ∤ k
@@ -157,11 +157,24 @@ theorem near_prime_nondivisor_minFac_bound (n k s q : ℕ)
   -- p ≤ s: p | s (from p^e | s with e ≥ 1)
   have hp_le_s : p ≤ s :=
     Nat.le_of_dvd hs0 (dvd_trans (dvd_pow_self p (by omega : e ≠ 0)) hpe_s)
-  -- s < n/k: since n = s*q and q > k, we have s*k < s*q = n, so s < n/k
+  -- s < n/k: since q > k and n = s*q, we get s*k < n, so s+1 ≤ n/k
   have hs_lt : s < n / k := by
-    rw [Nat.lt_div_iff_mul_lt (by omega : 0 < k)]
-    calc s * k < s * q := by exact (Nat.mul_lt_mul_left hs0).mpr hqk
-      _ = n := hnsq.symm
+    have h_sk_lt : s * k < n := by
+      calc s * k < s * q := (Nat.mul_lt_mul_left hs0).mpr hqk
+        _ = n := hnsq.symm
+    -- s*k < n and k > 0 gives s < n/k: n/k ≥ (s*k+1)/k = s + 1/k ≥ s+1 > s... 
+    -- Actually: s+1 ≤ n/k ↔ (s+1)*k ≤ n. And (s+1)*k = s*k + k ≤ s*k + q = ...
+    -- Simpler: s*k < n → s*k ≤ n-1 → s ≤ (n-1)/k → s < n/k? Not quite.
+    -- Direct: n/k ≥ n/q = s (exact since n = s*q). And n/k > s because q > k.
+    -- n = s*q, n/k: since s*k < s*q, dividing by k: s < s*q/k = n/k.
+    -- But division is tricky. Let's use: s ≤ n/q and n/q ≤ n/k only when q ≥ k.
+    -- Actually n/q = s (exact), and we need s < n/k.
+    -- n/k ≥ s ↔ s*k ≤ n. s*k < n, so s*k ≤ n-1 < n, so s*k ≤ n. ✓ s ≤ n/k.
+    -- For STRICT: s < n/k ↔ s*k < n - (n mod k)? Hmm.
+    -- Use: (s+1)*k ≤ n → s+1 ≤ n/k → s < n/k.
+    have h2 : (s + 1) * k ≤ n := by nlinarith [hqk]
+    calc s < s + 1 := Nat.lt_succ_of_le le_rfl
+      _ ≤ n / k := Nat.le_div_iff_mul_le (by omega) |>.mpr h2
   -- minFac ≤ p ≤ s < n/k
   exact le_trans (Nat.minFac_le_of_dvd hp.two_le h_dvd) (by omega)
 
