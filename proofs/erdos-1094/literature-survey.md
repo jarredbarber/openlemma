@@ -39,10 +39,11 @@ Note that the largest value of $k$ among these exceptions is **28**. This suppor
 The function $g(k)$ is defined as the least integer $n > k+1$ such that $\text{minFac}\left(\binom{n}{k}\right) > k$.
 *   **Schur (1929)** proved $g(k) > k$.
 *   **Ecklund, Erdős, and Selfridge (1974)** proved $g(k) \geq 2k$ for most $k$.
-*   **Konyagin (1999)** established the lower bound $g(k) \gg \exp(c (\log k)^2)$ for some constant $c > 0$.
-*   **Granville and Ramaré (1996)** also provided lower bounds and studied the distribution of prime factors.
+*   **Granville and Ramaré (1996)** proved $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ for an absolute constant $c > 0$. This is the best verified unconditional lower bound (per MathWorld).
+*   **Konyagin (1999)** published "Estimates of the least prime factor of a binomial coefficient" in *Mathematika* 46 (1999), 41–55. The exact bound proved is unverified by us — the abstract formula is rendered as an image on Cambridge Core. The paper cites both ELS93 and Granville–Ramaré.
+*   **Sorenson (2019)** computed $g(k)$ up to $k = 323$ and conjectured $\log g(k) \sim k/\log k$ conditionally.
 
-Konyagin's result is significant because $\exp(c (\log k)^2)$ eventually dominates $k^2$. For large $k$, $g(k) > k^2$ implies that any $k$-rough binomial coefficient must have $n > k^2$, which satisfies the $n \leq k^2$ part of the conjecture.
+**Critical note:** The Granville–Ramaré bound grows **slower than any polynomial** in $k$ — it is $o(k^\varepsilon)$ for every $\varepsilon > 0$. In particular, it does NOT prove $g(k) > k^2$, or even $g(k) > k^{1+\varepsilon}$, for any fixed $\varepsilon$. The conjecture $g(k) > k^2$ for $k > 16$ (ELS93 Conjecture 1) remains **open even ineffectively** as far as we can verify.
 
 ### Divisibility by Small Primes
 Erdős observed that for a fixed $k$, $\text{minFac}\left(\binom{n}{k}\right) \leq n/k$ for all $n$ sufficiently large. This is because as $n \to \infty$, the probability that $n$ avoids carries in base $p$ for all primes $p \leq n/k$ approaches zero.
@@ -52,7 +53,7 @@ Erdős observed that for a fixed $k$, $\text{minFac}\left(\binom{n}{k}\right) \l
 *   **Refinement**: Erdős et al. showed that $\binom{n}{k}$ usually has prime factors $\leq n/k$. The "Interval Divisibility Lemma" (often attributed to Selfridge or Erdős) states that if $p$ is a prime in $(k, n/k]$, and $p$ divides $\lfloor n/k \rfloor$, then $p$ divides $\binom{n}{k}$.
 
 ## 6. Summary of Status
-The problem of showing that $E$ is finite remains **OPEN**. While there is strong numerical and asymptotic evidence (particularly the lack of exceptions for $k \geq 29$ and Konyagin's bound on $g(k)$), a complete proof has not been published in the literature.
+The problem of showing that $E$ is finite remains **OPEN**. The best unconditional lower bound on $g(k)$ is subpolynomial (Granville–Ramaré 1996), far from the conjectured $g(k) > k^2$. Strong numerical evidence supports the conjecture (no exceptions found for $k \ge 29$), but no theoretical path to a proof is known.
 
 ## 7. Key Authors for Further Research
 *   **Andrew Granville**: Extensive work on the distribution of prime factors of binomial coefficients.

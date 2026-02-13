@@ -28,7 +28,7 @@ They also define a stronger variant: $p(N, k)$ denotes the least prime factor of
 | **Conjecture 1** | $g(k) > k^2$ for $k > 16$, with $g(28) = 284$ the last exception | Computational |
 | **Conjecture 2** | $p(N, k) \le \max(N/k, 29)$ for all $N \ge 2k$ | Computational |
 
-The gap between $k^2/\ln k$ (proved) and $k^2$ (conjectured) has been open for **over 30 years**.
+The gap between $k^2/\ln k$ (proved by ELS93) and $k^2$ (conjectured) has been open for **over 30 years**. The best subsequent improvement is by Granville and Ramaré (1996), who proved $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ — a subpolynomial bound that still falls far short of $k^2$.
 
 ### 1.3 The Role of 29
 
@@ -131,7 +131,13 @@ Using all 10 primes $\le 29$, we improve to $\delta_k < 1/k^2$, giving expected 
 
 2. **Effective Baker–Stewart bounds:** Stewart (1980) showed that $s_{b_1}(n) + s_{b_2}(n) > c \cdot \log n / (\log \log n)^2$ for coprime bases. Making this effective and combining across multiple bases might yield $g(k) > k^2$ for $k$ above some explicit threshold — but the threshold would likely be astronomically large.
 
-3. **Konyagin's approach:** Konyagin (1999) proved $g(k) \gg \exp(c(\log k)^2)$, which eventually exceeds $k^2$. But "eventually" means for $k$ beyond some unknown constant, and the method doesn't provide an effective threshold.
+3. **Best known lower bound (Granville–Ramaré 1996):** The strongest published bound is:
+$$g(k) \ge \exp\!\left(c\sqrt{\frac{\log^3 k}{\log\log k}}\right)$$
+due to Granville and Ramaré (1996). This grows **slower than any polynomial** — for any fixed $\varepsilon > 0$, the bound is $o(k^\varepsilon)$. In particular, **it does NOT prove $g(k) > k^2$ for large $k$**, or even $g(k) > k^{1+\varepsilon}$ for any fixed $\varepsilon$.
+
+   Konyagin (1999) published a paper in *Mathematika* (vol. 46, no. 1, pp. 41–55) titled "Estimates of the least prime factor of a binomial coefficient," which improves on ELS93 and cites Granville–Ramaré. However, the exact bound in Konyagin's paper is rendered as an image in the online abstract and **we have not been able to verify the precise statement**. MathWorld (Wolfram) still cites Granville–Ramaré 1996 as the best known bound as of its last update.
+
+   **The upshot:** Even ineffectively, it is NOT KNOWN that $g(k) > k^2$ for all sufficiently large $k$. The ELS93 conjecture $g(k) > k^2$ (for $k > 16$) remains fully open.
 
 ### 3.3 The Worst Case
 
@@ -161,17 +167,19 @@ The core obstacle is the same one ELS93 faced: going from $g(k) > ck^2/\ln k$ to
 
 ELS93 were aware of this gap. Their Conjecture 1 is precisely the statement we cannot prove analytically.
 
-### 4.3 The Konyagin Connection
+### 4.3 The State of Lower Bounds on g(k)
 
-Konyagin (1999) proved $g(k) \gg \exp(c(\log k)^2)$. Since $\exp(c(\log k)^2)$ eventually exceeds $k^2$:
+The best VERIFIED lower bound on $g(k)$ is:
+$$g(k) \ge \exp\!\left(c\sqrt{\frac{\log^3 k}{\log\log k}}\right)$$
+due to Granville and Ramaré (1996). This is subpolynomial — it grows slower than $k^\varepsilon$ for any fixed $\varepsilon > 0$.
 
-$$\exists K_0 : \forall k > K_0, \; g(k) > k^2$$
+**What this means:** There is NO known proof, even ineffective, that $g(k) > k^2$ for all sufficiently large $k$. The gap between the best lower bound (subpolynomial) and the ELS93 conjecture ($g(k) > k^2$) is enormous.
 
-This means ELS93 Conjecture 1 is TRUE for $k > K_0$. The problem is that $K_0$ is INEFFECTIVE — Konyagin's proof doesn't compute it. If $K_0$ could be made effective and shown to be $\le 700$, our `native_decide` verification would close the gap completely.
+**Konyagin (1999):** A paper by S. V. Konyagin in *Mathematika* 46 (1999), 41–55, proves a lower bound on $g(k)$ and establishes a theorem on fractional parts of smooth functions. The exact bound is unreadable from the online abstract (rendered as an image). We do not know whether it improves on Granville–Ramaré or by how much. MathWorld still cites Granville–Ramaré as the best known.
 
-**State of the art:** Making Konyagin's constant effective is an open problem. The proof uses the Thue–Siegel–Roth theorem (or its $p$-adic variant by Ridout), which is famously ineffective.
+**Sorenson (2019, arXiv:1907.08559):** Under a "Uniform Distribution Heuristic," shows $\log g(k) \sim k/\log k$, which would mean $g(k) \approx \exp(k/\log k)$ — vastly exceeding $k^2$. But this is conditional on an unproved heuristic. Unconditionally, they compute $g(k)$ up to $k = 323$.
 
-However, **Baker's method** (linear forms in logarithms) gives effective but weaker bounds. If Baker-type bounds could replace Roth-type bounds in Konyagin's argument, the result might become effective. This is a plausible research direction but has not been carried out.
+**The honest picture:** Our axioms ($g(k) > k^2$ for $k > 700$) represent a genuinely open problem with no known theoretical path to resolution. The best unconditional bounds don't even reach $g(k) > k^{1+\varepsilon}$.
 
 ---
 
@@ -225,11 +233,11 @@ The Bertrand chain argument is our main structural innovation: it eliminates ALL
 
 ### Honest assessment:
 
-Our formalization reduces the Erdős 1094 conjecture to the ELS93 conjecture plus finite computation. The ELS93 conjecture has been open for 30+ years and appears to require either:
-- Making Konyagin's $\exp(c(\log k)^2)$ bound effective (via Baker's method), or
-- A fundamentally new approach to multi-base digit equidistribution.
+Our formalization reduces the Erdős 1094 conjecture to the ELS93 conjecture ($g(k) > k^2$ for $k > 16$) plus finite computation. This conjecture has been open for 30+ years. The best unconditional lower bound on $g(k)$ is subpolynomial (Granville–Ramaré 1996), falling far short of $k^2$. Closing the gap would require either:
+- A fundamentally new approach to multi-base digit equidistribution, or
+- Major advances in the theory of simultaneous representations in multiple bases.
 
-Neither is in sight with current techniques.
+No known technique comes close to proving $g(k) > k^{1+\varepsilon}$ for any fixed $\varepsilon > 0$, let alone $g(k) > k^2$.
 
 ---
 
@@ -237,7 +245,7 @@ Neither is in sight with current techniques.
 
 - **[ELS88]** P. Erdős, C. B. Lacampagne, J. L. Selfridge, "Prime factors of binomial coefficients and related problems," *Acta Arith.* 49 (1988), 507–523.
 - **[ELS93]** P. Erdős, C. B. Lacampagne, J. L. Selfridge, "Estimates of the least prime factor of a binomial coefficient," *Math. Comp.* 61 (1993), 215–224.
-- **[Kon99]** S. V. Konyagin, "On the least prime factor of a binomial coefficient," preprint, 1999. (Also referenced in Guy, *Unsolved Problems in Number Theory*, B31.)
-- **[Ste80]** C. L. Stewart, "On the representation of an integer in two different bases," *J. reine angew. Math.* 319 (1980), 63–72.
-- **[GR96]** A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* 43 (1996), 73–107.
+- **[GR96]** A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* 43 (1996), 73–107. *(Best known unconditional lower bound on g(k).)*
+- **[Kon99]** S. V. Konyagin, "Estimates of the least prime factor of a binomial coefficient," *Mathematika* 46 (1999), no. 1, 41–55. *(Exact bound unverified — abstract formula is image-only on Cambridge Core.)*
+- **[Sor19]** J. Sorenson, "An algorithm and estimates for the Erdős–Selfridge function," arXiv:1907.08559, 2019; published in *ANTS XIV*, 2020. *(Computes g(k) up to k = 323; conditional estimate log g(k) ~ k/log k.)*
 - **[Guy04]** R. K. Guy, *Unsolved Problems in Number Theory*, 3rd ed., Springer, 2004. Problems B31, B33.
