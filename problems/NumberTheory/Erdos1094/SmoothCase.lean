@@ -160,7 +160,7 @@ theorem near_prime_nondivisor_minFac_bound (n k s q : ℕ)
   -- s < n/k: since n = s*q and q > k, we have s*k < s*q = n, so s < n/k
   have hs_lt : s < n / k := by
     rw [Nat.lt_div_iff_mul_lt (by omega : 0 < k)]
-    calc s * k < s * q := Nat.mul_lt_mul_left hs0 hqk
+    calc s * k < s * q := by exact (Nat.mul_lt_mul_left hs0).mpr hqk
       _ = n := hnsq.symm
   -- minFac ≤ p ≤ s < n/k
   exact le_trans (Nat.minFac_le_of_dvd hp.two_le h_dvd) (by omega)
