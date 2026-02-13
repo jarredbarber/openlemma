@@ -76,14 +76,14 @@ reduced to the Boolean satisfiability problem.
 | Correctness.lean | 158 | 0 | 0 | 8 |
 | Tableau.lean | 186 | 0 | 0 | 0 |
 | PolyTime.lean | 30 | 1 | 0 | 0 |
-| Completeness.lean | 647 | 2 | 0 | 36 |
+| Completeness.lean | 740 | 1 | 0 | 46 |
 | Soundness.lean | 607 | 0 | 1 | 37 |
 | CookLevin.lean (hub) | ~52 | 1 | 0 | 3 |
-| **Total** | **~1680** | **4** | **1** | **84** |
+| **Total** | **~1773** | **3** | **1** | **94** |
 
 ### Remaining gaps:
 1. `step_tracks_stacks'` (Completeness axiom) — mechanical stack invariant
-2. `trace_base_stacks'` (Completeness axiom) — mechanical base case
+2. ~~`trace_base_stacks'`~~ — **PROVED** (was axiom)
 3. `tableauFormula_is_polytime` (PolyTime axiom) — citation axiom
 4. `SAT_is_NP_hard_citation` (CookLevin axiom) — assembly from components
 5. `satisfies_transition` matching case (Soundness sorry) — in progress
