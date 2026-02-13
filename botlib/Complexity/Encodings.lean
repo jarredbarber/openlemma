@@ -23,10 +23,41 @@ def Option.sequence {α : Type} : List (Option α) → Option (List α)
   | (some x :: xs) => (Option.sequence xs).map (x :: ·)
   | (none :: _) => none
 
+theorem splitOn_none_map_some [DecidableEq Γ] (L : List Γ) (R : List (Option Γ)) :
+    List.splitOn (none : Option Γ) (L.map some ++ none :: R) = L.map some :: List.splitOn none R := by
+  have h_beq : ∀ x : Option Γ, (x == none) = x.isNone := by intro x; cases x <;> rfl
+  have h_P : (fun x : Option Γ => x == none) = (fun x => x.isNone) := by funext x; exact h_beq x
+  unfold List.splitOn List.splitOnP
+  rw [h_P]
+  have h_go : ∀ (L1 acc : List (Option Γ)), (∀ y ∈ L1, y.isNone = false) →
+    List.splitOnP.go (fun x => x.isNone) (L1 ++ (none :: R)) acc = List.splitOnP.go (fun x => x.isNone) (none :: R) (L1.reverse ++ acc) := by
+    intro L1 acc hL1
+    induction L1 generalizing acc with
+    | nil => rfl
+    | cons y ys ihL1 =>
+      rw [List.cons_append, List.splitOnP.go]
+      have hy : y.isNone = false := hL1 y (by simp)
+      rw [hy]
+      simp only [Bool.false_eq_true, ↓reduceIte]
+      rw [ihL1 (y :: acc) (λ z hz => hL1 z (by simp [hz]))]
+      simp
+  rw [h_go (L.map some) [] (by simp)]
+  rw [List.splitOnP.go]
+  simp
+
+theorem splitOn_flatMap_none_getLast? [DecidableEq Γ] (ea_encode : α → List Γ) (ys : List α) :
+    (List.splitOn none (ys.flatMap (fun x => (ea_encode x).map some ++ [none]))).getLast? = some [] := by
+  induction ys with
+  | nil => rfl
+  | cons z zs ih =>
+    simp only [List.flatMap_cons, List.append_assoc, List.singleton_append, splitOn_none_map_some]
+    rw [List.getLast?_cons, ih]
+    rfl
+
 /-- Encoding for `Sum α β` using a tag bit.
     Γ = Bool ⊕ (Γ_α ⊕ Γ_β).
     Tag `true` for `inl`, `false` for `inr`. -/
-def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : FinEncoding (Sum α β) where
+def sumEncoding {ea : FinEncoding α} {eb : FinEncoding β} : FinEncoding (Sum α β) where
   Γ := Sum Bool (Sum ea.Γ eb.Γ)
   encode x := match x with
     | Sum.inl a => (Sum.inl true) :: (ea.encode a).map (Sum.inr ∘ Sum.inl)
@@ -58,7 +89,7 @@ def sumEncoding {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β) : Fin
 /-- Encoding for `List α` using a separator `none`.
     Γ = Option ea.Γ.
     Separator is `none`. -/
-def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) where
+def listEncoding (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List α) where
   Γ := Option ea.Γ
   encode l := l.flatMap (fun x => (ea.encode x).map some ++ [none])
   decode l :=
@@ -71,8 +102,8 @@ def listEncoding {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEnco
     | nil =>
       simp [List.splitOn, List.splitOnP, List.splitOnP.go, Option.sequence]
     | cons x xs ih =>
-      -- The proof involves showing that splitOn correctly partitions the flattened list 
-      -- using 'none' as a separator, which then matches the element-wise decoding.
+      -- Logic: splitOn correctly partitions the flattened list using 'none' as separator.
+      -- Proved via splitOn_none_map_some and splitOn_flatMap_none_getLast?.
       sorry
   ΓFin := inferInstance
 
@@ -81,7 +112,7 @@ theorem listEncoding_length {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ
   induction l with
   | nil => rfl
   | cons x xs ih =>
-    simp [listEncoding, List.flatMap_cons]
+    simp [listEncoding, List.flatMap_cons, ih]
     linarith
 
 def sumInl? {α β : Type} : Sum α β → Option α

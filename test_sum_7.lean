@@ -1,2 +1,2 @@
 import Mathlib
-#check List.range_succ_left
+#check Finset.prod_range_succ'
