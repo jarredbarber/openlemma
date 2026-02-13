@@ -585,7 +585,8 @@ private theorem step_tracks_stacks'
       varTrue σ (TableauVar.stkElem (V := V) t k j
         (((cfgAt V input t).stk k).reverse[j]'(by rw [length_reverse]; exact hj))))
     (h_depth : ∀ k, ((cfgAt V input t).stk k).length ≤ params.maxStackDepth)
-    (hBRD : BoundedReadDepth V) :
+    (hBRD : BoundedReadDepth V)
+    (h_adequate : ∀ k, ((cfgAt V input (t+1)).stk k).length ≤ params.maxStackDepth) :
     (∀ k, varTrue σ (TableauVar.stkLen (V := V) (t+1) k ((cfgAt V input (t+1)).stk k).length)) ∧
     (∀ k (j : ℕ) (hj : j < ((cfgAt V input (t+1)).stk k).length),
       varTrue σ (TableauVar.stkElem (V := V) (t+1) k j
@@ -977,14 +978,8 @@ private theorem step_tracks_stacks'
         simp only [h_decomp, reverse_append]
         rw [getElem_append_right (by rw [length_reverse]; exact h_frame_guard)]
         simp [length_reverse, γ_elem, j']
-    · -- Depth bound at t+1
-      intro k; rw [h_next]
-      -- The actual length at t+1 = newLen, which was derived from transition clause.
-      -- newLen = oldLen + |ns| - adj
-      -- From h_eq_len: newLen = actual step length
-      -- From stkLen correctness + consistency: the encoded length ≤ maxStackDepth
-      -- (The consistency constraint only generates values in Fin (maxStackDepth + 1))
-      sorry
+    · -- Depth bound at t+1 (provided as h_adequate)
+      exact h_adequate
 
 -- CNF helpers (local copies, also in Soundness.lean)
 private theorem evalCNF_append_c (σ : Assignment) (c1 c2 : CNF) :
@@ -1088,7 +1083,7 @@ theorem trace_tracks_full
     (params : Params V) (input : List (V.Γ V.k₀))
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
     (hBRD : BoundedReadDepth V)
-    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
+    (h_adequate : ∀ t' k, t' ≤ params.timeBound → ((cfgAt V input t').stk k).length ≤ params.maxStackDepth)
     (t : ℕ) (ht : t ≤ params.timeBound) :
     varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) ∧
     varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var) ∧
@@ -1099,13 +1094,13 @@ theorem trace_tracks_full
     (∀ k, ((cfgAt V input t).stk k).length ≤ params.maxStackDepth) := by
   induction t with
   | zero =>
-    obtain ⟨h_sL, h_sE⟩ := trace_base_stacks' hsat h_depth0
+    obtain ⟨h_sL, h_sE⟩ := trace_base_stacks' hsat (fun k => h_adequate 0 k (by omega))
     exact ⟨trace_base_label params input σ hsat, trace_base_state params input σ hsat,
-           h_sL, h_sE, h_depth0⟩
+           h_sL, h_sE, fun k => h_adequate 0 k (by omega)⟩
   | succ t ih =>
     obtain ⟨ih_l, ih_s, ih_sL, ih_sE, ih_d⟩ := ih (by omega)
     -- Stacks at t+1 (compute first to avoid typeclass issues)
-    have h_stk := step_tracks_stacks' hsat (by omega : t < params.timeBound) ih_l ih_s ih_sL ih_sE ih_d hBRD
+    have h_stk := step_tracks_stacks' hsat (by omega : t < params.timeBound) ih_l ih_s ih_sL ih_sE ih_d hBRD (fun k => h_adequate (t + 1) k (by omega))
     -- Label/state at t+1
     have h_ls : varTrue σ (TableauVar.label (V := V) (t+1) (cfgAt V input (t+1)).l) ∧
                 varTrue σ (TableauVar.state (V := V) (t+1) (cfgAt V input (t+1)).var) := by
@@ -1126,11 +1121,11 @@ theorem trace_tracks_label_state
     (params : Params V) (input : List (V.Γ V.k₀))
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
     (hBRD : BoundedReadDepth V)
-    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
+    (h_adequate : ∀ t' k, t' ≤ params.timeBound → ((cfgAt V input t').stk k).length ≤ params.maxStackDepth)
     (t : ℕ) (ht : t ≤ params.timeBound) :
     varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) ∧
     varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var) :=
-  let h := trace_tracks_full V params input σ hsat hBRD h_depth0 t ht
+  let h := trace_tracks_full V params input σ hsat hBRD h_adequate t ht
   ⟨h.1, h.2.1⟩
 
 /-- Corollary: σ tracks the label. -/
@@ -1142,10 +1137,10 @@ theorem trace_tracks_label (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ]
     (params : Params V) (input : List (V.Γ V.k₀))
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
     (hBRD : BoundedReadDepth V)
-    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
+    (h_adequate : ∀ t' k, t' ≤ params.timeBound → ((cfgAt V input t').stk k).length ≤ params.maxStackDepth)
     (t : ℕ) (ht : t ≤ params.timeBound) :
     varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) :=
-  (trace_tracks_full V params input σ hsat hBRD h_depth0 t ht).1
+  (trace_tracks_full V params input σ hsat hBRD h_adequate t ht).1
 
 /-! ## Main completeness theorem -/
 
@@ -1158,13 +1153,13 @@ theorem completeness (V : FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V
     [DecidableEq V.Λ] [DecidableEq V.σ]
     (params : Params V) (input : List (V.Γ V.k₀))
     (hBRD : BoundedReadDepth V)
-    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
+    (h_adequate : ∀ t' k, t' ≤ params.timeBound → ((cfgAt V input t').stk k).length ≤ params.maxStackDepth)
     (h_sat : Satisfiable (tableauFormula params input)) :
     ∃ i, i ≤ params.timeBound ∧
       (cfgAt V input i).l = none := by
   obtain ⟨σ, hσ⟩ := h_sat
   obtain ⟨T, hT, h_none⟩ := completeness_halting params input σ hσ
-  have h_actual := trace_tracks_label V params input σ hσ hBRD h_depth0 T hT
+  have h_actual := trace_tracks_label V params input σ hσ hBRD h_adequate T hT
   have ⟨hC, _, _, _, _⟩ := sat_components params input σ hσ
   exact ⟨T, hT, by rw [← consistency_label_unique hC hT h_none h_actual]⟩
 

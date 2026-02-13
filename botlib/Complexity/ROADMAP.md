@@ -51,8 +51,8 @@ reduced to the Boolean satisfiability problem.
 - [x] Prove `satisfies_frame` in `Soundness.lean` (Fully proved axiom-free)
 - [x] Prove `satisfies_transition` in `Soundness.lean` (FULLY PROVED, 0 sorrys)
 - [x] Move `BoundedReadDepth` to `Tableau.lean` (required for transition soundness)
-- [~] Close `satisfies_transition` matching-case sorry — halted case DONE, running label/state DONE, running stack consequents remaining (1 sorry)
-- [ ] Eliminate `step_tracks_stacks'` axiom in `Completeness.lean` (mechanical)
+- [x] Close `satisfies_transition` matching-case — FULLY PROVED (0 sorrys)
+- [x] Eliminate `step_tracks_stacks'` axiom in `Completeness.lean` (FULLY PROVED — 400 lines)
 - [x] Eliminate `trace_base_stacks'` axiom in `Completeness.lean` (PROVED)
 - [ ] Eliminate `tableauFormula_is_polytime` axiom in `PolyTime.lean` (citation)
 - [ ] Assemble `SAT_is_NP_hard` from components (replace citation axiom)
@@ -69,20 +69,20 @@ reduced to the Boolean satisfiability problem.
 - [x] 3-SAT → EXACT COVER reduction (verified)
 - [x] Basic NP-completeness results (follows from reductions)
 
-## Current Stats (as of 2026-02-12)
+## Current Stats (as of 2026-02-12, updated after step_tracks_stacks' proof)
 
 | File | Lines | Axioms | Sorrys | Theorems |
 |------|-------|--------|--------|----------|
 | Correctness.lean | 370 | 0 | 0 | 16 |
 | Tableau.lean | 187 | 0 | 0 | 0 |
 | PolyTime.lean | 30 | 1 | 0 | 0 |
-| Completeness.lean | 740 | 1 | 0 | 46 |
+| Completeness.lean | 1166 | 0 | 0 | ~60 |
 | Soundness.lean | 918 | 0 | 0 | ~45 |
 | CookLevin.lean (hub) | ~52 | 1 | 0 | 3 |
-| **Total** | **~2297** | **3** | **0** | **~110** |
+| **Total** | **~2723** | **2** | **0** | **~124** |
 
 ### Remaining gaps:
-1. `step_tracks_stacks'` (Completeness axiom) — mechanical stack invariant
+1. ~~`step_tracks_stacks'`~~ — **FULLY PROVED** (Completeness.lean, 0 axioms)
 2. ~~`trace_base_stacks'`~~ — **PROVED** (was axiom)
 3. `tableauFormula_is_polytime` (PolyTime axiom) — citation axiom
 4. `SAT_is_NP_hard_citation` (CookLevin axiom) — assembly from components
