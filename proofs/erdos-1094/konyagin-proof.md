@@ -148,6 +148,31 @@ So bounding the $r$-fold amplified sum is **equivalent to bounding the count** �
 
 The genuine error information lives in the **partial amplifications** (subsets $S \subsetneq \{1, \ldots, r\}$) and the **generic terms** ($S = \emptyset$).
 
+### §7.7. Numerical Verification: Error Bound Failure
+
+**CRITICAL FINDING:** The first-zero truncation bound (§7.5) does NOT explain the actual error.
+
+Computed for $n \in [2k, k^2]$ with the first $r$ primes (sorted by $c_i$):
+
+| $k$ | $r$ | $\delta N$ | count | $|$error$|$ | fz\_bound | ET+CS | $\sqrt{NR}$ |
+|-----|-----|-----------|-------|------------|-----------|-------|----------|
+| 200 | 4 | 0.987 | **0** | 0.987 | 0.0000 | $1.9 \times 10^5$ | $1.2 \times 10^8$ |
+| 300 | 5 | 0.912 | **0** | 0.912 | 0.0000 | $1.1 \times 10^8$ | $1.0 \times 10^{11}$ |
+| 500 | 5 | 0.234 | **0** | 0.234 | 0.0000 | $3.8 \times 10^8$ | $5.9 \times 10^{11}$ |
+| 100 | 10 | 11.45 | **3** | 8.45 | 0.0000 | huge | huge |
+
+**Three conclusions:**
+
+1. **First-zero truncation captures ~0.001% of the error.** The actual error $|E| \sim O(1)$ is dominated by the TAIL ($h \gg h_{\mathrm{zero}}$). The "elementary argument" of §7.5 bounds only the first few $h$ values.
+
+2. **All standard bounds fail.** The Erdős–Turán + Cauchy–Schwarz bound is $\sqrt{M' \prod c_i}/\pi \sim 10^5$–$10^8$. The classical $\sqrt{NR}$ is even larger ($10^8$–$10^{11}$). Both exceed the actual error ($\sim 1$) by factors of $10^5$–$10^{11}$.
+
+3. **Count $= 0$ empirically whenever $\delta N < 1$** (with $r \ge 4$ primes and $c_{\min} \le 6$). This requires $\sim 10^7\times$ cancellation in the signed exponential sum — exactly the gap that Bombieri–Pila must bridge.
+
+**Exception:** $k = 100$ has $c_{\min} = 6$ (no prime with $c = 2$), and three persistent exceptions $n = 2014, 2015, 2016 \approx 38 \times p_1$ survive all 10 available primes.
+
+**The lattice point interpretation:** The CRT map $n \mapsto (n \bmod p_1, \ldots, n \bmod p_r)$ sends $[2k, k^2]$ to a LINE SEGMENT in the torus $(\mathbb{Z}/p_1) \times \cdots \times (\mathbb{Z}/p_r)$. The "bad" region is a product set $S_1 \times \cdots \times S_r$ with $|S_i| = c_i$. Proving the line misses the product set requires lattice-point counting beyond standard Fourier analysis.
+
 ### §8. Expected Result (Conditional on §7)
 
 With BP applied pairwise to $\binom{r}{2}$ pairs, using $r$ primes with $c_{0,i} \approx 2t$ (where $t = p - k/2 \approx \alpha\log^2 k$):
@@ -180,7 +205,11 @@ For the discrepancy to be $< 1$: need $B^{2r/(d+1)} < M/R$, which determines the
 | §4: Counting formula | Complete ✅ |
 | §5: Elementary CS fails | Proved ✅ (and verified: earlier "breakthrough" was an algebra error) |
 | §6: Per-prime exponential sums | Complete ✅ |
-| §7: BP curve identification | **Gap** — needs Konyagin's paper |
+| §7.1–7.4: Resonance curves | Complete ✅ (degree-4 curves identified) |
+| §7.5: First-zero truncation | ⚠️ Valid bound but captures ~0.001% of error |
+| §7.6: Amplified sublattice | ✅ Proved circular (encodes the count) |
+| §7.7: Numerical verification | ✅ All standard bounds fail by $10^5$–$10^{11}\times$ |
+| §7→8: BP application | **Gap** — needs Konyagin's paper |
 | §8–9: Assembly and constants | **Sketch only** |
 
 ### What This Means for the Lean Formalization
