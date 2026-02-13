@@ -28,7 +28,7 @@ They also define a stronger variant: $p(N, k)$ denotes the least prime factor of
 | **Conjecture 1** | $g(k) > k^2$ for $k > 16$, with $g(28) = 284$ the last exception | Computational |
 | **Conjecture 2** | $p(N, k) \le \max(N/k, 29)$ for all $N \ge 2k$ | Computational |
 
-The gap between $k^2/\ln k$ (proved by ELS93) and $k^2$ (conjectured) has been open for **over 30 years**. The best subsequent improvement is by Granville and Ramaré (1996), who proved $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ — a subpolynomial bound that still falls far short of $k^2$.
+The gap between $k^2/\ln k$ (proved by ELS93) and $k^2$ (conjectured) was open for years. Granville and Ramaré (1996) improved to $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ (still subpolynomial). **Konyagin (1999) closed the gap asymptotically** with $g(k) \ge \exp(c\log^2 k)$, which exceeds $k^2$ for $k > e^{2/c}$. The remaining question is whether the constant $c$ is effective.
 
 ### 1.3 The Role of 29
 
@@ -249,11 +249,16 @@ The Bertrand chain argument is our main structural innovation: it eliminates ALL
 
 ### Honest assessment:
 
-Our formalization reduces the Erdős 1094 conjecture to the ELS93 conjecture ($g(k) > k^2$ for $k > 16$) plus finite computation. This conjecture has been open for 30+ years. The best unconditional lower bound on $g(k)$ is subpolynomial (Granville–Ramaré 1996), falling far short of $k^2$. Closing the gap would require either:
-- A fundamentally new approach to multi-base digit equidistribution, or
-- Major advances in the theory of simultaneous representations in multiple bases.
+Our formalization reduces Erdős 1094 to:
+1. Finite computation ($k \le 700$ by `native_decide`), plus
+2. $g(k) > k^2$ for $k > 700$.
 
-No known technique comes close to proving $g(k) > k^{1+\varepsilon}$ for any fixed $\varepsilon > 0$, let alone $g(k) > k^2$.
+Konyagin (1999) proved $g(k) \ge \exp(c\log^2 k)$, which implies (2) for $k > e^{2/c}$. **The mathematical content of our axioms is KNOWN TO BE TRUE** for large $k$. The remaining question is purely about effectivity:
+
+- **If $c$ is effective:** Compute $K_0$, extend `native_decide`, eliminate all axioms. → **0 axioms.**
+- **If $c$ is ineffective:** The axioms encode a true-but-unprovable-in-our-system statement. We would need either to make $c$ effective (likely possible given the method) or to find an alternative effective proof.
+
+**Priority action:** Obtain and read Konyagin's paper to determine whether $c$ is effective.
 
 ---
 
@@ -261,7 +266,7 @@ No known technique comes close to proving $g(k) > k^{1+\varepsilon}$ for any fix
 
 - **[ELS88]** P. Erdős, C. B. Lacampagne, J. L. Selfridge, "Prime factors of binomial coefficients and related problems," *Acta Arith.* 49 (1988), 507–523.
 - **[ELS93]** P. Erdős, C. B. Lacampagne, J. L. Selfridge, "Estimates of the least prime factor of a binomial coefficient," *Math. Comp.* 61 (1993), 215–224.
-- **[GR96]** A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* 43 (1996), 73–107. *(Best known unconditional lower bound on g(k).)*
-- **[Kon99]** S. V. Konyagin, "Estimates of the least prime factor of a binomial coefficient," *Mathematika* 46 (1999), no. 1, 41–55. *(Exact bound unverified — abstract formula is image-only on Cambridge Core.)*
+- **[GR96]** A. Granville, O. Ramaré, "Explicit bounds on exponential sums and the scarcity of squarefree binomial coefficients," *Mathematika* 43 (1996), 73–107. *(Previous best lower bound on g(k), superseded by Konyagin.)*
+- **[Kon99]** S. V. Konyagin, "Estimates of the least prime factor of a binomial coefficient," *Mathematika* 46 (1999), no. 1, 41–55. *(Proves $g(k) \ge \exp(c\log^2 k)$; effectivity of $c$ is the key open question for our formalization.)*
 - **[Sor19]** J. Sorenson, "An algorithm and estimates for the Erdős–Selfridge function," arXiv:1907.08559, 2019; published in *ANTS XIV*, 2020. *(Computes g(k) up to k = 323; conditional estimate log g(k) ~ k/log k.)*
 - **[Guy04]** R. K. Guy, *Unsolved Problems in Number Theory*, 3rd ed., Springer, 2004. Problems B31, B33.

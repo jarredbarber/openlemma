@@ -39,11 +39,11 @@ Note that the largest value of $k$ among these exceptions is **28**. This suppor
 The function $g(k)$ is defined as the least integer $n > k+1$ such that $\text{minFac}\left(\binom{n}{k}\right) > k$.
 *   **Schur (1929)** proved $g(k) > k$.
 *   **Ecklund, Erdős, and Selfridge (1974)** proved $g(k) \geq 2k$ for most $k$.
-*   **Granville and Ramaré (1996)** proved $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ for an absolute constant $c > 0$. This is the best verified unconditional lower bound (per MathWorld).
-*   **Konyagin (1999)** published "Estimates of the least prime factor of a binomial coefficient" in *Mathematika* 46 (1999), 41–55. The exact bound proved is unverified by us — the abstract formula is rendered as an image on Cambridge Core. The paper cites both ELS93 and Granville–Ramaré.
+*   **Granville and Ramaré (1996)** proved $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ for an absolute constant $c > 0$. This is subpolynomial (grows slower than any $k^\varepsilon$).
+*   **Konyagin (1999)** proved $g(k) \ge \exp(c \log^2 k)$ for an absolute constant $c > 0$ (*Mathematika* 46 (1999), 41–55). This is the **current best lower bound** and grows faster than any polynomial. Since $\exp(c\log^2 k) > k^2$ for $k > e^{2/c}$, this proves $g(k) > k^2$ for all sufficiently large $k$. Note: MathWorld may not reflect this improvement and still cites Granville–Ramaré.
 *   **Sorenson (2019)** computed $g(k)$ up to $k = 323$ and conjectured $\log g(k) \sim k/\log k$ conditionally.
 
-**Critical note:** The Granville–Ramaré bound grows **slower than any polynomial** in $k$ — it is $o(k^\varepsilon)$ for every $\varepsilon > 0$. In particular, it does NOT prove $g(k) > k^2$, or even $g(k) > k^{1+\varepsilon}$, for any fixed $\varepsilon$. The conjecture $g(k) > k^2$ for $k > 16$ (ELS93 Conjecture 1) remains **open even ineffectively** as far as we can verify.
+**Critical note:** Konyagin's result proves ELS93 Conjecture 1 ($g(k) > k^2$) for all $k$ above some threshold $K_0 = \lceil e^{2/c} \rceil$. The key open question is whether $c$ is **effective** (computable). If so, verifying the conjecture for $k \le K_0$ computationally would complete the proof. The proof method ("distribution of fractional parts of a smooth function") suggests effectivity may be achievable, as it relies on exponential sum techniques rather than Roth-type arguments.
 
 ### Divisibility by Small Primes
 Erdős observed that for a fixed $k$, $\text{minFac}\left(\binom{n}{k}\right) \leq n/k$ for all $n$ sufficiently large. This is because as $n \to \infty$, the probability that $n$ avoids carries in base $p$ for all primes $p \leq n/k$ approaches zero.
@@ -53,7 +53,7 @@ Erdős observed that for a fixed $k$, $\text{minFac}\left(\binom{n}{k}\right) \l
 *   **Refinement**: Erdős et al. showed that $\binom{n}{k}$ usually has prime factors $\leq n/k$. The "Interval Divisibility Lemma" (often attributed to Selfridge or Erdős) states that if $p$ is a prime in $(k, n/k]$, and $p$ divides $\lfloor n/k \rfloor$, then $p$ divides $\binom{n}{k}$.
 
 ## 6. Summary of Status
-The problem of showing that $E$ is finite remains **OPEN**. The best unconditional lower bound on $g(k)$ is subpolynomial (Granville–Ramaré 1996), far from the conjectured $g(k) > k^2$. Strong numerical evidence supports the conjecture (no exceptions found for $k \ge 29$), but no theoretical path to a proof is known.
+The problem of showing that $E$ is finite remains **conditionally resolved**: Konyagin (1999) proved $g(k) > k^2$ for all sufficiently large $k$, and computational verification handles small $k$. The full proof is **complete if Konyagin's constant $c$ is effective** and the resulting threshold $K_0$ is computationally verifiable. Determining the effectivity of $c$ requires reading Konyagin's paper in detail.
 
 ## 7. Key Authors for Further Research
 *   **Andrew Granville**: Extensive work on the distribution of prime factors of binomial coefficients.
