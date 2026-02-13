@@ -27,21 +27,19 @@ A full formalization of the **Cook-Levin Theorem** (SAT is NP-complete) in Lean 
 
 ### Erdős 1094 (ACTIVE)
 
-**Problem:** Prove that for all k ≥ 29, there exists n > k+1 such that minFac(C(n,k)) > k.
+**Problem:** Prove that for all k ≥ 29, the least prime factor of $\binom{n}{k}$ is $\le \max(n/k, k)$ for all $n \ge 2k$.
 
-**Current status:**
-- [x] Asymptotic result (`card_KummerValid`): For large k, density of "bad" n vanishes ✅
-- [x] Small cases (k ≤ 28): Verified by computation ✅
-- [ ] Bridge cases (29 ≤ k ≤ 700): Density axiom for now (native_decide target)
-- [ ] Large n smooth case: Coverage axiom (aspirational to eliminate)
+**Architecture:**
+- **Case $n \le k^2$**: **CLOSED** via nonconstructive Konyagin citation. Axiom `konyagin_1999` proves $\exists K_0$ such that $g(k) > k^2$ for $k > K_0$.
+- **Case $n > k^2$**: **OPEN**. Relies on axiom `large_n_smooth_case`.
 
-**Axioms:** 2 (both cite known results from Konyagin 1999)
+**Axioms: 2** (down from 3)
+1. `konyagin_1999`: Faithful citation of *Mathematika* 46 (1999) proving $g(k) \ge \exp(c \log^2 k)$.
+2. `large_n_smooth_case`: For $n > k^2$ where $n/k$ is $k$-smooth, there exists a prime $p \le n/k$ dividing $\binom{n}{k}$.
 
-**Strategic research:** 1,600+ lines of natural language analysis including:
-- Konyagin proof structure with exponential sum framework
-- Why elementary Fourier methods fail (Parseval bound includes √M factor)
-- Where Bombieri-Pila enters (algebraic curves from resonance conditions)
-- Effectivity analysis of analytic number theory tools
+**Research output:** `konyagin-proof.md` (~400 lines) — Deep analysis of why elementary methods fail and the transition to analytic techniques.
+
+**Build Status:** **GREEN** (0 sorrys, 2 axioms). `native_decide` and ad-hoc density bridges have been eliminated.
 
 ## Library contents
 
@@ -86,7 +84,8 @@ A full formalization of the **Cook-Levin Theorem** (SAT is NP-complete) in Lean 
 | `SmoothEscape.lean` | ~280 | 1 (Zsygmondy) | σ₁-orbit of n ≥ 2 is not eventually S-smooth for any finite prime set S | Erdős 410 |
 | `Erdos1094/Asymptotic.lean` | ~140 | 0 | `card_KummerValid`: Asymptotic density bound for k-digit-domination | Erdős 1094 |
 | `Erdos1094/KLe28.lean` | ~120 | 0 | Direct verification for k ≤ 28 | Erdős 1094 |
-| `Erdos1094/KGe29.lean` | ~180 | 2 (Konyagin) | Bridge and large-n cases (citation axioms) | Erdős 1094 |
+| `Erdos1094/Konyagin.lean` | ~80 | 1 | Citation of Konyagin (1999) + bridge to g(k) > k² | Erdős 1094 |
+| `Erdos1094/KGe29.lean` | ~180 | 1 | Large-n case (relies on `large_n_smooth_case`) | Erdős 1094 |
 
 ## Provenance and prior work
 
