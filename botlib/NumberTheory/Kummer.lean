@@ -19,6 +19,7 @@ coefficients by a prime, derived from Kummer's theorem (1852).
 * `kummer_criterion`: `p ∣ C(n, k) ↔ ∃ i, digit_i(k) > digit_i(n)` in base `p`.
 * `trailing_zero_carry`: `v_p(n) > v_p(k) → p ∣ C(n, k)`.
 * `smooth_n_has_small_factor`: If `n` is `k`-smooth and `n > k`, then `∃ p ≤ k, p | C(n, k)`.
+* `divisible_smooth_quotient_has_small_factor`: If `k | n` and `n/k` is `k`-smooth, same conclusion.
 
 The proof strategy uses Lucas' theorem (already in Mathlib as
 `Choose.choose_modEq_choose_mod_mul_choose_div_nat`) combined with strong induction.
@@ -221,5 +222,23 @@ theorem smooth_n_has_small_factor (n k : ℕ) (hk : 2 ≤ k) (hn : k < n)
     have he_le : e + 1 ≤ padicValNat q n :=
       (@padicValNat_dvd_iff_le q hq_fact n (e + 1) hn0).mp hqe_n
     exact (@padicValNat_dvd_iff_le q hq_fact k (e + 1) hk0).mpr (le_trans he_le hv_le)
+
+/-- If k | n, n/k is k-smooth, n > k, and k ≥ 2, then ∃ prime p ≤ k with p | C(n,k).
+
+Since k | n, we have n = k · (n/k). Every prime factor of n divides k or n/k,
+hence is ≤ k. So n is k-smooth, and `smooth_n_has_small_factor` applies.
+
+**Application:** This eliminates `large_n_smooth_case` (axiom 2 in KGe29.lean)
+for the subcase where k | n. -/
+theorem divisible_smooth_quotient_has_small_factor
+    (n k : ℕ) (hk : 2 ≤ k) (hn : k < n) (hdvd : k ∣ n)
+    (hsmooth : ∀ q, q.Prime → q ∣ n / k → q ≤ k) :
+    ∃ q, q.Prime ∧ q ≤ k ∧ q ∣ n.choose k := by
+  apply smooth_n_has_small_factor n k hk hn
+  intro q hq hq_dvd
+  rw [(Nat.mul_div_cancel' hdvd).symm] at hq_dvd
+  rcases hq.dvd_mul.mp hq_dvd with h | h
+  · exact le_of_dvd (by omega) h
+  · exact hsmooth q hq h
 
 end OpenLemma.Kummer
