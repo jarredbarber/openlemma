@@ -231,9 +231,9 @@ For these primes: $L_p = 2$, so $\sigma_p(h_p)$ involves a product of two geomet
 
 The CRT density from $r$ primes near $k/2$ is $\delta \approx (2/k)^r$. For $r = 3$ and $N = k^2$: the expected count $E = \delta \cdot k^2 \approx 8/k < 1$. But the **discrepancy** (difference between actual and expected count) dominates.
 
-**Elementary discrepancy** (Parseval + Cauchy–Schwarz): $D \le \sqrt{R \cdot \log M}$ where $R = |S_k|$ and $M$ is the CRT modulus. For 3 primes: $D \approx k^{3/2}\sqrt{\log k} \gg 1$. The density gain ($E < 1$) is completely wiped out by the error.
+**Elementary discrepancy** (Parseval + Cauchy–Schwarz): The error in $|S \cap [1,N]| = \delta N + E$ satisfies $|E| \le \sqrt{NR}$ where $R = \prod|S_{p_i}|$ is the product set size and $N$ is the interval length. Note: $\sqrt{NR} = \sqrt{N\delta M}$, NOT $\sqrt{N\delta}$. The factor of $\sqrt{M}$ is exponentially large ($M = \prod p_i^2$). For $r$ primes near $k/2$: $|E| \ge k \cdot \prod|S_{p_i}|^{1/2}$, which is exponentially large in $r$.
 
-**Root cause:** The exponential sum $\sum_{s \in S_k} e(hs/M)$ has $R$ terms. The mean-square bound (Parseval) gives $\sqrt{R}$, but $\sqrt{R} \gg k^2$ for 3 primes. The elementary approach cannot prove $g(k) > k^2$.
+**Root cause:** The Parseval identity gives $\sum|\sigma(h)|^2 = MR$, so the typical $|\sigma(h)| \approx \sqrt{R}$. The CRT product structure does NOT reduce the typical $|\sigma|$ — it merely FACTORS it. Cauchy–Schwarz on the factored sum gives the same bound as on the unfactored sum.
 
 This is the fundamental reason why Konyagin needs a non-trivial tool.
 
