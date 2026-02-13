@@ -259,4 +259,112 @@ theorem stepAux_stk_len_delta (q : TM2.Stmt Γ Λ σ) (s : σ) (S1 S2 : ∀ k, L
       omega
     · simp only [update_of_ne hk] at h_eq; exact h_eq
 
+/-! ### Stack Decomposition Theorem
+
+  Shows that `TM2.stepAux q s S` decomposes as:
+  `(TM2.stepAux q s S).stk k = (TM2.stepAux q s (take rd S)).stk k ++ (S k).drop (rd k)`
+  when `rd k ≥ stmtReadDepth k q`.
+
+  This is the key theorem for proving stkElem consequents in Soundness:
+  the "new top" segment of the result stack is determined entirely by the
+  truncated stack, and the "old bottom" is preserved unchanged.
+-/
+
+private lemma head?_take_pos'' {α : Type*} (l : List α) (n : ℕ) (hn : 0 < n) :
+    (l.take n).head? = l.head? := by
+  cases l with
+  | nil => simp
+  | cons a t => simp [take_cons, hn]
+
+private lemma push_take_eq (S : ∀ k, List (Γ k)) (rd : K → ℕ)
+    (k' : K) (v : Γ k') :
+    (fun k₀ => (update S k' (v :: S k') k₀).take (update rd k' (rd k' + 1) k₀)) =
+    update (fun k₀ => (S k₀).take (rd k₀)) k' (v :: (S k').take (rd k')) := by
+  funext k₀; by_cases hk : k₀ = k'
+  · subst hk; simp [Function.update, dite_true]
+  · simp [Function.update, hk, dite_false]
+
+private lemma push_drop_eq (S : ∀ k, List (Γ k)) (rd : K → ℕ)
+    (k' : K) (v : Γ k') (k : K) :
+    (update S k' (v :: S k') k).drop (update rd k' (rd k' + 1) k) =
+    (S k).drop (rd k) := by
+  by_cases hk : k = k'
+  · subst hk; simp [Function.update, dite_true]
+  · simp [Function.update, hk, dite_false]
+
+private lemma pop_take_eq (S : ∀ k, List (Γ k)) (rd : K → ℕ)
+    (k' : K) (h_pos : 0 < rd k') :
+    (fun k₀ => (update S k' (S k').tail k₀).take (update rd k' (rd k' - 1) k₀)) =
+    update (fun k₀ => (S k₀).take (rd k₀)) k' ((S k').take (rd k')).tail := by
+  funext k₀; by_cases hk : k₀ = k'
+  · subst hk; simp [Function.update, dite_true]
+    cases S k₀ with
+    | nil => simp
+    | cons a t =>
+      rw [List.tail, show rd k₀ = (rd k₀ - 1) + 1 from by omega, take_succ_cons]
+      simp [List.tail]
+  · simp [Function.update, hk, dite_false]
+
+private lemma pop_drop_eq (S : ∀ k, List (Γ k)) (rd : K → ℕ)
+    (k' : K) (h_pos : 0 < rd k') (k : K) :
+    (update S k' (S k').tail k).drop (update rd k' (rd k' - 1) k) =
+    (S k).drop (rd k) := by
+  by_cases hk : k = k'
+  · subst hk; simp [Function.update, dite_true]
+    cases S k with
+    | nil => simp
+    | cons a t =>
+      simp [List.tail]; congr 1; omega
+  · simp [Function.update, hk, dite_false]
+
+/-- Stack decomposition: `TM2.stepAux q s S` produces a result stack that decomposes as
+the result of `TM2.stepAux` on truncated stacks, followed by the preserved bottom.
+This is proved by structural induction on the TM2 statement. -/
+theorem stepAux_stk_decomp (q : TM2.Stmt Γ Λ σ) (s : σ) (S : ∀ k, List (Γ k))
+    (rd : K → ℕ) (h_rd : ∀ k, stmtReadDepth k q ≤ rd k) (k : K) :
+    (TM2.stepAux q s S).stk k =
+    (TM2.stepAux q s (fun k' => (S k').take (rd k'))).stk k ++ (S k).drop (rd k) := by
+  induction q generalizing s S rd k with
+  | halt => simp [TM2.stepAux, take_append_drop]
+  | goto _ => simp [TM2.stepAux, take_append_drop]
+  | load f q ih => exact ih (f s) S rd h_rd k
+  | branch f q1 q2 ih1 ih2 =>
+    simp only [TM2.stepAux]; cases f s
+    · exact ih2 s S rd (fun k' => le_trans (Nat.le_max_right _ _) (h_rd k')) k
+    · exact ih1 s S rd (fun k' => le_trans (Nat.le_max_left _ _) (h_rd k')) k
+  | push k' f q ih =>
+    simp only [TM2.stepAux]
+    have h_rd' : ∀ k₀, stmtReadDepth k₀ q ≤ update rd k' (rd k' + 1) k₀ := by
+      intro k₀; by_cases hk : k₀ = k'
+      · subst hk; simp [Function.update, dite_true]
+        have := h_rd k₀; simp [stmtReadDepth] at this; omega
+      · simp [Function.update, hk, dite_false]
+        have := h_rd k₀; simp [stmtReadDepth] at this; omega
+    have h := ih s (update S k' (f s :: S k')) (update rd k' (rd k' + 1)) h_rd' k
+    rw [push_take_eq, push_drop_eq] at h; exact h
+  | peek k' f q ih =>
+    simp only [TM2.stepAux]
+    have h_rd_q : ∀ k₀, stmtReadDepth k₀ q ≤ rd k₀ := by
+      intro k₀; have := h_rd k₀; simp [stmtReadDepth] at this; omega
+    have h_pos : 0 < rd k' := by
+      have := h_rd k'; simp [stmtReadDepth] at this; omega
+    rw [show (S k').head? = ((S k').take (rd k')).head? from
+      (head?_take_pos'' _ _ h_pos).symm]
+    exact ih (f s ((S k').take (rd k')).head?) S rd h_rd_q k
+  | pop k' f q ih =>
+    simp only [TM2.stepAux]
+    have h_rd_q : ∀ k₀, stmtReadDepth k₀ q ≤ update rd k' (rd k' - 1) k₀ := by
+      intro k₀; by_cases hk : k₀ = k'
+      · subst hk; simp [Function.update, dite_true]
+        have := h_rd k₀; simp [stmtReadDepth] at this; omega
+      · simp [Function.update, hk, dite_false]
+        have := h_rd k₀; simp [stmtReadDepth, Ne.symm hk] at this; exact this
+    have h_pos : 0 < rd k' := by
+      have := h_rd k'; simp [stmtReadDepth] at this; omega
+    rw [show (S k').head? = ((S k').take (rd k')).head? from
+      (head?_take_pos'' _ _ h_pos).symm]
+    have h := ih (f s ((S k').take (rd k')).head?)
+      (update S k' (S k').tail) (update rd k' (rd k' - 1)) h_rd_q k
+    rw [pop_take_eq _ _ _ h_pos, pop_drop_eq _ _ _ h_pos k] at h; exact h
+
 end CookLevinTableau

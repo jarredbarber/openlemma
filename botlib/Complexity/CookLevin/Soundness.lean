@@ -14,9 +14,9 @@ Key results:
 - `satisfies_consistency`: trace satisfies consistency constraints (proved)
 - `satisfies_acceptance`: trace satisfies acceptance constraints (proved)
 - `satisfies_frame`: trace satisfies frame preservation constraints (proved)
-- `satisfies_transition`: trace satisfies transition constraints (proved, 1 sorry for
+- `satisfies_transition`: trace satisfies transition constraints (fully proved, 0 sorrys,
   the matching case where actual config equals (l, s, topsInfo))
-- `reduction_sound`: main soundness theorem (0 axioms, 1 sorry from transition)
+- `reduction_sound`: main soundness theorem (0 axioms, 0 sorrys)
 -/
 import botlib.Complexity.CookLevin.Tableau
 import botlib.Complexity.CookLevin.Correctness
@@ -524,8 +524,110 @@ theorem satisfies_transition (params : Params V) (c : ℕ → V.Cfg)
             simp only [traceValuation]
             -- Goal: decide (((c (i+1)).stk k₂).length = ...) = true
             simp only [decide_eq_true_eq]; exact h_actual_len
-          · -- stkElem consequents — needs top element agreement theorem
-            sorry
+          · -- stkElem consequents via stack decomposition
+            -- Use rd = 1 for all stacks (BRD ≤ 1)
+            have h_stkVals_take1 : ∀ k, stkVals k = ((c i).stk k).take 1 := by
+              intro k
+              cases h_ti' : topsInfo k with
+              | none =>
+                simp [stkVals_def, h_ti', h_stk_empty k h_ti']
+              | some p =>
+                obtain ⟨len', γ'⟩ := p
+                have h_sv' : stkVals k = [γ'] := by simp [stkVals_def, h_ti']
+                rw [h_sv']
+                have h_len' := h_stk_len k len' γ' h_ti'
+                rcases h_sk : (c i).stk k with _ | ⟨hd, tl⟩
+                · simp [h_sk] at h_len'
+                · simp only [take, cons.injEq, and_true]
+                  have h_raw' := h_stk_elem_raw k len' γ' h_ti'
+                  rw [evalTLit_trace] at h_raw'
+                  simp only [traceValuation, h_len',
+                    show len'.val < len'.val + 1 from by omega, dite_true,
+                    List.get_eq_getElem] at h_raw'
+                  simp only [h_sk] at h_raw'; simp at h_raw'
+                  have h_tl' : tl.length = len'.val := by
+                    simp [h_sk] at h_len'; exact h_len'
+                  rw [show (tl.reverse ++ [hd])[len'.val]'(by simp; omega) =
+                    [hd][len'.val - tl.reverse.length]'(by simp [h_tl'])
+                    from getElem_append_right (by simp [h_tl'])] at h_raw'
+                  simp [h_tl'] at h_raw'; exact h_raw'.symm
+            -- Decomposition: actual result = ns ++ old_bottom
+            have h_decomp_k2 : (TM2.stepAux (V.m lbl) (c i).var (c i).stk).stk k₂ =
+                ns ++ ((c i).stk k₂).drop 1 := by
+              have h_rd_le : ∀ k, stmtReadDepth k (V.m lbl) ≤ 1 := by
+                intro k
+                have : @stmtReadDepth V.K V.Γ V.Λ V.σ k V.decidableEqK (V.m lbl)
+                  = stmtReadDepth k (V.m lbl) := by congr 1
+                rw [← this]; exact hBRD lbl k
+              have h_d := stepAux_stk_decomp (K := V.K) (Γ := V.Γ)
+                (V.m lbl) (c i).var (c i).stk
+                (fun _ => 1) h_rd_le k₂
+              simp only [show (fun k' => ((c i).stk k').take 1) = stkVals from
+                (funext h_stkVals_take1).symm] at h_d
+              exact h_d
+            -- Now prove each stkElem clause (produced by map on ns.reverse.zipIdx)
+            simp only [evalCNF, all_eq_true, mem_map]
+            intro cl ⟨⟨γ', j⟩, h_mem, hcl⟩; subst hcl
+            simp only [evalCNF, all_cons, all_nil, Bool.and_true]
+            apply clause_sat_from_last
+            rw [evalTLit_trace]; simp only [ite_true]
+            simp only [traceValuation]
+            -- Goal: decide (reverse[base+j] = γ') = true
+            -- From decomposition: actual.reverse = bottom.reverse ++ ns.reverse
+            -- Need: traceValuation c (stkElem (i+1) k₂ (base+j) γ') = true
+            -- i.e., decide ((c (i+1)).stk k₂ .reverse[base+j] = γ') = true
+            -- Use decomposition: actual = ns ++ bottom, so reverse = bottom.reverse ++ ns.reverse
+            -- and base = |bottom|, so reverse[base+j] = ns.reverse[j] = γ'
+            have h_zip := List.mem_zipIdx h_mem
+            have h_j_lt : j < 0 + ns.reverse.length := h_zip.2.1
+            have h_j_bound : j < ns.reverse.length := by omega
+            have h_elem : γ' = ns.reverse[j - 0]'(by omega) := h_zip.2.2
+            simp at h_elem
+            have h_base_eq : (match topsInfo k₂ with | none => 0 | some (len, _) => len.val + 1) -
+                (if Option.isSome (topsInfo k₂) = true then 1 else 0) =
+                (((c i).stk k₂).drop 1).length := by
+              cases h_ti' : topsInfo k₂ with
+              | none => simp [h_stk_empty k₂ h_ti']
+              | some p =>
+                obtain ⟨len', γ''⟩ := p
+                simp only [Option.isSome]; norm_num
+                have h_len' := h_stk_len k₂ len' γ'' h_ti'
+                simp [h_len']
+            -- Compute actual result via decomposition
+            have h_stk_eq : (c (i + 1)).stk k₂ = ns ++ ((c i).stk k₂).drop 1 := by
+              rw [h_actual]; exact h_decomp_k2
+            have h_rev : ((c (i + 1)).stk k₂).reverse =
+                (((c i).stk k₂).drop 1).reverse ++ ns.reverse := by
+              rw [h_stk_eq, reverse_append]
+            -- The index base + j falls in the ns.reverse part
+            set base := (match topsInfo k₂ with | none => 0 | some (len, _) => len.val + 1) -
+                (if Option.isSome (topsInfo k₂) = true then 1 else 0)
+            have h_idx_bound : base + j < ((c (i + 1)).stk k₂).length := by
+              rw [h_stk_eq, length_append]
+              have : base = (((c i).stk k₂).drop 1).length := h_base_eq
+              have : j < ns.length := by rwa [length_reverse] at h_j_bound
+              omega
+            -- Goal: traceValuation c (stkElem (i+1) k₂ (base+j) γ') = true
+            -- Strategy: unfold traceValuation, use h_stk_eq to simplify, extract element
+            -- Directly construct the proof
+            -- traceValuation c (stkElem (i+1) k₂ (base+j) γ') unfolds to:
+            -- let stk := (c(i+1)).stk k₂; if h : base+j < stk.length then decide(stk.reverse[base+j] = γ') else ...
+            -- We have h_idx_bound, so the dif is true branch.
+            -- (c(i+1)).stk k₂ = ns ++ bottom (h_stk_eq)
+            -- reverse = bottom.reverse ++ ns.reverse
+            -- base = bottom.length (h_base_eq)
+            -- reverse[base+j] = ns.reverse[j] = γ'
+            show traceValuation c (TableauVar.stkElem (i + 1) k₂ (base + j) γ') = true
+            simp only [traceValuation]
+            rw [dif_pos h_idx_bound]
+            simp only [decide_eq_true_eq, List.get_eq_getElem, h_stk_eq, reverse_append, h_base_eq]
+            -- Goal: (bottom.reverse ++ ns.reverse)[bottom.length + j] = γ'
+            -- Since bottom.length ≤ bottom.reverse.length = bottom.length,
+            -- this accesses ns.reverse[j]
+            have : (((c i).stk k₂).drop 1).reverse.length ≤
+                (((c i).stk k₂).drop 1).length + j := by simp [length_reverse]
+            rw [getElem_append_right this]
+            simp [length_reverse]; exact h_elem.symm
   · -- Label matches, state doesn't: second literal is true
     have h_lit : evalLiteral (traceAssignment c) (tLit V (TableauVar.state i s) false) = true := by
       rw [evalTLit_trace]; simp [traceValuation, Ne.symm hs]
@@ -792,7 +894,7 @@ theorem satisfies_acceptance (params : Params V) (c : ℕ → V.Cfg)
     the tableau formula is satisfiable.
 
     All sub-theorems (consistency, initial, transition, frame, acceptance) are proved.
-    Uses 0 axioms, 1 sorry (in transition's matching case). -/
+    Uses 0 axioms, 0 sorrys. Fully proved! -/
 theorem reduction_sound (params : Params V) (inputContents : List (V.Γ V.k₀))
     (c : ℕ → V.Cfg)
     (h_init : c 0 = { l := some V.main, var := V.initialState,
