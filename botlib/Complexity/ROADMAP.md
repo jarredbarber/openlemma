@@ -49,7 +49,7 @@ reduced to the Boolean satisfiability problem.
 - [x] Prove `satisfies_initial` in `Soundness.lean` (Fully proved axiom-free)
 - [x] Prove `satisfies_consistency` in `Soundness.lean` (Fully proved axiom-free)
 - [x] Prove `satisfies_frame` in `Soundness.lean` (Fully proved axiom-free)
-- [x] Prove `satisfies_transition` in `Soundness.lean` (3/4 cases proved, 1 sorry for matching case)
+- [x] Prove `satisfies_transition` in `Soundness.lean` (FULLY PROVED, 0 sorrys)
 - [x] Move `BoundedReadDepth` to `Tableau.lean` (required for transition soundness)
 - [~] Close `satisfies_transition` matching-case sorry — halted case DONE, running label/state DONE, running stack consequents remaining (1 sorry)
 - [ ] Eliminate `step_tracks_stacks'` axiom in `Completeness.lean` (mechanical)
@@ -73,20 +73,20 @@ reduced to the Boolean satisfiability problem.
 
 | File | Lines | Axioms | Sorrys | Theorems |
 |------|-------|--------|--------|----------|
-| Correctness.lean | 262 | 0 | 0 | 12 |
-| Tableau.lean | 186 | 0 | 0 | 0 |
+| Correctness.lean | 370 | 0 | 0 | 16 |
+| Tableau.lean | 187 | 0 | 0 | 0 |
 | PolyTime.lean | 30 | 1 | 0 | 0 |
 | Completeness.lean | 740 | 1 | 0 | 46 |
-| Soundness.lean | 816 | 0 | 1 | 40 |
+| Soundness.lean | 918 | 0 | 0 | ~45 |
 | CookLevin.lean (hub) | ~52 | 1 | 0 | 3 |
-| **Total** | **~2076** | **3** | **1** | **101** |
+| **Total** | **~2297** | **3** | **0** | **~110** |
 
 ### Remaining gaps:
 1. `step_tracks_stacks'` (Completeness axiom) — mechanical stack invariant
 2. ~~`trace_base_stacks'`~~ — **PROVED** (was axiom)
 3. `tableauFormula_is_polytime` (PolyTime axiom) — citation axiom
 4. `SAT_is_NP_hard_citation` (CookLevin axiom) — assembly from components
-5. `satisfies_transition` running stkElem consequents (Soundness sorry) — halted done, running label/state done, running stkLen done
+5. ~~`satisfies_transition` running stkElem consequents~~ — **FULLY PROVED** (Soundness.lean 0 sorrys)
 
 ## Design Decisions
 - Build on Mathlib's TM2/FinTM2 (matches existing Lean ecosystem)
