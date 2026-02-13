@@ -83,18 +83,32 @@ axiom large_n_smooth_case (n k : ℕ) (hk : 2 ≤ k) (hn : k * k < n)
     ∃ p, p.Prime ∧ p ≤ n / k ∧ p ∣ n.choose k
 ```
 
-**Status:** Partially proved (gap closed for $k \mid n$ and large $k$).
+**Status:** Partially eliminated via a tower of lemmas (2026-02-13).
 
-- **Subcase $k \mid n$:** Proved in `Kummer.lean` (`divisible_smooth_quotient_has_small_factor`).
-  If $n/k$ is smooth and $k \mid n$, then $n$ is smooth, so $\min Fac \le k$.
-- **Subcase $n = kM + r$ ($r \neq 0$):** Still requires axiom formally.
-  However, Strategy 5 (Generalized Interval Divisibility) shows that for
-  $k \ge 36$, this case is vacuous because the interval $[kM, kM+k)$ contains NO survivors
-  of the Large Prime constraints ($p \in (k, 2k]$).
-  For $k < 36$, computational checks confirm no exceptions.
+#### Lemma tower (each node proved axiom-free in Lean)
 
-**Remaining Gap:** Formally, the axiom is still needed for $n \nmid k$,
-but we know this set is empty for $k \ge 36$.
+```
+Type B: n/k k-smooth, n > k²
+├── B1: n is k-smooth → PROVED (smooth_n_has_small_factor)
+│   └── Special case: k | n → PROVED (divisible_smooth_quotient_has_small_factor)
+├── B2: n has a "gap prime" p ∈ (k, ⌊n/k⌋] → PROVED (p | n, p > k, p ∤ k!)
+└── B3: n = s·q, s < k, q prime > ⌊n/k⌋ (no gap prime, n not k-smooth)
+    ├── B3a: s ∤ k → PROVED (trailing_zero_carry: v_p(s) > v_p(k) → p | C)
+    └── B3b: s | k → OPEN (only known exception: (62, 6))
+```
+
+**B3b is the remaining gap.** n = s·q where s is a proper divisor of k and
+q is a prime > ⌊n/k⌋. Computationally verified: the ONLY exception in all
+tested ranges (k ≤ 35, M ≤ 5000) is (62, 6).
+
+**Why (62, 6) is unique:** 62 = 2 × 31. The Mersenne prime 31 = 11111₂ =
+111₅ = 1011₃ has "all high digits" in every small base. Multiplied by s=2,
+it digit-dominates k=6 in bases 2, 3, and 5 simultaneously. For larger k,
+more prime bases must be satisfied, making such coincidences impossible.
+
+**What would close B3b:** Prove that for k > K₀, no prime q can make sq
+digit-dominate k in all bases p ≤ k when s | k. The digit constraints form
+a system of congruences on q that becomes overdetermined as π(k) grows.
 
 ## The Honest Picture
 
@@ -106,7 +120,11 @@ but we know this set is empty for $k \ge 36$.
 | k ∈ [17,28], n ∈ [285, k²] | ✅ Proved | `native_decide` |
 | k > 700, n ∈ [2k, k²] | ❌ Axiom 1 | Density gap (needs BP) |
 | n > k², n/k has prime > k | ✅ Proved | Interval divisibility |
-| n > k², n/k is k-smooth | ❌ Axiom 2 | Sylvester–Schur variant |
+| n > k², k \| n, n/k k-smooth | ✅ Proved | Trailing zero (Kummer) |
+| n > k², n k-smooth | ✅ Proved | smooth_n_has_small_factor |
+| n > k², gap prime exists | ✅ Proved | Trivial (p \| n, p > k) |
+| n > k², n=sq, s∤k | ✅ Proved | Trailing zero on s |
+| n > k², n=sq, s\|k | ❌ Axiom 2 | Only exception: (62,6) |
 
 **Verified partial result (axiom-free):**
 For n ≤ k²: the exceptional set E ∩ {n ≤ k²} ⊆ {k ≤ 28, n ≤ 284}.
