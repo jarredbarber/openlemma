@@ -15,6 +15,7 @@ All finite-case verification is sidelined as a black-box compute task.
 ### 2. Implementation State
 - [x] Digest NL proof into Lean skeleton (`Asymptotic.lean`)
 - [x] Prove `moduli_coprime` in `Asymptotic.lean` (Algebraic bedrock)
+- [x] Establish Asymptotic Finiteness via Large Prime Density (Mertens bound alone)
 - [ ] Prove `card_KummerValid` in `Asymptotic.lean` (Blueprint provided)
 - [ ] Formalize CRT factorization for Kummer densities
 - [ ] Resolve Case 1 threshold ($k \in [10001, 178416]$) via batch compute

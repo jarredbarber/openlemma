@@ -241,7 +241,7 @@
   },
   {
     "id": "erdos-013",
-    "description": "Verify Asymptotic.lean citation axioms\nAudit the annotated citation axioms for Stewart and Mertens in Asymptotic.lean against the provided links.",
+    "description": "Verify Asymptotic.lean citation axioms\nAudit the annotated citation axiom for Mertens in Asymptotic.lean against the provided link.",
     "state": "open",
     "role": "verify",
     "priority": 2,
@@ -249,6 +249,6 @@
     "dependencies": [],
     "createdAt": "2026-02-12T21:40:00.000Z",
     "updatedAt": "2026-02-12T21:40:00.000Z",
-    "summary": "Verify is auditing the revised citation axioms for Erdős 1094."
+    "summary": "Verify is auditing the Mertens citation axiom for Erdős 1094."
   }
 ]

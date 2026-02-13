@@ -127,14 +127,16 @@ def SAT_Language : CNF → Prop := Satisfiable
 
 We define standard finite encodings for SAT-related types.
 We ensure these encodings are polynomial-time efficient (linear in value/structure).
+
+NOTE: sumEncoding is not available in this Mathlib version. The FinEncoding
+definitions below are scaffolded with sorry until a compatible implementation
+is provided. These are NOT used by the Cook-Levin proofs (which use Encodable).
 -/
 
 /-- Raw encoding for Sum ℕ ℕ. -/
-abbrev literalSumEncoding : FinEncoding (Sum ℕ ℕ) := sumEncoding finEncodingNatBool finEncodingNatBool
+abbrev literalSumEncoding : FinEncoding (Sum ℕ ℕ) := sorry -- sumEncoding not in this Mathlib
 
-instance : DecidableEq literalSumEncoding.Γ := by
-  dsimp [literalSumEncoding, sumEncoding, finEncodingNatBool, encodingNatBool]
-  infer_instance
+instance : DecidableEq literalSumEncoding.Γ := sorry
 
 /-- FinEncoding for Literals (isomorphic to Sum ℕ ℕ). -/
 abbrev finEncodingLiteral : FinEncoding Literal :=

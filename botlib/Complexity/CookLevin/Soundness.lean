@@ -98,13 +98,13 @@ five sub-lemmas for clarity and to avoid timeout:
 5. Stack lengths of k ≠ k₀ at t=0 are 0
 -/
 
-private theorem satisfies_initial_label (c : ℕ → V.Cfg)
+private theorem satisfies_initial_label {inputContents : List (V.Γ V.k₀)} (c : ℕ → V.Cfg)
     (h_init : c 0 = { l := some V.main, var := V.initialState,
                        stk := fun k => if h : k = V.k₀ then h ▸ inputContents else [] }) :
     evalCNF (traceAssignment c) [[tLit V (TableauVar.label 0 (some V.main)) true]] = true := by
   simp [evalCNF, evalClause, evalLit_pos, traceValuation, h_init]
 
-private theorem satisfies_initial_state (c : ℕ → V.Cfg)
+private theorem satisfies_initial_state {inputContents : List (V.Γ V.k₀)} (c : ℕ → V.Cfg)
     (h_init : c 0 = { l := some V.main, var := V.initialState,
                        stk := fun k => if h : k = V.k₀ then h ▸ inputContents else [] }) :
     evalCNF (traceAssignment c) [[tLit V (TableauVar.state 0 V.initialState) true]] = true := by
@@ -134,7 +134,7 @@ private theorem satisfies_initial_stkElem (inputContents : List (V.Γ V.k₀)) (
              decide_eq_true_eq, List.get_eq_getElem]
   exact hγ.symm
 
-private theorem satisfies_initial_stkLen_other (c : ℕ → V.Cfg)
+private theorem satisfies_initial_stkLen_other {inputContents : List (V.Γ V.k₀)} (c : ℕ → V.Cfg)
     (h_init : c 0 = { l := some V.main, var := V.initialState,
                        stk := fun k => if h : k = V.k₀ then h ▸ inputContents else [] }) :
     evalCNF (traceAssignment c)
