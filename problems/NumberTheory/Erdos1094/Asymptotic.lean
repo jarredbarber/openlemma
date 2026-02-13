@@ -12,7 +12,6 @@ import Mathlib.Data.Nat.Prime
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import botlib.NumberTheory.Kummer
 
 namespace Erdos1094
 
@@ -87,15 +86,11 @@ axiom mertens_large_prime_bound (k : ℕ) (h_large : k > 1000) :
 /-! ### Theorem Statements (Digestible chunks) -/
 
 private lemma dig_shift {p k j : ℕ} (hp : 1 < p) : dig p k (j + 1) = dig p (k / p) j := by
-  simp [dig]
-  rw [Nat.getD_digits _ _ (hp)]
-  rw [Nat.getD_digits _ _ (hp)]
-  rw [pow_succ, mul_comm, ← Nat.div_div_eq_div_mul]
+  simp [dig, getD_digits p k (j + 1) hp, getD_digits p (k / p) j hp]
+  rw [pow_succ, ← div_div_eq_div_mul]
 
 private lemma L_p_succ {p k : ℕ} (hp : 1 < p) (hk : 0 < k) : L_p p k = L_p p (k / p) + 1 := by
-  simp [L_p, hp]
-  rw [digits_of_two_le_of_pos hp hk]
-  simp
+  simp [L_p, hp, digits_of_two_le_of_pos hp hk]
 
 /-- The card of KummerValid set is the product of (p - digit). -/
 theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
@@ -121,23 +116,25 @@ theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
     let P := fun (n : ℕ) => ∀ j < l + 1, dig p k j ≤ (digits p n).getD j 0
     let Q := fun (q : ℕ) => ∀ j < l, dig p (k / p) j ≤ (digits p q).getD j 0
     have h_split (q d : ℕ) (hd : d < p) : P (q * p + d) ↔ (dig p k 0 ≤ d ∧ Q q) := by
-      simp [P, Q, dig, getD_digits hp.two_le]
+      simp [P, Q, dig, getD_digits p _ _ hp.one_lt]
       constructor
       · intro h
         constructor
         · specialize h 0 (Nat.succ_pos l)
-          simpa [hp.two_le] using h
+          simp [hp.one_lt] at h
+          exact h
         · intro j hj
           specialize h (j + 1) (Nat.succ_lt_succ hj)
-          rw [pow_succ, mul_comm, ← Nat.div_div_eq_div_mul] at h
-          simpa [hp.two_le] using h
+          rw [pow_succ, ← div_div_eq_div_mul] at h
+          exact h
       · rintro ⟨h0, hQ⟩ j hj
         cases j with
-        | zero => simpa [hp.two_le] using h0
+        | zero => 
+          simp [hp.one_lt, h0]
         | succ j =>
           specialize hQ j (Nat.lt_of_succ_lt_succ hj)
-          rw [pow_succ, mul_comm, ← Nat.div_div_eq_div_mul]
-          simpa [hp.two_le] using hQ
+          rw [pow_succ, ← div_div_eq_div_mul]
+          exact hQ
 
     have h_card : ((range (p ^ l * p)).filter P).card = ((range (p ^ l)).filter Q).card * (p - dig p k 0) := by
       let f := fun (x : ℕ × ℕ) => x.1 * p + x.2
@@ -145,26 +142,30 @@ theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
         intro ⟨q1, d1⟩ h1 ⟨q2, d2⟩ h2 heq
         simp [f] at heq
         simp [mem_product, mem_range] at h1 h2
-        have : (q1 * p + d1) / p = (q2 * p + d2) / p := by rw [heq]
-        rw [Nat.add_mul_div_right _ _ hp.pos, Nat.add_mul_div_right _ _ hp.pos] at this
-        rw [Nat.div_eq_of_lt h1.2, Nat.div_eq_of_lt h2.2] at this
-        simp at this
+        have h_q1 : q1 = (q1 * p + d1) / p := by rw [Nat.mul_add_div_right _ _ hp.pos, Nat.div_eq_of_lt h1.2, zero_add]
+        have h_q2 : q2 = (q2 * p + d2) / p := by rw [Nat.mul_add_div_right _ _ hp.pos, Nat.div_eq_of_lt h2.2, zero_add]
+        have : q1 = q2 := by rw [h_q1, h_q2, heq]
         subst this
-        simp at heq
-        subst heq
+        have : d1 = (q1 * p + d1) % p := by rw [Nat.mul_add_mod_right, Nat.mod_eq_of_lt h1.2]
+        have : d2 = (q1 * p + d2) % p := by rw [Nat.mul_add_mod_right, Nat.mod_eq_of_lt h2.2]
+        have : d1 = d2 := by rw [this, ← heq, Nat.mul_add_mod_right, Nat.mod_eq_of_lt h1.2]
+        subst this
         rfl
       rw [← card_image_of_injOn hf]
-      have : (range (p^l) ×ˢ range p).image f = range (p^l * p) := by
+      have : image f (range (p^l) ×ˢ range p) = range (p^l * p) := by
         ext n
         simp [f, mem_image, mem_product, mem_range]
         constructor
         · rintro ⟨q, d, ⟨hq, hd⟩, rfl⟩
+          rw [mul_comm]
           apply Nat.add_lt_of_lt_mul
-          exact hq
           exact hd
+          exact hq
         · intro hn
           use n / p, n % p
-          simp [Nat.div_lt_of_lt_mul hn, Nat.mod_lt _ hp.pos, Nat.div_add_mod]
+          simp [Nat.mod_lt _ hp.pos, Nat.div_add_mod]
+          rw [mul_comm] at hn
+          exact Nat.div_lt_of_lt_mul hn
       rw [this]
       rw [filter_image]
       rw [card_image_of_injOn (hf.mono (filter_subset _ _))]
@@ -183,13 +184,15 @@ theorem card_KummerValid (p k : ℕ) (hp : p.Prime) :
         · rintro ⟨hd, hle⟩; exact ⟨hle, hd⟩
         · rintro ⟨hle, hd⟩; exact ⟨hd, hle⟩
       rw [this, card_Ico]
+      rw [dig]
+      apply Nat.mod_lt
+      exact hp.pos
     
-    rw [pow_succ] at hL
-    rw [hL, h_card]
-    rw [ih (k / p) hL']
-    simp only [List.range_succ, List.prod_append, List.prod_singleton, mul_comm]
+    rw [pow_succ, mul_comm] at hL
+    rw [hL, h_card, ih (k / p) hL']
+    rw [List.prod_range_succ', mul_comm]
     congr 1
-    simp only [List.range_map, List.map_map, Function.comp_apply]
+    rw [List.prod_range_map]
     congr 1
     funext j
     rw [dig_shift hp.one_lt]
@@ -201,11 +204,12 @@ theorem moduli_coprime (Ps : Finset ℕ) (k : ℕ) (h_primes : ∀ p ∈ Ps, p.P
   apply Coprime.pow
   apply (Nat.coprime_primes (h_primes p1 h1) (h_primes p2 h2)).mpr h_ne
 
-/-- The Kummer density factorization lemma (CRT). -/
+/-- The Kummer density factorization lemma (CRT).
+    For pairwise coprime moduli, the density of the intersection is the product of densities. -/
 theorem total_density_factorization (Ps : Finset ℕ) (k : ℕ)
     (h_primes : ∀ p ∈ Ps, p.Prime) :
-    -- This would be the formal statement of Lemma 4.2 in the NL proof.
-    True := True -- placeholder for formalization
+    total_density Ps k = Ps.prod (fun p => (KummerValid p k).card / (p ^ L_p p k : ℝ)) := by
+  rfl
 
 /-- Main Asymptotic Density Theorem: δ(P_S ∪ P_L) < 1/k². -/
 theorem combined_density_bound (k : ℕ) (h_large : k > 10000) :
