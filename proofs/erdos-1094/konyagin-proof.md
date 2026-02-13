@@ -102,6 +102,25 @@ Away from the main peak: the full Dirichlet kernel $D_{c_i}(\theta) = \sin(\pi c
 
 **⚠️ GAP:** The transition from the local (quadratic-approximation) degree-4 curves to a GLOBAL bound on resonant $h$ requires careful analysis of how the CRT line interacts with the Dirichlet kernel's oscillations across the full torus. This is the key missing step.
 
+### §7.5. Secondary Lobes Are Negligible — The Real Obstacle
+
+**Numerical finding** (verified for $k=30$, $p_1=17$, $p_2=19$):
+
+The secondary lobes of the Dirichlet kernel contribute **< 0.001** to the total error (vs actual error 1.5). The error structure is dominated by the $\tau_1$ **amplification effect**:
+
+| Source | Example $|\sigma|$ | Count | Total absolute contribution |
+|--------|-------------------|-------|---------------------------|
+| **Doubly amplified** ($p_1 \mid h_1$ AND $p_2 \mid h_2$) | 6219 | ~323 | ~9 |
+| Singly amplified (one $p_i \mid h_i$) | 400–580 | ~10,000 | ~3 |
+| Generic (no amplification) | ≤ 32 | ~93,000 | ~0.5 |
+| Secondary Dirichlet lobes | ≤ 13.4 | ~21 pairs | **< 0.001** |
+
+When $p_i \mid h_i$: $\tau_1(h_i) = p_i - 1$ instead of $-1$, amplifying $|\sigma(h)|$ by $(p_i-1)^2$. For two primes with $p_1 = 17$, $p_2 = 19$: the amplification is $16 \times 18 = 288\times$.
+
+**The top single contribution** ($|σ \cdot c / M| = 1.53$) comes from $h = 646$ where **both** $h_1 = 17 = p_1$ and $h_2 = 342 = 18 \cdot 19$ (so $p_2 \mid h_2$). This is NOT a secondary Dirichlet lobe — it's a $\tau_1$-amplified main lobe.
+
+**Implication for BP strategy:** The target for lattice-point counting should be the **sublattice** $h_1 \in p_1\mathbb{Z}$, $h_2 \in p_2\mathbb{Z}$ (the $\tau_1$-amplified points), not the secondary peaks of the Dirichlet kernel. These form a periodic sublattice of period $p_1 p_2$ in the CRT torus.
+
 ### §8. Expected Result (Conditional on §7)
 
 With BP applied pairwise to $\binom{r}{2}$ pairs, using $r$ primes with $c_{0,i} \approx 2t$ (where $t = p - k/2 \approx \alpha\log^2 k$):
