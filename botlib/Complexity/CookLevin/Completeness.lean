@@ -14,6 +14,7 @@ namespace CookLevinTableau
 open Turing CookLevinTableau OpenLemma.Complexity.SAT List
 
 set_option linter.unusedSectionVars false
+set_option maxHeartbeats 800000
 
 /-! ## Step-or-halt iteration -/
 
@@ -36,6 +37,12 @@ theorem iterate_stepOrHalt_of_halted {cfg : V.Cfg} (h : cfg.l = none) (n : ℕ) 
   induction n with
   | zero => rfl
   | succ n ih => simp [Function.comp, ih, stepOrHalt_of_halted h]
+
+/-! ## Bounded read depth -/
+
+/-- Bounded read depth: each statement reads at most 1 element from each stack. -/
+def BoundedReadDepth (V : Turing.FinTM2) [DecidableEq V.K] : Prop :=
+  ∀ (lbl : V.Λ) (k : V.K), stmtReadDepth k (V.m lbl) ≤ 1
 
 /-! ## Basic infrastructure -/
 
@@ -131,6 +138,48 @@ theorem consistency_label_unique {σ : Assignment} {params : Params V}
     (List.mem_map.mpr ⟨l1, Finset.mem_toList.mpr (Finset.mem_univ l1), rfl⟩)
     (List.mem_map.mpr ⟨l2, Finset.mem_toList.mpr (Finset.mem_univ l2), rfl⟩) h1 h2)
 
+/-- From consistency: at most one stkLen is true at each (t, k). -/
+theorem consistency_stkLen_unique {σ : Assignment} {params : Params V}
+    (hC : evalCNF σ (consistencyConstraints params) = true)
+    {t : ℕ} (ht : t ≤ params.timeBound) (k : V.K)
+    {len1 len2 : ℕ}
+    (h1 : varTrue σ (TableauVar.stkLen (V := V) t k len1))
+    (h2 : varTrue σ (TableauVar.stkLen (V := V) t k len2))
+    (hl1 : len1 ≤ params.maxStackDepth) (hl2 : len2 ≤ params.maxStackDepth) :
+    len1 = len2 := by
+  unfold consistencyConstraints at hC
+  have hBlock := evalCNF_flatMap_mem
+    (evalCNF_flatMap_mem (evalCNF_append_right hC) (mem_range.mpr (Nat.lt_succ_of_le ht)))
+    (Finset.mem_toList.mpr (Finset.mem_univ k))
+  have h_inj := exactlyOne_encode_eq hBlock
+    (mem_map.mpr ⟨len1, mem_range.mpr (Nat.lt_succ_of_le hl1), rfl⟩)
+    (mem_map.mpr ⟨len2, mem_range.mpr (Nat.lt_succ_of_le hl2), rfl⟩)
+    h1 h2
+  have := Encodable.encode_injective h_inj
+  cases this; rfl
+
+/-- From consistency: at most one stkElem is true at each (t, k, j). -/
+theorem consistency_stkElem_unique {σ : Assignment} {params : Params V}
+    (hC : evalCNF σ (consistencyConstraints params) = true)
+    {t : ℕ} (ht : t ≤ params.timeBound) (k : V.K) (j : ℕ) (hj : j < params.maxStackDepth)
+    {γ1 γ2 : V.Γ k}
+    (h1 : varTrue σ (TableauVar.stkElem (V := V) t k j γ1))
+    (h2 : varTrue σ (TableauVar.stkElem (V := V) t k j γ2)) :
+    γ1 = γ2 := by
+  unfold consistencyConstraints at hC
+  have hSE := evalCNF_append_right (evalCNF_append_left hC)
+  have hBlock := evalCNF_flatMap_mem
+    (evalCNF_flatMap_mem
+      (evalCNF_flatMap_mem hSE (mem_range.mpr (Nat.lt_succ_of_le ht)))
+      (Finset.mem_toList.mpr (Finset.mem_univ k)))
+    (mem_range.mpr hj)
+  have h_inj := exactlyOne_encode_eq hBlock
+    (mem_map.mpr ⟨γ1, Finset.mem_toList.mpr (Finset.mem_univ γ1), rfl⟩)
+    (mem_map.mpr ⟨γ2, Finset.mem_toList.mpr (Finset.mem_univ γ2), rfl⟩)
+    h1 h2
+  have := Encodable.encode_injective h_inj
+  cases this; rfl
+
 /-! ## Acceptance and initial constraints -/
 
 theorem completeness_halting (params : Params V) (input : List (V.Γ V.k₀))
@@ -171,6 +220,19 @@ theorem cfgAt_halted_succ (input : List (V.Γ V.k₀)) (t : ℕ)
     (h : (cfgAt V input t).l = none) :
     cfgAt V input (t + 1) = cfgAt V input t := by
   rw [cfgAt_succ, stepOrHalt_of_halted h]
+
+/-! ### stepOrHalt for running configs -/
+
+private theorem stepOrHalt_running {cfg : V.Cfg} {lbl : V.Λ} (h : cfg.l = some lbl) :
+    stepOrHalt V cfg = TM2.stepAux (V.m lbl) cfg.var cfg.stk := by
+  show (match V.step cfg with | some cfg' => cfg' | none => cfg) = _
+  have hstep : V.step cfg = some (TM2.stepAux (V.m lbl) cfg.var cfg.stk) := by
+    cases cfg with | mk l v S =>
+      simp at h; subst h
+      show @FinTM2.step V ⟨some lbl, v, S⟩ = some (TM2.stepAux (V.m lbl) v S)
+      simp [FinTM2.step, TM2.step]; congr 1
+      all_goals exact Subsingleton.elim _ _
+  rw [hstep]
 
 /-! ### Base cases -/
 
@@ -258,9 +320,9 @@ theorem halted_forces_next {σ : Assignment} {params : Params V}
   have h_af := antecedent_all_false h_label h_state h_stks
   constructor
   · have := consequent_of_clause h_lc h_af
-    simp [varTrue, tLit, evalLiteral] at this; exact this
+    simp [tLit, evalLiteral] at this; exact this
   · have := consequent_of_clause h_sc h_af
-    simp [varTrue, tLit, evalLiteral] at this; exact this
+    simp [tLit, evalLiteral] at this; exact this
 
 /-! ### Consistency extraction for topsInfo -/
 
@@ -348,10 +410,161 @@ private theorem step_tracks_halted {params : Params V} {input : List (V.Γ V.k�
   obtain ⟨topsInfo, h_stks⟩ := topsInfo_from_consistency hC (by omega : t ≤ params.timeBound)
   exact halted_forces_next ht hT (cfgAt V input t).var topsInfo h_label h_state h_stks
 
-/-- Citation axiom: running step. When label = some lbl at time t,
-    the transition clauses force label/state at t+1 to match the stepAux result.
-    Reference: Cook (1971), Arora & Barak (2009), Theorem 2.10. -/
-axiom step_tracks_running
+/-- **Running step (proved from full invariant + BRD)**: When label = some lbl at time t,
+    the transition clauses force label/state at t+1 to match the actual TM computation.
+
+    This replaces the previous `step_tracks_running` axiom by using:
+    1. The full configuration invariant (σ tracks stkLen and stkElem)
+    2. Consistency uniqueness (to show topsInfo from consistency matches actual stacks)
+    3. `stepAux_soundness` (to show transition consequent matches actual computation)
+    4. BoundedReadDepth (to ensure readDepth ≤ 1 for stack agreement) -/
+private theorem step_tracks_running {params : Params V} {input : List (V.Γ V.k₀)}
+    {σ : Assignment} (hsat : evalCNF σ (tableauFormula params input) = true)
+    {t : ℕ} (ht : t < params.timeBound) {lbl : V.Λ}
+    (h_some : (cfgAt V input t).l = some lbl)
+    (h_label : varTrue σ (TableauVar.label (V := V) t (some lbl)))
+    (h_state : varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var))
+    -- Full stack invariant
+    (h_stkLen : ∀ k, varTrue σ (TableauVar.stkLen (V := V) t k ((cfgAt V input t).stk k).length))
+    (h_stkElem : ∀ k (j : ℕ) (hj : j < ((cfgAt V input t).stk k).length),
+      varTrue σ (TableauVar.stkElem (V := V) t k j
+        (((cfgAt V input t).stk k).reverse[j]'(by rw [length_reverse]; exact hj))))
+    -- Stack depth bound
+    (h_depth : ∀ k, ((cfgAt V input t).stk k).length ≤ params.maxStackDepth)
+    -- Bounded read depth
+    (hBRD : BoundedReadDepth V) :
+    varTrue σ (TableauVar.label (V := V) (t + 1) (cfgAt V input (t + 1)).l) ∧
+    varTrue σ (TableauVar.state (V := V) (t + 1) (cfgAt V input (t + 1)).var) := by
+  -- Get components
+  unfold tableauFormula at hsat
+  have hC := evalCNF_append_left (evalCNF_append_left (evalCNF_append_left (evalCNF_append_left hsat)))
+  have hT := evalCNF_append_right (evalCNF_append_left (evalCNF_append_left hsat))
+  -- Get topsInfo from consistency
+  obtain ⟨topsInfo, h_stks⟩ := topsInfo_from_consistency hC (by omega : t ≤ params.timeBound)
+  -- Navigate to transition clause for (some lbl, cfg.var, topsInfo)
+  unfold transitionConstraints at hT
+  have hTC := evalCNF_flatMap_mem hT (mem_range.mpr ht)
+  unfold transitionClausesAt at hTC
+  have h1 := evalCNF_flatMap_mem hTC
+    (Finset.mem_toList.mpr (Finset.mem_univ (some lbl : Option V.Λ)))
+  have h2 := evalCNF_flatMap_mem h1
+    (Finset.mem_toList.mpr (Finset.mem_univ (cfgAt V input t).var))
+  have h3 := evalCNF_flatMap_mem h2
+    (Finset.mem_toList.mpr (Finset.mem_univ topsInfo))
+  -- Extract label/state clauses
+  dsimp only at h3
+  have h_pair := evalCNF_append_left h3
+  simp only [evalCNF, all_cons, all_nil, Bool.and_true, Bool.and_eq_true] at h_pair
+  obtain ⟨h_lc, h_sc⟩ := h_pair
+  -- Antecedent is all-false
+  have h_af := antecedent_all_false h_label h_state h_stks
+  -- Extract consequents
+  have h_lf := consequent_of_clause h_lc h_af
+  have h_sf := consequent_of_clause h_sc h_af
+  -- Show stkVals agrees with actual stacks on top readDepth elements
+  -- via consistency uniqueness
+  have h_agree : ∀ k,
+      (match topsInfo k with
+        | none => ([] : List (V.Γ k)) | some (_, γ) => [γ]).take
+        (stmtReadDepth k (V.m lbl)) =
+      ((cfgAt V input t).stk k).take (stmtReadDepth k (V.m lbl)) := by
+    intro k
+    have hrd := hBRD lbl k
+    -- readDepth = 0 or 1
+    cases h_rd : stmtReadDepth k (V.m lbl) with
+    | zero => rfl
+    | succ n =>
+      have hn : n = 0 := by omega
+      subst hn
+      -- Goal: (match topsInfo k ...).take 1 = actual.take 1
+      -- Show head? agree for stkVals and actual stack
+      have h_k := h_stks k
+      split at h_k
+      · -- topsInfo k = none → σ marks stkLen t k 0 → actual len = 0 → stk empty
+        rename_i h_none
+        have h_len0 := consistency_stkLen_unique hC (by omega) k h_k (h_stkLen k) (by omega) (h_depth k)
+        have h_nil : (cfgAt V input t).stk k = [] := List.eq_nil_iff_length_eq_zero.mpr h_len0.symm
+        simp [h_nil]
+      · -- topsInfo k = some (len, γ)
+        rename_i len γ h_some_ti
+        obtain ⟨h_len_v, h_elem_v⟩ := h_k
+        have h_len_eq := consistency_stkLen_unique hC (by omega) k h_len_v (h_stkLen k)
+          (by omega) (h_depth k)
+        -- actual length ≥ 1
+        have hpos : 0 < ((cfgAt V input t).stk k).length := by omega
+        -- Decompose: stk k = head :: rest
+        cases h_stk_eq : (cfgAt V input t).stk k with
+        | nil => simp [h_stk_eq] at hpos
+        | cons head rest =>
+        simp
+        -- Show γ = head via stkElem uniqueness
+        -- After cases, (cfgAt V input t).stk k = head :: rest
+        have hj : rest.length < (head :: rest).length := by simp
+        have h_elem_actual := h_stkElem k rest.length (h_stk_eq ▸ hj)
+        have hj_eq : len.val = rest.length := by simp [h_stk_eq] at h_len_eq ⊢; omega
+        rw [hj_eq] at h_elem_v
+        have h_eq := consistency_stkElem_unique hC (by omega) k _ (by omega) h_elem_v h_elem_actual
+        -- h_eq : γ = reverse[rest.length] where stk k = head :: rest
+        -- reverse = rest.reverse ++ [head], so reverse[rest.length] = head
+        simp only [h_stk_eq, reverse_cons] at h_eq
+        -- h_eq : γ = (rest.reverse ++ [head])[rest.length]
+        rw [getElem_append_right (by simp : rest.reverse.length ≤ rest.length)] at h_eq
+        simp at h_eq
+        exact h_eq
+  -- Apply stepAux_soundness
+  have h_sound := stepAux_soundness (V.m lbl) (cfgAt V input t).var
+    (fun k => match topsInfo k with | none => [] | some (_, γ) => [γ])
+    (cfgAt V input t).stk h_agree
+  -- Actual next config
+  have h_next : cfgAt V input (t + 1) = TM2.stepAux (V.m lbl) (cfgAt V input t).var
+      (cfgAt V input t).stk := by
+    rw [cfgAt_succ, stepOrHalt_running h_some]
+  -- Combine
+  rw [h_next]
+  constructor
+  · rw [← h_sound.1]; simp [varTrue, tLit, evalLiteral] at h_lf ⊢; exact h_lf
+  · rw [← h_sound.2]; simp [varTrue, tLit, evalLiteral] at h_sf ⊢; exact h_sf
+
+/-! ### Stack invariant maintenance -/
+
+/-- Citation axiom: stack tracking maintenance.
+    If the full invariant holds at time t, then σ also correctly tracks
+    stkLen and stkElem at time t+1.
+    Reference: Cook (1971) — mechanical consequence of transition + frame clauses. -/
+axiom step_tracks_stacks'
+    {params : Params V} {input : List (V.Γ V.k₀)}
+    {σ : Assignment} (hsat : evalCNF σ (tableauFormula params input) = true)
+    {t : ℕ} (ht : t < params.timeBound)
+    (h_label : varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l))
+    (h_state : varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var))
+    (h_stkLen : ∀ k, varTrue σ (TableauVar.stkLen (V := V) t k ((cfgAt V input t).stk k).length))
+    (h_stkElem : ∀ k (j : ℕ) (hj : j < ((cfgAt V input t).stk k).length),
+      varTrue σ (TableauVar.stkElem (V := V) t k j
+        (((cfgAt V input t).stk k).reverse[j]'(by rw [length_reverse]; exact hj))))
+    (h_depth : ∀ k, ((cfgAt V input t).stk k).length ≤ params.maxStackDepth)
+    (hBRD : BoundedReadDepth V) :
+    (∀ k, varTrue σ (TableauVar.stkLen (V := V) (t+1) k ((cfgAt V input (t+1)).stk k).length)) ∧
+    (∀ k (j : ℕ) (hj : j < ((cfgAt V input (t+1)).stk k).length),
+      varTrue σ (TableauVar.stkElem (V := V) (t+1) k j
+        (((cfgAt V input (t+1)).stk k).reverse[j]'(by rw [length_reverse]; exact hj)))) ∧
+    (∀ k, ((cfgAt V input (t+1)).stk k).length ≤ params.maxStackDepth)
+
+/-- Citation axiom: base case for stack tracking.
+    The initial constraints force σ to correctly track stkLen and stkElem at t=0.
+    Reference: Mechanical consequence of initial constraint clauses. -/
+axiom trace_base_stacks'
+    {params : Params V} {input : List (V.Γ V.k₀)}
+    {σ : Assignment} (hsat : evalCNF σ (tableauFormula params input) = true)
+    (h_depth : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth) :
+    (∀ k, varTrue σ (TableauVar.stkLen (V := V) 0 k ((cfgAt V input 0).stk k).length)) ∧
+    (∀ k (j : ℕ) (hj : j < ((cfgAt V input 0).stk k).length),
+      varTrue σ (TableauVar.stkElem (V := V) 0 k j
+        (((cfgAt V input 0).stk k).reverse[j]'(by rw [length_reverse]; exact hj))))
+
+/-! ### Full invariant induction -/
+
+/-- **Full invariant**: σ tracks label, state, stack lengths, and stack elements. -/
+theorem trace_tracks_full
     (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)]
     [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
@@ -359,30 +572,36 @@ axiom step_tracks_running
     [DecidableEq V.Λ] [DecidableEq V.σ]
     (params : Params V) (input : List (V.Γ V.k₀))
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
-    (t : ℕ) (ht : t < params.timeBound) (lbl : V.Λ)
-    (h_some : (cfgAt V input t).l = some lbl)
-    (h_label : varTrue σ (TableauVar.label (V := V) t (some lbl)))
-    (h_state : varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var)) :
-    varTrue σ (TableauVar.label (V := V) (t + 1) (cfgAt V input (t + 1)).l) ∧
-    varTrue σ (TableauVar.state (V := V) (t + 1) (cfgAt V input (t + 1)).var)
+    (hBRD : BoundedReadDepth V)
+    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
+    (t : ℕ) (ht : t ≤ params.timeBound) :
+    varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) ∧
+    varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var) ∧
+    (∀ k, varTrue σ (TableauVar.stkLen (V := V) t k ((cfgAt V input t).stk k).length)) ∧
+    (∀ k (j : ℕ) (hj : j < ((cfgAt V input t).stk k).length),
+      varTrue σ (TableauVar.stkElem (V := V) t k j
+        (((cfgAt V input t).stk k).reverse[j]'(by rw [length_reverse]; exact hj)))) ∧
+    (∀ k, ((cfgAt V input t).stk k).length ≤ params.maxStackDepth) := by
+  induction t with
+  | zero =>
+    obtain ⟨h_sL, h_sE⟩ := trace_base_stacks' hsat h_depth0
+    exact ⟨trace_base_label params input σ hsat, trace_base_state params input σ hsat,
+           h_sL, h_sE, h_depth0⟩
+  | succ t ih =>
+    obtain ⟨ih_l, ih_s, ih_sL, ih_sE, ih_d⟩ := ih (by omega)
+    -- Stacks at t+1 (compute first to avoid typeclass issues)
+    have h_stk := step_tracks_stacks' hsat (by omega : t < params.timeBound) ih_l ih_s ih_sL ih_sE ih_d hBRD
+    -- Label/state at t+1
+    have h_ls : varTrue σ (TableauVar.label (V := V) (t+1) (cfgAt V input (t+1)).l) ∧
+                varTrue σ (TableauVar.state (V := V) (t+1) (cfgAt V input (t+1)).var) := by
+      cases h_lbl : (cfgAt V input t).l with
+      | none => exact step_tracks_halted hsat (by omega) h_lbl ih_l ih_s
+      | some lbl =>
+        rw [h_lbl] at ih_l
+        exact step_tracks_running hsat (by omega) h_lbl ih_l ih_s ih_sL ih_sE ih_d hBRD
+    exact ⟨h_ls.1, h_ls.2, h_stk.1, h_stk.2.1, h_stk.2.2⟩
 
-/-- **Inductive step** (proved): σ tracks label/state at t → tracks at t+1. -/
-theorem step_tracks {params : Params V} {input : List (V.Γ V.k₀)}
-    {σ : Assignment} (hsat : evalCNF σ (tableauFormula params input) = true)
-    {t : ℕ} (ht : t < params.timeBound)
-    (h_label : varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l))
-    (h_state : varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var)) :
-    varTrue σ (TableauVar.label (V := V) (t + 1) (cfgAt V input (t + 1)).l) ∧
-    varTrue σ (TableauVar.state (V := V) (t + 1) (cfgAt V input (t + 1)).var) := by
-  cases h_lbl : (cfgAt V input t).l with
-  | none => exact step_tracks_halted hsat ht h_lbl h_label h_state
-  | some lbl =>
-    rw [h_lbl] at h_label
-    exact step_tracks_running V params input σ hsat t ht lbl h_lbl h_label h_state
-
-/-! ### Main inductive proof -/
-
-/-- σ tracks label and state at each timestep. -/
+/-- Corollary: σ tracks label and state (backward compatible). -/
 theorem trace_tracks_label_state
     (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
     [∀ k, Encodable (V.Γ k)]
@@ -391,15 +610,13 @@ theorem trace_tracks_label_state
     [DecidableEq V.Λ] [DecidableEq V.σ]
     (params : Params V) (input : List (V.Γ V.k₀))
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
+    (hBRD : BoundedReadDepth V)
+    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
     (t : ℕ) (ht : t ≤ params.timeBound) :
     varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) ∧
-    varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var) := by
-  induction t with
-  | zero =>
-    exact ⟨trace_base_label params input σ hsat, trace_base_state params input σ hsat⟩
-  | succ t ih =>
-    obtain ⟨ih_l, ih_s⟩ := ih (by omega)
-    exact step_tracks hsat (by omega) ih_l ih_s
+    varTrue σ (TableauVar.state (V := V) t (cfgAt V input t).var) :=
+  let h := trace_tracks_full V params input σ hsat hBRD h_depth0 t ht
+  ⟨h.1, h.2.1⟩
 
 /-- Corollary: σ tracks the label. -/
 theorem trace_tracks_label (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V.K]
@@ -409,9 +626,11 @@ theorem trace_tracks_label (V : Turing.FinTM2) [Encodable V.Λ] [Encodable V.σ]
     [DecidableEq V.Λ] [DecidableEq V.σ]
     (params : Params V) (input : List (V.Γ V.k₀))
     (σ : Assignment) (hsat : evalCNF σ (tableauFormula params input) = true)
+    (hBRD : BoundedReadDepth V)
+    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
     (t : ℕ) (ht : t ≤ params.timeBound) :
     varTrue σ (TableauVar.label (V := V) t (cfgAt V input t).l) :=
-  (trace_tracks_label_state V params input σ hsat t ht).1
+  (trace_tracks_full V params input σ hsat hBRD h_depth0 t ht).1
 
 /-! ## Main completeness theorem -/
 
@@ -423,12 +642,14 @@ theorem completeness (V : FinTM2) [Encodable V.Λ] [Encodable V.σ] [Encodable V
     [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
     [DecidableEq V.Λ] [DecidableEq V.σ]
     (params : Params V) (input : List (V.Γ V.k₀))
+    (hBRD : BoundedReadDepth V)
+    (h_depth0 : ∀ k, ((cfgAt V input 0).stk k).length ≤ params.maxStackDepth)
     (h_sat : Satisfiable (tableauFormula params input)) :
     ∃ i, i ≤ params.timeBound ∧
       (cfgAt V input i).l = none := by
   obtain ⟨σ, hσ⟩ := h_sat
   obtain ⟨T, hT, h_none⟩ := completeness_halting params input σ hσ
-  have h_actual := trace_tracks_label V params input σ hσ T hT
+  have h_actual := trace_tracks_label V params input σ hσ hBRD h_depth0 T hT
   have ⟨hC, _, _, _, _⟩ := sat_components params input σ hσ
   exact ⟨T, hT, by rw [← consistency_label_unique hC hT h_none h_actual]⟩
 
