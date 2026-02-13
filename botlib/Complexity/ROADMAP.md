@@ -51,9 +51,9 @@ reduced to the Boolean satisfiability problem.
 - [x] Prove `satisfies_frame` in `Soundness.lean` (Fully proved axiom-free)
 - [x] Prove `satisfies_transition` in `Soundness.lean` (3/4 cases proved, 1 sorry for matching case)
 - [x] Move `BoundedReadDepth` to `Tableau.lean` (required for transition soundness)
-- [ ] Close `satisfies_transition` matching-case sorry (assigned to formalize)
+- [~] Close `satisfies_transition` matching-case sorry — halted case DONE, running label/state DONE, running stack consequents remaining (1 sorry)
 - [ ] Eliminate `step_tracks_stacks'` axiom in `Completeness.lean` (mechanical)
-- [ ] Eliminate `trace_base_stacks'` axiom in `Completeness.lean` (mechanical)
+- [x] Eliminate `trace_base_stacks'` axiom in `Completeness.lean` (PROVED)
 - [ ] Eliminate `tableauFormula_is_polytime` axiom in `PolyTime.lean` (citation)
 - [ ] Assemble `SAT_is_NP_hard` from components (replace citation axiom)
 
@@ -77,16 +77,16 @@ reduced to the Boolean satisfiability problem.
 | Tableau.lean | 186 | 0 | 0 | 0 |
 | PolyTime.lean | 30 | 1 | 0 | 0 |
 | Completeness.lean | 740 | 1 | 0 | 46 |
-| Soundness.lean | 607 | 0 | 1 | 37 |
+| Soundness.lean | 768 | 0 | 1 | 40 |
 | CookLevin.lean (hub) | ~52 | 1 | 0 | 3 |
-| **Total** | **~1773** | **3** | **1** | **94** |
+| **Total** | **~1934** | **3** | **1** | **97** |
 
 ### Remaining gaps:
 1. `step_tracks_stacks'` (Completeness axiom) — mechanical stack invariant
 2. ~~`trace_base_stacks'`~~ — **PROVED** (was axiom)
 3. `tableauFormula_is_polytime` (PolyTime axiom) — citation axiom
 4. `SAT_is_NP_hard_citation` (CookLevin axiom) — assembly from components
-5. `satisfies_transition` matching case (Soundness sorry) — in progress
+5. `satisfies_transition` running stack consequents (Soundness sorry) — halted case done, running label/state done
 
 ## Design Decisions
 - Build on Mathlib's TM2/FinTM2 (matches existing Lean ecosystem)
