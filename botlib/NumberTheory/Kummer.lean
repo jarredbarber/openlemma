@@ -106,4 +106,58 @@ theorem kummer_criterion (p : ℕ) [Fact p.Prime] (n k : ℕ) (hk : k ≤ n) :
   simp_rw [Nat.getD_digits _ _ h2]
   exact kummer_criterion_core n k hk
 
+
+/-! ## ELS93 Lemma 3: Prime divisibility at multiples -/
+
+/-- If p | r and m > 0, then some base-p digit of m exceeds that of r*m. -/
+private lemma digit_exceeds_of_dvd (r m : ℕ) (hpr : p ∣ r) (hm : 0 < m) :
+    ∃ i, m / p ^ i % p > (r * m) / p ^ i % p := by
+  induction m using Nat.strongRecOn with
+  | ind m ih =>
+    by_cases hmp : m % p > 0
+    · refine ⟨0, ?_⟩
+      simp only [pow_zero, Nat.div_one]
+      have : (r * m) % p = 0 := by
+        rw [Nat.mul_mod, Nat.dvd_iff_mod_eq_zero.mp hpr, zero_mul, Nat.zero_mod]
+      omega
+    · push_neg at hmp
+      have hpm : p ∣ m := Nat.dvd_of_mod_eq_zero (by omega)
+      have hm_div : 0 < m / p := Nat.div_pos (le_of_dvd hm hpm) pp.pos
+      have hm_lt : m / p < m := Nat.div_lt_self hm pp.one_lt
+      have hrm_div : (r * m) / p = r * (m / p) := Nat.mul_div_assoc r hpm
+      obtain ⟨i, hi⟩ := ih (m / p) hm_lt hm_div
+      refine ⟨i + 1, ?_⟩
+      simp only [pow_succ]
+      rw [show p ^ i * p = p * p ^ i from by ring,
+          ← Nat.div_div_eq_div_mul m p (p ^ i),
+          ← Nat.div_div_eq_div_mul (r * m) p (p ^ i),
+          hrm_div]
+      exact hi
+
+/-- **ELS93 Lemma 3**: If p | r and k > 0, then p | C(r·k, k).
+
+By Kummer's criterion, since p | r, some base-p digit of k exceeds
+the corresponding digit of r·k.
+
+Reference: Erdős, Lacampagne, Selfridge (1993), Lemma 3. -/
+theorem prime_dvd_choose_multiple (r k : ℕ) (hr : p ∣ r) (hk : 0 < k) :
+    p ∣ (r * k).choose k := by
+  rcases r with _ | r
+  · simp only [zero_mul, Nat.choose_eq_zero_of_lt hk]; exact dvd_zero p
+  · have hrk : k ≤ (r + 1) * k := Nat.le_mul_of_pos_left k (by omega)
+    rw [kummer_criterion p ((r + 1) * k) k hrk]
+    simp_rw [Nat.getD_digits _ _ pp.two_le]
+    exact digit_exceeds_of_dvd (r + 1) k hr hk
+
+/-- For r ≥ 2 and k > 0, minFac(C(r·k, k)) ≤ r. -/
+theorem minFac_choose_multiple_le (r k : ℕ) (hr : 2 ≤ r) (hk : 0 < k) :
+    ((r * k).choose k).minFac ≤ r := by
+  have hr_mf := Nat.minFac_prime (by omega : r ≠ 1)
+  have := Fact.mk hr_mf
+  have h_dvd : r.minFac ∣ (r * k).choose k :=
+    prime_dvd_choose_multiple r k (Nat.minFac_dvd r) hk
+  calc ((r * k).choose k).minFac
+      ≤ r.minFac := Nat.minFac_le_of_dvd hr_mf.two_le h_dvd
+    _ ≤ r := Nat.minFac_le (by omega)
+
 end OpenLemma.Kummer
