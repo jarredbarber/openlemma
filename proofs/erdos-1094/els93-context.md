@@ -131,13 +131,21 @@ Using all 10 primes $\le 29$, we improve to $\delta_k < 1/k^2$, giving expected 
 
 2. **Effective Baker–Stewart bounds:** Stewart (1980) showed that $s_{b_1}(n) + s_{b_2}(n) > c \cdot \log n / (\log \log n)^2$ for coprime bases. Making this effective and combining across multiple bases might yield $g(k) > k^2$ for $k$ above some explicit threshold — but the threshold would likely be astronomically large.
 
-3. **Best known lower bound (Granville–Ramaré 1996):** The strongest published bound is:
-$$g(k) \ge \exp\!\left(c\sqrt{\frac{\log^3 k}{\log\log k}}\right)$$
-due to Granville and Ramaré (1996). This grows **slower than any polynomial** — for any fixed $\varepsilon > 0$, the bound is $o(k^\varepsilon)$. In particular, **it does NOT prove $g(k) > k^2$ for large $k$**, or even $g(k) > k^{1+\varepsilon}$ for any fixed $\varepsilon$.
+3. **Konyagin's bound (1999):** Konyagin proved:
+$$g(k) \ge \exp(c \log^2 k)$$
+where $c > 0$ is an absolute positive constant (*Mathematika* 46 (1999), 41–55). This is confirmed by the chief and improves on the earlier Granville–Ramaré (1996) bound of $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$, which MathWorld still cites.
 
-   Konyagin (1999) published a paper in *Mathematika* (vol. 46, no. 1, pp. 41–55) titled "Estimates of the least prime factor of a binomial coefficient," which improves on ELS93 and cites Granville–Ramaré. However, the exact bound in Konyagin's paper is rendered as an image in the online abstract and **we have not been able to verify the precise statement**. MathWorld (Wolfram) still cites Granville–Ramaré 1996 as the best known bound as of its last update.
+   Since $\exp(c\log^2 k) > k^2$ iff $c \log k > 2$ iff $k > e^{2/c}$, **this proves $g(k) > k^2$ for all $k > e^{2/c}$.** The ELS93 conjecture is TRUE for all sufficiently large $k$.
 
-   **The upshot:** Even ineffectively, it is NOT KNOWN that $g(k) > k^2$ for all sufficiently large $k$. The ELS93 conjecture $g(k) > k^2$ (for $k > 16$) remains fully open.
+   **The critical open question is effectivity.** Is the constant $c$ computable? Konyagin's proof uses "a new theorem on the distribution of fractional parts of a smooth function." His references include Bombieri–Pila (integer points on curves), Filaseta–Trifonov (fractional parts/exponential sums), Huxley–Trifonov (squarefull numbers in intervals), and Schmidt (Diophantine approximation). Most of these methods are **effective** (exponential sum and lattice point techniques produce computable constants). However, Schmidt's book includes both effective results (geometry of numbers) and ineffective ones (Roth's theorem). Without access to the paper, we cannot determine whether the proof uses any ineffective component.
+
+   **If $c$ is effective and computable:** Set $K_0 = \lceil e^{2/c} \rceil$. Then:
+   - $k \le K_0$: verify by `native_decide` (if $K_0$ is computationally feasible)
+   - $k > K_0$: $g(k) > k^2$ by Konyagin's theorem
+   
+   This would **eliminate Axiom 1 entirely**, reducing the formalization to zero axioms on the CRT coverage question.
+
+   **If $c$ is ineffective:** We know $g(k) > k^2$ for large enough $k$, but cannot compute the threshold. The axiom would persist, though its mathematical content would be known to be true.
 
 ### 3.3 The Worst Case
 
@@ -169,17 +177,25 @@ ELS93 were aware of this gap. Their Conjecture 1 is precisely the statement we c
 
 ### 4.3 The State of Lower Bounds on g(k)
 
-The best VERIFIED lower bound on $g(k)$ is:
-$$g(k) \ge \exp\!\left(c\sqrt{\frac{\log^3 k}{\log\log k}}\right)$$
-due to Granville and Ramaré (1996). This is subpolynomial — it grows slower than $k^\varepsilon$ for any fixed $\varepsilon > 0$.
+The progression of lower bounds on $g(k)$:
 
-**What this means:** There is NO known proof, even ineffective, that $g(k) > k^2$ for all sufficiently large $k$. The gap between the best lower bound (subpolynomial) and the ELS93 conjecture ($g(k) > k^2$) is enormous.
+| Year | Authors | Bound | Dominates $k^2$? |
+|------|---------|-------|-------------------|
+| 1993 | ELS93 | $g(k) > c_1 k^2 / \ln k$ | No |
+| 1996 | Granville–Ramaré | $g(k) \ge \exp(c\sqrt{\log^3 k / \log\log k})$ | No (subpolynomial) |
+| 1999 | **Konyagin** | $g(k) \ge \exp(c \log^2 k)$ | **Yes**, for $k > e^{2/c}$ |
 
-**Konyagin (1999):** A paper by S. V. Konyagin in *Mathematika* 46 (1999), 41–55, proves a lower bound on $g(k)$ and establishes a theorem on fractional parts of smooth functions. The exact bound is unreadable from the online abstract (rendered as an image). We do not know whether it improves on Granville–Ramaré or by how much. MathWorld still cites Granville–Ramaré as the best known.
+**What Konyagin's result means:** The ELS93 conjecture $g(k) > k^2$ is TRUE for all sufficiently large $k$. The remaining question is whether the threshold $K_0 = \lceil e^{2/c} \rceil$ can be computed.
 
-**Sorenson (2019, arXiv:1907.08559):** Under a "Uniform Distribution Heuristic," shows $\log g(k) \sim k/\log k$, which would mean $g(k) \approx \exp(k/\log k)$ — vastly exceeding $k^2$. But this is conditional on an unproved heuristic. Unconditionally, they compute $g(k)$ up to $k = 323$.
+**Effectivity status:** UNKNOWN. The proof's main tool is a "new theorem on the distribution of fractional parts of a smooth function." The references suggest mostly effective methods (exponential sums, lattice point counting), but without reading the full paper, we cannot confirm. If $c$ is effective and $K_0 \le 700$ (or any computationally feasible value), our `native_decide` would close the gap.
 
-**The honest picture:** Our axioms ($g(k) > k^2$ for $k > 700$) represent a genuinely open problem with no known theoretical path to resolution. The best unconditional bounds don't even reach $g(k) > k^{1+\varepsilon}$.
+**Sorenson (2019, arXiv:1907.08559):** Computes $g(k)$ up to $k = 323$. Conjectures $\log g(k) \sim k/\log k$ conditionally (Uniform Distribution Heuristic), which would mean $g(k) \approx \exp(k/\log k)$ — vastly exceeding $k^2$.
+
+**The path to 0 axioms:** If Konyagin's constant $c$ is effective:
+1. Compute $K_0 = \lceil e^{2/c} \rceil$
+2. Extend `native_decide` to cover $k \le K_0$
+3. Apply Konyagin's theorem for $k > K_0$
+4. Both CRT axioms vanish
 
 ---
 
