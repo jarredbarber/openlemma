@@ -227,6 +227,16 @@ For these primes: $L_p = 2$, so $\sigma_p(h_p)$ involves a product of two geomet
 
 **Key observation (Konyagin).** The exponential sums $\sigma_p(h_p)$ for primes $p \in (k/2, k)$ exhibit cancellation that COMPOUNDS multiplicatively across primes. The number of "bad" $h$ values (those giving large $|\sigma_p|$ for many primes simultaneously) is bounded by lattice-point counting on algebraic curves.
 
+### Why elementary methods fail
+
+The CRT density from $r$ primes near $k/2$ is $\delta \approx (2/k)^r$. For $r = 3$ and $N = k^2$: the expected count $E = \delta \cdot k^2 \approx 8/k < 1$. But the **discrepancy** (difference between actual and expected count) dominates.
+
+**Elementary discrepancy** (Parseval + Cauchy–Schwarz): $D \le \sqrt{R \cdot \log M}$ where $R = |S_k|$ and $M$ is the CRT modulus. For 3 primes: $D \approx k^{3/2}\sqrt{\log k} \gg 1$. The density gain ($E < 1$) is completely wiped out by the error.
+
+**Root cause:** The exponential sum $\sum_{s \in S_k} e(hs/M)$ has $R$ terms. The mean-square bound (Parseval) gives $\sqrt{R}$, but $\sqrt{R} \gg k^2$ for 3 primes. The elementary approach cannot prove $g(k) > k^2$.
+
+This is the fundamental reason why Konyagin needs a non-trivial tool.
+
 ### The Bombieri–Pila connection
 
 The condition $|\sigma_p(h_p)| \ge \alpha |S_p|$ for multiple primes $p_1, \ldots, p_r$ simultaneously imposes constraints on $h \bmod p_1^2 \cdots p_r^2$. These constraints define algebraic curves in $(\mathbb{Z}/p_i^2)^r$, and the number of lattice points is bounded by the Bombieri–Pila theorem.
