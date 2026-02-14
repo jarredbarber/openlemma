@@ -5,6 +5,7 @@ Released under Apache 2.0 license.
 import problems.NumberTheory.Erdos1094.SmoothCase
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.ChineseRemainder
+import Mathlib.Data.Nat.Digits.Lemmas
 import Mathlib.Data.Real.Basic
 
 /-!
@@ -71,25 +72,47 @@ theorem large_prime_divides_choose_iff (n k q : ℕ) (hq : q.Prime) (hqk : k < q
     (hkn : k ≤ n) :
     q ∣ n.choose k ↔ n % q < k := by
   have hq_fact : Fact q.Prime := ⟨hq⟩
-  -- Use kummer_criterion which uses digits, then convert
-  rw [OpenLemma.Kummer.kummer_criterion q n k hkn]
-  -- The key insight: for k < q, the only nonzero digit of k in base q is at position 0
-  -- and it equals k. Similarly, digit 0 of n is n % q.
+  -- Access the private kummer_criterion_core through the public interface
+  -- It states: p | C(n,k) ↔ ∃i, k/p^i % p > n/p^i % p
+  have h_core : q ∣ n.choose k ↔ ∃ i, k / q ^ i % q > n / q ^ i % q := by
+    -- kummer_criterion_core is private, but kummer_criterion gives us the same via digits
+    rw [OpenLemma.Kummer.kummer_criterion q n k hkn]
+    have h2 : 2 ≤ q := hq.two_le
+    constructor
+    · intro ⟨i, hi⟩
+      use i
+      simp_rw [Nat.getD_digits _ _ h2] at hi
+      exact hi
+    · intro ⟨i, hi⟩
+      use i
+      simp_rw [Nat.getD_digits _ _ h2]
+      exact hi
+  rw [h_core]
+  -- Now prove: (∃i, k/q^i % q > n/q^i % q) ↔ n % q < k
+  -- For k < q, only i=0 matters (since k/q^i = 0 for i≥1)
   constructor
   · intro ⟨i, hi⟩
-    -- We have (Nat.digits q k)[i] > (Nat.digits q n)[i]
-    -- For k < q: (Nat.digits q k) = [k], so only position 0 is nonzero
     by_cases hi0 : i = 0
     · subst hi0
-      -- At position 0: digit of k is k, digit of n is n % q
-      sorry  -- This requires understanding the Nat.digits API in detail
-    · -- At position i > 0: digit of k is 0 (since k < q means digits has length 1)
-      sorry
+      simp only [pow_zero, Nat.div_one] at hi
+      have : k % q = k := Nat.mod_eq_of_lt hqk
+      rw [this] at hi
+      omega
+    · -- For i > 0: k/q^i = 0 since k < q ≤ q^i, leading to contradiction
+      have hpow_le : q ≤ q ^ i := by
+        have hi_pos : i ≠ 0 := by omega
+        exact Nat.le_self_pow hi_pos q
+      have : k < q ^ i := lt_of_lt_of_le hqk hpow_le
+      have hk_div_zero : k / q ^ i = 0 := Nat.div_eq_zero_iff.mpr (Or.inr this)
+      simp only [hk_div_zero, Nat.zero_mod] at hi
+      -- hi says 0 > n / q^i % q, but mod is always ≥ 0, contradiction
+      exact absurd hi (Nat.not_lt.mpr (Nat.zero_le _))
   · intro h
-    -- We need to show ∃ i, digit_i(k) > digit_i(n)
-    -- At position 0: k > n % q
     use 0
-    sorry
+    simp only [pow_zero, Nat.div_one]
+    have hk_mod : k % q = k := Nat.mod_eq_of_lt hqk
+    rw [hk_mod]
+    exact h
 
 /-! ### CRT Counting -/
 
@@ -179,9 +202,28 @@ theorem gap_prime_rescue_k_ge_9 (k n : ℕ) (hk : 9 ≤ k) (hn : k ^ 2 < n) :
     sorry  -- Would use crt_bad_count
   
   -- The bound c is less than 1 when scaled appropriately
+  -- We need M > k, i.e., n/k > k. This holds when n > k*(k+1) - 1 = k^2 + k - 1.
+  -- For k ≥ 9 and n > k^2, we can strengthen to n ≥ k^2 + 1, but we need n ≥ k^2 + k.
+  -- Actually, if M ≤ k, the interval (k, M] is empty, so there are no primes to consider.
+  -- The theorem is vacuously true in that case (though the proof structure breaks).
+  -- For now, we add this as an assumption:
   have hM_pos : k < M := by
-    -- M = n / k and n > k^2, so n/k > k
-    sorry  -- Technical division arithmetic
+    -- If M ≤ k, then n ≤ k * k + (k-1) = k^2 + k - 1
+    by_contra h
+    push_neg at h
+    -- M ≤ k means n/k ≤ k, so n ≤ k * k + (k - 1)
+    have : n ≤ k * k + (k - 1) := by
+      have h1 : n / k ≤ k := h
+      have h2 : n % k < k := Nat.mod_lt n (by omega)
+      have h3 : n % k ≤ k - 1 := Nat.le_pred_of_lt h2
+      calc n = k * (n / k) + n % k := (Nat.div_add_mod n k).symm
+        _ ≤ k * k + n % k := Nat.add_le_add_right (Nat.mul_le_mul_left k h1) _
+        _ ≤ k * k + (k - 1) := Nat.add_le_add_left h3 _
+    -- But n > k^2 = k*k, and for k ≥ 9, we have k - 1 ≥ 8, so k*k + (k-1) > k*k
+    -- Actually this doesn't give us a contradiction with n > k^2 directly.
+    -- The issue is: n > k^2 doesn't imply n > k^2 + (k-1) for small n.
+    -- So the theorem needs a stronger hypothesis or we handle this case separately.
+    sorry  -- TODO: Either strengthen hypothesis to n > k^2 + k, or handle M ≤ k case
   
   -- Key: the bound can be expressed in terms of M, and F_lt_one gives us control
   obtain ⟨c, h_count_mem, h_count_le⟩ := h_count_bound
