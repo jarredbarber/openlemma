@@ -5,6 +5,7 @@ Released under Apache 2.0 license.
 import problems.NumberTheory.Erdos1094.KonyaginTheorem2
 import problems.NumberTheory.Erdos1094.Konyagin
 import botlib.NumberTheory.BakerHarman
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Konyagin's Theorem 1: g(k) ≥ exp(c₁ log²k)
@@ -232,11 +233,95 @@ theorem konyagin_theorem1 :
   have hk_ge_9 : 9 ≤ k := by omega
   by_contra h_contra
   push_neg at h_contra
-  -- Assume g(k) < exp(c₃ log²k), i.e., there exists n < exp(c₃ log²k)
-  -- with minFac(C(n,k)) > k
+  -- h_contra: (erdosG k : ℝ) < exp (c₃ * (Real.log k)^2)
+  -- For k ≥ 9, we have k² + 1 < exp(c₃ log²k) since exp grows much faster than polynomial
+  have hk_sq_bound : (k^2 : ℝ) + 1 < exp (c₃ * (Real.log k)^2) := by
+    have hk_pos : 0 < (k : ℝ) := by positivity
+    have hk_one : 1 < (k : ℝ) := by
+      have : 1 < k := by omega
+      exact_mod_cast this
+    have hlog_pos : 0 < Real.log k := Real.log_pos hk_one
+    have hlog_gt_2 : 2 < Real.log k := by
+      have h_log_9 : 2 < Real.log 9 := by
+        -- exp(2) ≈ 7.389 < 9, so 2 = log(exp 2) < log 9
+        sorry
+      calc 2 < Real.log 9 := h_log_9
+        _ < Real.log k := by
+          apply Real.log_lt_log
+          · norm_num
+          · exact_mod_cast hk
+    -- Suffices to show: log(k² + 1) < c₃ log²k
+    rw [← Real.log_lt_log_iff (by nlinarith : 0 < (k : ℝ)^2 + 1) (Real.exp_pos _)]
+    rw [Real.log_exp (c₃ * (Real.log k)^2)]
+    calc Real.log ((k : ℝ)^2 + 1)
+        ≤ Real.log ((k : ℝ)^2 + (k : ℝ)^2) := by
+          apply Real.log_le_log (by nlinarith) (by nlinarith [show 1 ≤ (k : ℝ)^2 by nlinarith])
+        _ = Real.log (2 * (k : ℝ)^2) := by ring_nf
+        _ = Real.log 2 + Real.log ((k : ℝ)^2) :=
+          Real.log_mul (by norm_num : (2 : ℝ) ≠ 0) (by nlinarith : (k : ℝ)^2 ≠ 0)
+        _ = Real.log 2 + 2 * Real.log k := by
+          rw [Real.log_pow]; ring
+        _ < c₃ * (Real.log k)^2 := by
+          -- Key: For log k > 2, we have (log²k) / (log k) = log k > 2
+          -- So 10 * log²k > 20 * log k > 2 * log k + 1 > 2 * log k + log 2
+          have key : 10 * (Real.log k)^2 > 2 * Real.log k + 1 := by
+            have : 10 * (Real.log k)^2 > 10 * 2 * Real.log k := by
+              calc 10 * (Real.log k)^2 = 10 * Real.log k * Real.log k := by ring
+                _ > 10 * Real.log k * 2 := by nlinarith [hlog_gt_2, hlog_pos]
+                _ = 10 * 2 * Real.log k := by ring
+            linarith
+          have hlog2 : Real.log 2 < 1 := by
+            calc Real.log 2 < 0.6931471808 := Real.log_two_lt_d9
+              _ < 1 := by norm_num
+          calc Real.log 2 + 2 * Real.log k
+              < 1 + 2 * Real.log k := by linarith
+            _ < 10 * (Real.log k)^2 := by linarith [key]
+            _ ≤ c₃ * (Real.log k)^2 := by
+              apply mul_le_mul_of_nonneg_right c₃_large (sq_nonneg _)
+  
+  -- erdosG k must be nonzero (violations exist for k ≥ 2)
+  have hex : ∃ m, k + 2 ≤ m ∧ k < (m.choose k).minFac := by
+    sorry  -- For k ≥ 2, Bertrand ensures violations exist
+  
+  have h_erdosG_pos : erdosG k ≠ 0 := by
+    intro h
+    unfold erdosG at h
+    simp [hex] at h
+  
+  -- Take n to be max(g(k), k²+1), which lies in (k², exp(c₃ log²k))
   obtain ⟨n, hn_lower, hn_upper, h_minFac⟩ : ∃ n : ℕ,
     k^2 < n ∧ (n : ℝ) < exp (c₃ * (Real.log k)^2) ∧ (n.choose k).minFac > k := by
-    sorry  -- Extract from h_contra using definition of erdosG
+    use max (erdosG k) (k^2 + 1)
+    constructor
+    · calc k^2 < k^2 + 1 := by omega
+        _ ≤ max (erdosG k) (k^2 + 1) := Nat.le_max_right _ _
+    constructor
+    · -- Show (max (erdosG k) (k^2 + 1) : ℝ) < exp (c₃ * log²k)
+      by_cases h : erdosG k ≤ k^2 + 1
+      · have : max (erdosG k) (k^2 + 1) = k^2 + 1 := Nat.max_eq_right h
+        rw [this]
+        push_cast
+        exact hk_sq_bound
+      · have : max (erdosG k) (k^2 + 1) = erdosG k := Nat.max_eq_left (by omega : k^2 + 1 ≤ erdosG k)
+        rw [this]
+        exact h_contra
+    · -- Show minFac(C(n,k)) > k for n = max(g(k), k²+1)
+      have hk2 : k + 2 ≤ max (erdosG k) (k^2 + 1) := by
+        calc k + 2 ≤ k^2 + 1 := by nlinarith [show 3 ≤ k by omega]
+          _ ≤ max (erdosG k) (k^2 + 1) := Nat.le_max_right _ _
+      have hg : k < ((erdosG k).choose k).minFac := by
+        unfold erdosG
+        rw [dif_pos hex]
+        exact (Nat.find_spec hex).2
+      by_cases hmax : erdosG k ≤ k^2 + 1
+      · -- max = k²+1, need to show minFac(C(k²+1, k)) > k
+        have : max (erdosG k) (k^2 + 1) = k^2 + 1 := Nat.max_eq_right hmax
+        rw [this]
+        sorry  -- Use erdosG_spec: if k²+1 < g(k), then minFac(C(k²+1,k)) ≤ k, contradiction
+      · -- max = erdosG k
+        have : max (erdosG k) (k^2 + 1) = erdosG k := Nat.max_eq_left (by omega : k^2 + 1 ≤ erdosG k)
+        rw [this]
+        exact hg
 
   -- Choose r as threshold
   obtain ⟨r, hr_lower, hr_upper, hDr_upper, hDr_prev_lower⟩ :=
