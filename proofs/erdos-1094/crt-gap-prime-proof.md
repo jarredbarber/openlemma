@@ -57,9 +57,27 @@ large_n_smooth_case [AXIOM — now only needed for k ∈ {7, 8}]
     └── k ∈ {7, 8}: OPEN
 ```
 
+## Acceptable Citation Axioms
+
+The following may be stated as axioms with `-- CITATION: <reference>`:
+
+1. **Rosser-Schoenfeld Mertens bound** (equation 2.30 from Rosser & Schoenfeld 1962):
+```lean
+axiom rosser_schoenfeld_mertens (x : ℝ) (hx : x ≥ 1) :
+    Real.exp (-Real.EulerMascheroni) / Real.log x * (1 - 1 / (2 * Real.log x ^ 2))
+    ≤ ∏ p in (Finset.filter Nat.Prime (Finset.range ⌊x⌋₊)), (1 - 1 / (p : ℝ))
+    ∧
+    ∏ p in (Finset.filter Nat.Prime (Finset.range ⌊x⌋₊)), (1 - 1 / (p : ℝ))
+    ≤ Real.exp (-Real.EulerMascheroni) / Real.log x * (1 + 1 / (2 * Real.log x ^ 2))
+```
+(Exact Lean signature may differ. The key: explicit two-sided bound on ∏_{p ≤ x}(1-1/p).)
+
+Everything else — CRT, the F < 1 derivation, the main theorem — should be proved, not axiomatized.
+
 ## File
 
 Create `problems/NumberTheory/Erdos1094/GapPrime.lean`:
-- `gap_prime_crt_density`: CRT counting lemma
-- `F_lt_one`: F(k,M) < 1 for k ≥ 9, all M
-- `gap_prime_rescue_k_ge_9`: main theorem
+- `rosser_schoenfeld_mertens`: citation axiom (Rosser-Schoenfeld 1962)
+- `gap_prime_crt_density`: CRT counting lemma (PROVED)
+- `F_lt_one`: F(k,M) < 1 for k ≥ 9, all M (PROVED from citation)
+- `gap_prime_rescue_k_ge_9`: main theorem (PROVED)
