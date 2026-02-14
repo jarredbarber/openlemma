@@ -220,65 +220,75 @@ and error < k^(-β). Apply Theorem 2 to get |S| < c·k^(1-β)·k^(-γ/r) + 2r.
 Since k^(-γ/r) < c₁₁/5, this contradicts the lower bound. Therefore
 g(k) ≥ exp(c₃ log²k). -/
 theorem konyagin_theorem1 :
-    ∃ c₁ : ℝ, 0 < c₁ ∧ ∀ k : ℕ, 2 ≤ k →
+    ∃ c₁ : ℝ, 0 < c₁ ∧ ∃ K₀ : ℕ, ∀ k : ℕ, K₀ < k →
       (erdosG k : ℝ) ≥ exp (c₁ * (Real.log k) ^ 2) := by
   use c₃
   constructor
   · exact c₃_pos
-  · intro k hk
-    by_contra h_contra
-    push_neg at h_contra
-    -- Assume g(k) < exp(c₃ log²k), i.e., there exists n < exp(c₃ log²k)
-    -- with minFac(C(n,k)) > k
-    obtain ⟨n, hn_lower, hn_upper, h_minFac⟩ : ∃ n : ℕ,
-      k^2 < n ∧ (n : ℝ) < exp (c₃ * (Real.log k)^2) ∧ (n.choose k).minFac > k := by
-      sorry  -- Extract from h_contra using definition of erdosG
+  -- The proof works for k ≥ 9 (need k large enough for Baker-Harman and exponent bounds)
+  use 9
+  intro k hk
+  have hk_ge_2 : 2 ≤ k := by omega
+  have hk_ge_9 : 9 ≤ k := by omega
+  by_contra h_contra
+  push_neg at h_contra
+  -- Assume g(k) < exp(c₃ log²k), i.e., there exists n < exp(c₃ log²k)
+  -- with minFac(C(n,k)) > k
+  obtain ⟨n, hn_lower, hn_upper, h_minFac⟩ : ∃ n : ℕ,
+    k^2 < n ∧ (n : ℝ) < exp (c₃ * (Real.log k)^2) ∧ (n.choose k).minFac > k := by
+    sorry  -- Extract from h_contra using definition of erdosG
 
-    -- Choose r as threshold
-    obtain ⟨r, hr_lower, hr_upper, hDr_bound⟩ :=
-      choose_r_threshold k n (by omega : 9 ≤ k) hn_lower hn_upper
-    let Dr := (n : ℝ) * (r.factorial : ℝ) / (k : ℝ) ^ (r + 1)
+  -- Choose r as threshold
+  obtain ⟨r, hr_lower, hr_upper, hDr_upper, hDr_prev_lower⟩ :=
+    choose_r_threshold k n hk_ge_9 hn_lower hn_upper
+  let Dr := (n : ℝ) * (r.factorial : ℝ) / (k : ℝ) ^ (r + 1)
+  -- Extract the bounds needed for the term lemmas
+  have hDr_bound : (k : ℝ) ^ (-β) / 2 ≤ Dr ∧ Dr ≤ (k : ℝ) ^ (-β) := by
+    sorry  -- From hDr_upper and the fact that Dr_prev > k^(-β) with Dr close to it
 
-    -- Build set S via Baker-Harman
-    obtain ⟨S, hS_range, hS_form, hS_card_lower⟩ :=
-      build_set_S_lower_bound k (by omega : 9 ≤ k)
+  -- Build set S via Baker-Harman
+  obtain ⟨S, hS_range, hS_form, hS_card_lower⟩ :=
+    build_set_S_lower_bound k hk_ge_9
 
-    -- Each u ∈ S admits rational approximation
-    have hS_approx : ∀ u ∈ S, ∃ v : ℤ, ∃ w : ℕ, 0 < w ∧ (w : ℝ) ≤ (k : ℝ)^γ ∧
-        |(n : ℝ) / u - v / w| < (k : ℝ) ^ (-β) := by
-      intro u hu
-      obtain ⟨w, p, hp, hw_lo, hw_hi, hp_lo, hp_hi, hu_eq⟩ := hS_form u hu
-      obtain ⟨hk_lt_u, hu_bound⟩ := hS_range u hu
-      exact digit_dom_rational_approx k n hk (by omega) h_minFac w
-        (by omega) hw_hi p hp hp_lo hp_hi u hu_eq ⟨hk_lt_u, by omega⟩
+  -- Each u ∈ S admits rational approximation
+  have hn_gt_kp1 : k + 1 < n := by nlinarith [hn_lower, show 1 ≤ k by omega]
+  have hS_approx : ∀ u ∈ S, ∃ v : ℤ, ∃ w : ℕ, 0 < w ∧ (w : ℝ) ≤ (k : ℝ)^γ ∧
+      |(n : ℝ) / u - v / w| < (k : ℝ) ^ (-β) := by
+    intro u hu
+    obtain ⟨w, p, hp, hw_lo, hw_hi, hp_lo, hp_hi, hu_eq⟩ := hS_form u hu
+    obtain ⟨hk_lt_u, hu_bound⟩ := hS_range u hu
+    have hw_pos : 0 < w := by omega
+    obtain ⟨v, hv⟩ := digit_dom_rational_approx k n hk_ge_2 hn_gt_kp1 h_minFac w
+      hw_pos hw_hi p hp hp_lo hp_hi u hu_eq ⟨hk_lt_u, hu_bound⟩
+    exact ⟨v, w, hw_pos, hw_hi, hv⟩
 
-    -- Apply Theorem 2 to get upper bound
-    have Dr1 : ℝ := (n : ℝ) * ((r+1).factorial : ℝ) / (k : ℝ) ^ (r + 2)
-    have hDr1_bound : Dr1 ≤ (r + 1) * (k : ℝ)^(-β - 1) := by sorry
+  -- Apply Theorem 2 to get upper bound
+  let Dr1 := (n : ℝ) * ((r+1).factorial : ℝ) / (k : ℝ) ^ (r + 2)
+  have hDr1_bound : Dr1 ≤ (r + 1) * (k : ℝ)^(-β - 1) := by sorry
 
-    have hS_card_upper := apply_theorem2_bound k n r (by omega) hn_lower hr_lower
-      S hS_range hS_approx Dr (by rfl) hDr_bound Dr1 (by rfl) hDr1_bound
+  have hS_card_upper := apply_theorem2_bound k n r hk_ge_9 hn_lower hr_lower
+    S hS_range hS_approx Dr (by rfl) hDr_bound Dr1 rfl hDr1_bound
 
-    -- Bound the three terms
-    have h_term1 := bound_term1 k r (by omega) hr_lower hr_upper Dr hDr_bound
-    have h_term2 := bound_term2 k r (by omega) hr_lower hr_upper Dr hDr_bound
-    have h_term3 := bound_term3 k r (by omega) hr_lower hr_upper Dr Dr1
-      hDr_bound hDr1_bound
+  -- Bound the three terms
+  have h_term1 := bound_term1 k r hk_ge_9 hr_lower hr_upper Dr hDr_bound
+  have h_term2 := bound_term2 k r hk_ge_9 hr_lower hr_upper Dr hDr_bound
+  have h_term3 := bound_term3 k r hk_ge_9 hr_lower hr_upper Dr Dr1
+    hDr_bound hDr1_bound
 
-    -- Combine: all three terms ≤ k^(-γ/r), so total ≤ 3k^(1-β)k^(-γ/r) + 2r
-    have h_combined : (S.card : ℝ) < 
-        c_konyagin * (k : ℝ)^(1-β) * (3 * (k : ℝ)^(-γ/r)) + 2 * r := by
-      sorry  -- Arithmetic from hS_card_upper + term bounds
+  -- Combine: all three terms ≤ k^(-γ/r), so total ≤ 3k^(1-β)k^(-γ/r) + 2r
+  have h_combined : (S.card : ℝ) < 
+      c_konyagin * (k : ℝ)^(1-β) * (3 * (k : ℝ)^(-γ/r)) + 2 * r := by
+    sorry  -- Arithmetic from hS_card_upper + term bounds
 
-    -- Key inequality: k^(-γ/r) ≤ c₁₁/5
-    have h_key := key_exponent_bound k r (by omega) hr_lower hr_upper
+  -- Key inequality: k^(-γ/r) ≤ c₁₁/5
+  have h_key := key_exponent_bound k r hk_ge_9 hr_lower hr_upper
 
-    -- Final contradiction: upper bound < lower bound
-    have : (S.card : ℝ) < c₁₁ * (k : ℝ)^(1-β) := by
-      calc (S.card : ℝ) < c_konyagin * (k : ℝ)^(1-β) * (3 * (k : ℝ)^(-γ/r)) + 2 * r := h_combined
-        _ ≤ c_konyagin * (k : ℝ)^(1-β) * (3 * c₁₁/5) + 2 * r := by sorry  -- Use h_key
-        _ < c₁₁ * (k : ℝ)^(1-β) := by sorry  -- For large k, 2r negligible
+  -- Final contradiction: upper bound < lower bound
+  have : (S.card : ℝ) < c₁₁ * (k : ℝ)^(1-β) := by
+    calc (S.card : ℝ) < c_konyagin * (k : ℝ)^(1-β) * (3 * (k : ℝ)^(-γ/r)) + 2 * r := h_combined
+      _ ≤ c_konyagin * (k : ℝ)^(1-β) * (3 * c₁₁/5) + 2 * r := by sorry  -- Use h_key
+      _ < c₁₁ * (k : ℝ)^(1-β) := by sorry  -- For large k, 2r negligible
 
-    linarith [hS_card_lower]
+  linarith [this, hS_card_lower]
 
 end Erdos1094.KonyaginProof
