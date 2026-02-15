@@ -1,46 +1,35 @@
 # Sorry Status - Erdős 1094 Project
 
-**Last updated:** 2026-02-13 (after 71 commits)
+**Last updated:** 2026-02-15
 
-## High Priority (Blocking Main Results)
+## ⚠️ CRITICAL: GapPrime.lean is MATHEMATICALLY BROKEN
 
-### GapPrime.lean (3 sorry) 
-File builds: ✅ GREEN
+**DO NOT work on GapPrime.lean sorrys.** The `F_lt_one` theorem is FALSE.
+The CRT counting bound (kM/Q + 1)·R has remainder R = ∏(q_i - k) which is
+astronomical (≈10³⁰ for k=9, M=100). The density kM·R/Q < 1 is correct
+but the integer count bound is always >> 1. The approach cannot prove count = 0.
 
-1. **Line 78**: `large_prime_divides_choose_iff` — ✅ **CLOSED**
-   - **What**: For prime q > k: q | C(n,k) ⟺ n mod q < k
-   - **Proof**: Used `kummer_criterion` + `Nat.getD_digits` to convert digit form to div/mod form
-   - **Key insight**: For k < q, only position i=0 matters; higher positions have k/q^i = 0
+`large_prime_divides_choose_iff` is valid and reusable. Everything else in
+GapPrime.lean should be ignored.
 
-2. **Line 123**: `crt_bad_count`
-   - **What**: CRT counting bound for bad residues
-   - **Why hard**: Requires CRT bijection + interval counting
-   - **Impact**: Core of gap prime counting argument
+## Open Problem: B3b (the last gap)
 
-3. **Line 141**: `mertens_product_bound`
-   - **What**: ∏(1 - k/q) ≤ (C ln k / ln M)^k
-   - **Why hard**: Derive from Rosser-Schoenfeld axiom via logarithms
-   - **Impact**: Needed to show F < 1
+The `large_n_smooth_case` axiom is NOT proved. The B3b case (n = sq, s | k,
+q prime > M, M k-smooth) remains open for general k.
 
-4. **Line 154**: `F_lt_one`
-   - **What**: F(k,M) < 1 for k ≥ 9
-   - **Why hard**: Combine all bounds and optimize over M
-   - **Impact**: Core of contradiction in main theorem
+**What we know:**
+- Computationally verified for k ≤ 50 (CRT intersection empty in (k, k²])
+- Density argument gives expected count < 1 but does NOT prove count = 0
+- No known structural proof for all k > K₀
 
-5. **Line 171**: `hM_pos` (in main theorem)
-   - **What**: k < M where M = n/k
-   - **Why hard**: n > k² insufficient for n/k > k (integer division)
-   - **Fix needed**: Either strengthen hypothesis to n > k²+k-1, or handle M ≤ k separately
-   - **Impact**: BLOCKS main theorem proof completion
-
-**Status**: Main proof structure complete (60 lines), 1 sorry closed, 4 remaining.
+**What we need:** A proof that works for ALL k above some threshold,
+independent of n. This is the hard part.
 
 ### KonyaginTheorem1.lean (10 sorry)
-File builds: ❌ HAS TYPE ERRORS (15 compile errors)
-
-- Not currently blocking since file doesn't compile
-- Needs type coercion fixes before sorry work
-- Chief directive: parked until ready
+File builds: ✅ GREEN (type errors fixed)
+Contains the Konyagin (1999) proof scaffold. Sorrys are real analysis
+(derivative bounds, parameter optimization). These are CORRECT targets
+but lower priority than finding a B3b proof.
 
 ## Medium Priority (Infrastructure)
 

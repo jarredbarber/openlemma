@@ -1,6 +1,6 @@
 # CRT Gap Prime Proof: Eliminating `large_n_smooth_case` for k ≥ 9
 
-**Status:** Draft ✏️ (revised for formalization clarity)
+**Status:** ⚠️ BROKEN — F_lt_one is FALSE (see §ERRATUM below)
 **Goal:** For k ≥ 9 and any n > k², prove ∃ prime q ∈ (k, ⌊n/k⌋] with q | C(n,k).
 
 ---
@@ -218,6 +218,20 @@ For k ∈ {7, 8}: the CRT gap prime argument alone is insufficient (F_max ≈ 1.
 | Formalizability | Very hard | Medium |
 
 ---
+
+---
+
+## ERRATUM
+
+**`F_lt_one` is FALSE as stated.** The integer count bound is
+(kM/Q + 1) · R where R = ∏(q_i - k). Since Q >> kM, this simplifies to
+≈ R = ∏(q_i - k), which is astronomical (≈10³⁰ for k=9, M=100).
+
+The real-valued density kM · ∏(1-k/q) = kM · R/Q does go below 1 for k ≥ 9.
+But the integer counting bound adds +R as a remainder term, and R dominates.
+
+**The CRT counting approach CANNOT prove count = 0.** The density-to-deterministic
+gap is fundamental to this method. A different proof strategy is needed for B3b.
 
 ## References
 
