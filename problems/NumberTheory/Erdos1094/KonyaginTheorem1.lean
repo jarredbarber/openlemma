@@ -5,7 +5,9 @@ Released under Apache 2.0 license.
 import problems.NumberTheory.Erdos1094.KonyaginTheorem2
 import problems.NumberTheory.Erdos1094.Konyagin
 import botlib.NumberTheory.BakerHarman
+import botlib.NumberTheory.Kummer
 import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Data.Nat.Digits.Lemmas
 
 /-!
 # Konyagin's Theorem 1: g(k) ≥ exp(c₁ log²k)
@@ -99,12 +101,107 @@ This implies |n/(q·w) - v/w| < k^(-β) for some integer v.
 - Scaling by w and taking rational approximation gives the bound -/
 lemma digit_dom_rational_approx (k n : ℕ) (hk : 2 ≤ k) (hn : k + 1 < n)
     (h_minFac : (n.choose k).minFac > k)
-    (w : ℕ) (hw_pos : 0 < w) (hw_bound : (w : ℝ) ≤ (k : ℝ) ^ γ)
+    (w : ℕ) (hw_ge_2 : 2 ≤ w) (hw_bound : (w : ℝ) ≤ (k : ℝ) ^ γ)
     (q : ℕ) (hq : q.Prime) (hq_lo : (k : ℝ) / w < q)
     (hq_hi : q ≤ ((k : ℝ) + (k : ℝ)^(1-β)) / w)
     (u : ℕ) (hu : u = w * q) (hu_range : k < u ∧ u ≤ k + ⌊(k : ℝ)^(1-β)⌋₊) :
     ∃ v : ℤ, |(n : ℝ) / u - v / w| < (k : ℝ) ^ (-β) := by
-  sorry
+  have hq_pos : 0 < q := hq.pos
+  have hq_le_k : q ≤ k := by
+    have : (q : ℝ) ≤ ((k : ℝ) + (k : ℝ)^(1-β)) / w := hq_hi
+    calc (q : ℝ) ≤ ((k : ℝ) + (k : ℝ)^(1-β)) / 2 := by
+        apply le_trans hq_hi
+        apply div_le_div_of_nonneg_left
+        · positivity
+        · positivity
+        · exact_mod_cast hw_ge_2
+      _ < (k : ℝ) := by
+        have : (k : ℝ)^(1-β) < (k : ℝ) := by
+          apply rpow_lt_id (by norm_cast) (by linarith [β])
+        linarith
+  
+  have hq_fact : Fact q.Prime := ⟨hq⟩
+  have hq_not_dvd : ¬ q ∣ n.choose k := by
+    have hck_pos : 0 < n.choose k := Nat.choose_pos (by omega)
+    intro h_dvd
+    have h_minFac_le : (n.choose k).minFac ≤ q := Nat.minFac_le_of_dvd hq.two_le h_dvd
+    omega
+
+  have h_no_carry : ∀ i, (Nat.digits q k).getD i 0 ≤ (Nat.digits q n).getD i 0 := by
+    intro i
+    by_contra h_violation
+    push_neg at h_violation
+    have h_dvd : q ∣ n.choose k := (OpenLemma.Kummer.kummer_criterion q n k (by omega)).mpr ⟨i, h_violation⟩
+    exact hq_not_dvd h_dvd
+
+  have r_k_le_r_n : k % q ≤ n % q := by
+    have h2q : 2 ≤ q := hq.two_le
+    have := h_no_carry 0
+    rw [Nat.getD_digits _ _ h2q, Nat.getD_digits _ _ h2q] at this
+    simpa using this
+
+  let m_n := n / q
+  let m_k := k / q
+  let r_n := n % q
+  let r_k := k % q
+
+  have hu_pos : 0 < (u : ℝ) := by norm_cast; omega
+  have h_frac : (n : ℝ) / u - (m_n + 1 : ℝ) / w = (r_n : ℝ) / u - 1 / w := by
+    field_simp [hu, (by omega : w ≠ 0), (by omega : q ≠ 0)]
+    calc (n : ℝ) * w - (m_n + 1 : ℝ) * u 
+        = (m_n * q + r_n : ℝ) * w - (m_n + 1 : ℝ) * w * q := by rw [hu]; norm_cast
+      _ = m_n * q * w + r_n * w - (m_n * q * w + w * q) := by ring
+      _ = r_n * w - w * q := by ring
+    
+  use (m_n + 1 : ℤ)
+  rw [show ((m_n + 1 : ℤ) : ℝ) = (m_n + 1 : ℕ) by norm_cast]
+  
+  have h_diff_eq : (n : ℝ) / u - (m_n + 1 : ℝ) / w = ((r_n : ℝ) - q) / u := by
+    rw [h_frac]
+    field_simp [hu, (by omega : w ≠ 0), (by omega : q ≠ 0)]
+    ring
+
+  rw [h_diff_eq, abs_div, abs_of_pos hu_pos]
+  have h_rn_lt_q : (r_n : ℝ) < q := by norm_cast; apply Nat.mod_lt; omega
+  rw [abs_of_neg (by linarith)]
+  
+  have h_m_k : m_k = w - 1 := by
+    have h_up : m_k < w := by
+      rw [← mul_lt_mul_right (by omega : 0 < q)]
+      calc m_k * q ≤ k := Nat.div_mul_le k q
+        _ < u := hu_range.1
+        _ = w * q := by norm_cast
+    have h_dn : w - 1 ≤ m_k := by
+      -- Since u ≤ k + N, wq ≤ k + N, q ≤ k/w + N/w.
+      -- So k/q ≥ w - wN/u.
+      -- If wN/u < 1, then k/q > w-1, so floor(k/q) ≥ w-1.
+      sorry
+    omega
+  
+  have h_bound : (q - r_n : ℝ) / u ≤ (q - r_k : ℝ) / u := by
+    apply div_le_div_of_nonneg_right
+    · norm_cast; linarith
+    · positivity
+  
+  calc (q - r_n : ℝ) / u ≤ (q - r_k : ℝ) / u := h_bound
+    _ = (1 - k / u) := by
+      field_simp [hu, (by omega : w ≠ 0), (by omega : q ≠ 0)]
+      calc (u : ℝ) - (k : ℝ) = (w * q : ℝ) - (m_k * q + r_k : ℝ) := by rw [hu]; norm_cast
+        _ = (w - m_k : ℝ) * q - r_k := by ring
+        _ = (w - (w - 1) : ℝ) * q - r_k := by rw [h_m_k]
+        _ = q - r_k := by ring
+    _ = (u - k : ℝ) / u := by field_simp
+    _ ≤ ⌊(k : ℝ) ^ (1 - β)⌋₊ / u := by 
+      apply div_le_div_of_nonneg_right
+      · norm_cast; omega
+      · positivity
+    _ ≤ (k : ℝ) ^ (1 - β) / (k : ℝ) := by
+      apply div_le_div_of_nonneg_left (by positivity)
+      · norm_cast; omega
+      · exact_mod_cast hu_range.1.le
+    _ = (k : ℝ) ^ (-β) := by
+      rw [rpow_sub (by norm_cast; omega)]
+      ring_nf
 
 /-! ### Helper: Derivatives of h(u) = n/u -/
 
@@ -342,10 +439,9 @@ theorem konyagin_theorem1 :
     intro u hu
     obtain ⟨w, p, hp, hw_lo, hw_hi, hp_lo, hp_hi, hu_eq⟩ := hS_form u hu
     obtain ⟨hk_lt_u, hu_bound⟩ := hS_range u hu
-    have hw_pos : 0 < w := by omega
     obtain ⟨v, hv⟩ := digit_dom_rational_approx k n hk_ge_2 hn_gt_kp1 h_minFac w
-      hw_pos hw_hi p hp hp_lo hp_hi u hu_eq ⟨hk_lt_u, hu_bound⟩
-    exact ⟨v, w, hw_pos, hw_hi, hv⟩
+      hw_lo hw_hi p hp hp_lo hp_hi u hu_eq ⟨hk_lt_u, hu_bound⟩
+    exact ⟨v, w, (by omega : 0 < w), hw_hi, hv⟩
 
   -- Apply Theorem 2 to get upper bound
   let Dr1 := (n : ℝ) * ((r+1).factorial : ℝ) / (k : ℝ) ^ (r + 2)
