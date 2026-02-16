@@ -1,308 +1,199 @@
-# Proof of large_n_smooth_case
-
-**Theorem.** For all sufficiently large k: if n > k², M = ⌊n/k⌋ is
-k-smooth, and k ∤ n, then minFac(C(n,k)) ≤ M.
-
-## Setup
-
-Write n = kM + r with 0 < r < k (since k ∤ n). Since n > k² and M = ⌊n/k⌋:
-we have M ≥ k + 1 > k. Since M is k-smooth: every prime factor of M is ≤ k.
-
-We need to find a prime p ≤ M with p | C(n,k).
-
-**Available primes:**
-- *Small primes* (p ≤ k): By Kummer's theorem, p | C(n,k) iff n does NOT
-  digit-dominate k in base p (i.e., some base-p digit of n is smaller than
-  the corresponding digit of k).
-- *Gap primes* (k < p ≤ M): Since p > k, at most one of the k consecutive
-  integers {n−k+1, …, n} is divisible by p. If one is: p | C(n,k), since
-  p > k means p ∤ k!, so the factor of p in the numerator n!/(n−k)! is not
-  cancelled. Precisely: p | C(n,k) iff n mod p < k.
-
-## Part I: n < exp(c log²k)
-
-**Lemma (Konyagin 1999).** There exists an absolute constant c > 0 such that
-g(k) ≥ exp(c log²k) for all sufficiently large k, where
-g(k) = min{n ≥ 2k : minFac(C(n,k)) > k}.
-
-*Proof.* This is Theorem 1 of Konyagin (1999). The proof uses exponential
-sum estimates over digit-constrained sets combined with the Bombieri–Pila
-theorem on integer points on algebraic curves. See Part III below for an
-outline. ∎
-
-**Corollary.** For k ≥ K₀ and n ∈ (k², exp(c log²k)): minFac(C(n,k)) ≤ k.
-
-*Proof.* Since exp(c log²k) > k² for large k: we have n < exp(c log²k) ≤ g(k).
-By definition of g(k): every n ∈ [2k, g(k)) satisfies minFac(C(n,k)) ≤ k.
-Since n > k² > 2k: the conclusion holds. Since k ≤ M: minFac(C(n,k)) ≤ M. ∎
-
-## Part II: n ≥ exp(c log²k)
-
-For this range: M = ⌊n/k⌋ ≥ exp(c log²k)/k, so M is extremely large
-relative to k. There are many gap primes in (k, M].
-
-**Step 1: Prime selection.**
-
-Choose r primes p₁ < p₂ < ⋯ < pᵣ from the interval (k/2, k) with the
-property that cᵢ := 2pᵢ − k is small (specifically, cᵢ ≤ C where C will
-be optimized later).
-
-By the prime number theorem: the interval (k/2, k/2 + C/2] contains
-≈ C/(2 ln k) primes. So we can select r = ⌊C/(2 ln k)⌋ primes with
-cᵢ ≤ C.
-
-Additionally, choose s gap primes q₁ < ⋯ < qₛ from (k, M]. By Bertrand's
-postulate applied repeatedly: we can choose at least s = ⌊log₂(M/k)⌋ gap
-primes.
-
-**Step 2: The counting problem.**
-
-For each small prime pᵢ: by Kummer's theorem (since k has exactly 2 digits
-in base pᵢ, namely k = 1·pᵢ + (k−pᵢ)), the condition pᵢ ∤ C(n,k) requires:
-- n mod pᵢ ≥ k − pᵢ (digit-0 domination), AND
-- pᵢ ∤ ⌊n/pᵢ⌋ (digit-1 domination)
-
-The digit-0 condition restricts n mod pᵢ to an interval Iᵢ of length
-cᵢ = 2pᵢ − k. The digit-1 condition excludes a set of density 1/pᵢ
-(when pᵢ² | n − (n mod pᵢ)).
-
-For each gap prime qⱼ: the condition qⱼ ∤ C(n,k) requires n mod qⱼ ≥ k.
-This restricts n mod qⱼ to an interval of length qⱼ − k.
-
-If ALL of these conditions hold simultaneously (all small primes AND all
-gap primes fail to divide C(n,k)): then minFac(C(n,k)) > M, contradicting
-our goal. So we need to show this cannot happen for n ∈ [kM, kM + k).
-
-**Step 3: Reformulation as a line missing a product set.**
-
-By CRT, the conditions are independent across different primes (coprime
-moduli). Define:
-
-M' = (∏ᵢ pᵢ) · (∏ⱼ qⱼ)
-
-The CRT map φ: ℤ → ∏ᵢ(ℤ/pᵢ) × ∏ⱼ(ℤ/qⱼ) sends the interval
-[kM, kM + k) to a line segment of length k in the (r+s)-dimensional torus.
-
-The "uncaught" set is:
-
-B = ∏ᵢ {n mod pᵢ : n mod pᵢ ≥ k − pᵢ} × ∏ⱼ {n mod qⱼ : n mod qⱼ ≥ k}
-
-This is a product of intervals with:
-- |Iᵢ| = cᵢ for each small prime (cᵢ = 2pᵢ − k)
-- |Jⱼ| = qⱼ − k for each gap prime
-
-The CRT density is:
-
-δ = ∏ᵢ (cᵢ/pᵢ) · ∏ⱼ ((qⱼ − k)/qⱼ)
-
-**Claim:** For k sufficiently large, the line segment φ([kM, kM+k)) does
-not intersect B. I.e., the count of uncaught n is zero.
-
-**Step 4: Density estimate.**
-
-The expected count is k · δ. We bound each factor:
-
-Small primes: ∏ᵢ (cᵢ/pᵢ) ≤ (C/(k/2))ʳ = (2C/k)ʳ.
-
-Gap primes: ∏ⱼ (1 − k/qⱼ). By Mertens' theorem:
-∏_{k<p≤M} (1 − k/p) ≈ (ln k / ln M)^k.
-
-For M ≥ exp(c log²k)/k: ln M ≥ c log²k − ln k ≈ c(ln k)². So:
-∏(1 − k/p) ≈ (1/(c ln k))^k = exp(−k ln(c ln k))
-
-Combined density: δ ≤ (2C/k)ʳ · exp(−k ln(c ln k)).
-
-With C = α(ln k)² and r ≈ C/(2 ln k) = α ln k/2:
-
-(2C/k)ʳ = (2α(ln k)²/k)^{α ln k/2} = exp((α ln k/2) · ln(2α(ln k)²/k))
-        = exp(−(α ln k/2) · (ln k − ln(2α(ln k)²)))
-        = exp(−(α/2)(ln k)² · (1 − o(1)))
-
-The gap prime factor: exp(−k ln(c ln k)).
-
-Total: δ ≤ exp(−(α/2)(ln k)² − k ln(c ln k)).
-
-Expected count: k · δ ≤ k · exp(−(α/2)(ln k)² − k ln(c ln k)) → 0
-super-exponentially.
-
-**Step 5: Why expected → 0 is not enough.**
-
-The count of uncaught n in [kM, kM+k) is an integer: either 0 or ≥ 1.
-The expected count → 0 means the count is "usually" 0, but does not rule
-out specific M values where the count is 1.
-
-The error in the count (deviation from the expected value) must be bounded.
-By Fourier analysis on ℤ/M':
-
-count = k · δ + E
-
-where E = (1/M') · Σ_{h≠0} σ(h) · D_k(h; M', kM) and σ(h) = ∏ᵢGᵢ(hᵢ)·∏ⱼHⱼ(hⱼ)
-is a product of geometric sums.
-
-Standard bounds (Cauchy–Schwarz, Erdős–Turán, large sieve) all give
-|E| ≥ 1, insufficient to prove count = 0. See konyagin-proof.md §8 for
-a systematic analysis of why eight standard techniques fail.
-
-**Step 6: The Bombieri–Pila bound (key lemma).**
-
-The standard bounds fail because they discard the phases of σ(h). The
-signed sum achieves 10⁴–10¹² × cancellation that absolute bounds cannot
-capture.
-
-To exploit this cancellation, we use:
-
-**Lemma (Bombieri–Pila, 1989).** Let C ⊂ ℝ² be an irreducible algebraic
-curve of degree d ≥ 2. Then for any B ≥ 1:
-  |{(x,y) ∈ ℤ² ∩ C ∩ [0,B]²}| ≤ C_{d,ε} · B^{1/d + ε}
-where C_{d,ε} depends only on d and ε, not on the specific curve.
-
-**Application.** For a pair of small primes (pᵢ, pⱼ): the geometric sum
-Gᵢ(a) = Σ_{t=0}^{cᵢ-1} e(−at/pᵢ) satisfies |Gᵢ(a)|² = Dᵢ(a/pᵢ) where
-Dᵢ is the Dirichlet kernel (squared):
-
-|Gᵢ(a)|² = sin²(πcᵢa/pᵢ) / sin²(πa/pᵢ)
-
-Near a = 0, this is ≈ cᵢ²(1 − Aᵢa²) where Aᵢ = (cᵢ²−1)π²/(3pᵢ²). The
-level set {(aᵢ, aⱼ) : |Gᵢ(aᵢ)|² · |Gⱼ(aⱼ)|² = T²} is then:
-
-AᵢAⱼaᵢ²aⱼ² − Aᵢaᵢ² − Aⱼaⱼ² + (1 − T²/(cᵢcⱼ)²) = 0
-
-This is a **degree-4 algebraic curve** in (aᵢ, aⱼ). By BP: the number of
-integer points (aᵢ, aⱼ) ∈ [0, pᵢ) × [0, pⱼ) on this curve is at most
-C_ε · (k/2)^{1/4+ε}.
-
-**Step 7: Error bound via Bombieri–Pila.**
-
-Decompose the error by the magnitude of |σ(h)|. Define a threshold T > 0.
-
-*Non-resonant terms* (|σ(h)| ≤ T): Their total contribution to E satisfies
-|E_non-res| ≤ T · Σ_{h≠0} |D_k(h)|/M' ≤ T · O(ln k).
-(The L¹ norm of the Dirichlet kernel of order k over ℤ/M' is O(M' ln k),
-so dividing by M' gives O(ln k).)
-
-*Resonant terms* (|σ(h)| > T): The resonant set, projected to any pair of
-prime coordinates (pᵢ, pⱼ), lies on a degree-4 curve. By BP: at most
-O(k^{1/4+ε}) resonant h per pair.
-
-For r small primes: using all (r choose 2) pairs with a union bound, the
-total number of resonant h is at most O(r² · k^{1/4+ε}).
-
-Each resonant h contributes at most |σ(h)| · |D_k(h)|/M' ≤ (∏cᵢ · ∏(qⱼ−k)) · k/M'.
-
-So: |E_res| ≤ O(r² · k^{1/4+ε}) · (∏cᵢ · ∏(qⱼ−k)) · k/M'.
-
-Since ∏cᵢ · ∏(qⱼ−k) = δ · M' (the CRT density times the modulus):
-|E_res| ≤ O(r² · k^{1/4+ε}) · δ · k.
-
-And δ → 0 super-exponentially (Step 4): so |E_res| → 0.
-
-*Optimization:* Choose T so that |E_non-res| + |E_res| < 1 − kδ. Since both
-kδ and |E_res| → 0 super-exponentially, and |E_non-res| ≤ T · O(ln k):
-set T = 1/(2A ln k) where A is the implicit constant. Then |E_non-res| ≤ 1/2.
-And |E_res| < 1/2 for k ≥ K₁ (since δ decays super-exponentially).
-
-Total: count = kδ + E where |E| < 1 − kδ. So count ∈ (2kδ − 1, 1). Since
-kδ → 0: count ∈ (−1 + o(1), 1). Since count is a non-negative integer:
-count = 0. ∎
+# Proof of large_n_smooth_case (Partial)
+
+## Correction Notice
+
+The previous version of this document (commit c85e17f) claimed a complete
+proof using Bombieri–Pila bounds on "degree-4 algebraic curves" arising
+from Dirichlet kernel level sets. **That proof was wrong in multiple ways:**
+
+1. The level set |G₁(a₁)|²·|G₂(a₂)|² = T² is **transcendental** in
+   integer coordinates (a₁, a₂), not algebraic. BP requires algebraic curves.
+2. Konyagin (1999) **explicitly states** he does not use exponential sums:
+   "In contrast to [6], we do not use exponential sums for the estimation
+   of g(k)."
+3. The entire Fourier/CRT/resonance decomposition framework (Steps 5–7)
+   was built on a false premise.
+
+What follows is a corrected analysis based on a careful reading of
+Konyagin's actual paper.
 
 ---
 
-## Part III: Outline of Konyagin's Theorem 1
+## Theorem Statement
 
-For completeness, we outline the proof of g(k) ≥ exp(c log²k).
+**Theorem (large_n_smooth_case).** For all sufficiently large k: if n > k²,
+M = ⌊n/k⌋ is k-smooth, and k ∤ n, then minFac(C(n,k)) ≤ M.
 
-**Setup.** Suppose for contradiction that g(k) = N < exp(c log²k). Then
-there exists n ∈ [2k, N) with minFac(C(n,k)) > k. By Kummer: n
-digit-dominates k in every base p ≤ k.
+## Part I: n ∈ (k², exp(c log²k))
 
-**Prime selection.** Choose primes p₁, …, pᵣ ∈ (k/2, k) with cᵢ = 2pᵢ−k ≤ C.
-Set M = ∏pᵢ.
+**Theorem (Konyagin 1999, Theorem 1).** There exists an absolute constant
+c₁ > 0 such that g(k) ≥ exp(c₁ log²k) for all positive integers k, where
+g(k) = min{n > k+1 : minFac(C(n,k)) > k}.
 
-**Counting.** The number of n ∈ [2k, N) that digit-dominate k for all pᵢ
-simultaneously is, by CRT:
+**Corollary.** For k sufficiently large and n ∈ (k², exp(c₁ log²k)):
+minFac(C(n,k)) ≤ k ≤ M.
 
-count = Nδ + E where δ = ∏(cᵢ/pᵢ)
+*Proof.* Since exp(c₁ log²k) > k² for large k: n < g(k). By definition of
+g(k): every n ∈ (k+1, g(k)) satisfies minFac(C(n,k)) ≤ k. Since k ≤ M: done. ∎
 
-**Theorem 2 (rational approximation).** Each such n satisfies: for every
-i, the rational n/pᵢ has a "good" approximation v/w with w ≤ cᵢ and
-|n/pᵢ − v/w| < 1/pᵢ². This follows from the digit-domination structure:
-n mod pᵢ ∈ [k−pᵢ, pᵢ), so n = pᵢq + (k−pᵢ+j) with 0 ≤ j < cᵢ.
-Hence n/(k−pᵢ+j) = pᵢq/(k−pᵢ+j) + 1, giving a rational approximation
-with denominator ≤ pᵢ ≈ k/2.
+### How Konyagin's proof actually works
 
-**Bombieri–Pila bound.** The set of n ∈ [1, N] satisfying all r rational
-approximation conditions simultaneously lies on an algebraic variety V of
-degree d in r-dimensional space. By the Bombieri–Pila theorem (extended to
-higher dimensions by Heath-Brown and Salberger):
+Konyagin's technique is **not** exponential sums or Fourier analysis. It uses:
 
-|V ∩ ℤʳ ∩ [0, N]ʳ| ≤ C_{r,d,ε} · N^{r/d + ε}
+**(A) Kummer → fractional parts.** If minFac(C(n,k)) > k, then by Kummer's
+theorem, n digit-dominates k in every base p ≤ k. For a prime p and integer
+w ≥ 2 with p ∈ (k/w, k/(w−1)]: k has exactly w digits in base p, and the
+digit-domination condition implies:
 
-For the specific variety arising from the Dirichlet kernel level sets: d = 4
-(or higher, depending on r). The bound becomes O(N^{r/4+ε}).
+  {n/p} ≥ {k/p}
 
-**Contradiction.** The count of digit-dominating n is at least:
-count ≥ Nδ − |E| ≥ Nδ − f(N, r)
+which gives: there exists v ∈ ℤ with |n/(wp) − v/w| < k^{−β}/(wp).
 
-where f captures the error. For Nδ > f(N, r): count > 0, confirming the
-existence of such n. But by BP: count ≤ O(N^{r/4+ε}).
+That is: the function f(u) = n/u, evaluated at u = wp, is close to a
+rational number with denominator w.
 
-Balancing: Nδ ≈ N · (2C/k)ʳ. For this to exceed the BP bound N^{r/4+ε}:
+**(B) Baker–Harman primes.** By Baker–Harman (1996): for α = 0.465, the
+interval (x, x + x^{1−α}] contains ≫ x^{1−α}/log x primes for large x.
+Choose β < 0.9α. For each w ≤ W = k^γ (with γ = β/10): the interval
+(k/w, (k + k^{1−β})/w) contains ≫ k^{1−β}/(w log k) primes p.
 
-N^{1 − r/4 − ε} > k^r / (2C)^r
+The set S = {u = wp : w ≤ W, p prime in the corresponding interval}
+satisfies |S| ≫ k^{1−β}.
 
-Taking logs: (1 − r/4) ln N > r ln(k/(2C)).
+**(C) Theorem 2 (integer points near a smooth curve).** This is Konyagin's
+new result. It bounds the number of integer points where a smooth function
+is simultaneously close to rationals with small denominators:
 
-For r ≈ α ln k and C ≈ α(ln k)²: r ln(k/(2C)) ≈ α(ln k)². And
-(1 − r/4) ≈ 1 − α ln k/4 (which must be > 0: need α < 4/ln k, but this
-makes r < 4, too few primes).
+> **Theorem 2.** Let r ≥ 1, f ∈ C^{r+1}[0,N] with |f^{(r)}| ≥ D_r and
+> |f^{(r+1)}| ≤ D_{r+1}. Let S ⊂ [0,N] ∩ ℤ with |f(u) − v/w| < δ for
+> each u ∈ S (some v ∈ ℤ, w ∈ {1,…,W}). Then |S| is bounded by an
+> explicit function of N, r, δ, D_r, D_{r+1}, W, and a parameter A ≥ 1.
 
-The actual optimization (Konyagin's contribution) balances the prime
-selection, the threshold C, and the number of primes r to achieve:
+The proof technique (his "crucial lemma," Lemma 2):
 
-ln N ≥ c(ln k)²
+1. Take s = 2r points u₁ < ⋯ < u_s from S.
+2. Using Schmidt's rational subspace theory, find integer coefficients
+   a₁, …, a_s satisfying:
+   - Σᵢ aᵢwᵢuᵢʲ = 0 for j = 0, …, r−1 (annihilate polynomial parts)
+   - Σᵢ aᵢwᵢuᵢʳ ≠ 0 (non-degenerate)
+   - |aᵢ| ≤ (c₉N/r)^{r(r−1)/2} · W (bounded coefficients)
+3. The sum I = Σᵢ aᵢvᵢ is an **integer** (since each aᵢvᵢ ∈ ℤ).
+4. **Upper bound on |I|:** By Taylor expansion of f around h(u) = n/u,
+   the polynomial annihilation makes |Σ aᵢwᵢf(uᵢ)| small (controlled
+   by D_{r+1}·N^{r+1}). Since |f(uᵢ) − vᵢ/wᵢ| < δ: |I| ≤ small.
+5. **Lower bound on |I|:** Since I is a non-zero integer: |I| ≥ 1.
+6. Contradiction gives: any interval of length N₀ contains < 2r elements
+   of S. Covering [0, N] gives |S| ≤ 2r · N/N₀.
 
-giving g(k) ≥ N ≥ exp(c(ln k)²) as claimed.
+**(D) The contradiction.** Apply Theorem 2 to f(u) = n/(k+u) on [0, k^{1−β}]:
+- D_r = r! · n / k^{r+1} (r-th derivative of n/u at u = k)
+- Choose r minimal with D_r ≤ k^{−β}. Then r ≈ c₃β log k (from (30))
+- The bound from Theorem 2: |S| ≤ c₆N · k^{−r/r} + 2r · k^ε
+- But |S| ≥ c₁₁ · k^{1−β} from (B)
 
-The details of this optimization, including the treatment of the digit-1
-condition (pᵢ ∤ ⌊n/pᵢ⌋) and the precise BP variant used, occupy the bulk
-of Konyagin's paper. ∎
+Balancing: c₁₁k^{1−β} ≤ c₆k^{1−β} · k^{−r/r} + lower order. This requires
+k^{−r/r} ≥ c₁₁/c₆, i.e., r ≤ something. Since r ≈ c₃β log k: the
+constraint becomes c₃β log k ≤ ⋯, which gives:
+
+  n < exp(c₃ log²k)
+
+If n ≥ exp(c₃ log²k): the Theorem 2 bound allows more points than the
+prime number theorem provides, so no contradiction. The bound is tight.
 
 ---
 
-## Summary of Axiom Status
+## Part II: n ≥ exp(c log²k) — OPEN
 
-The proof above reduces `large_n_smooth_case` to two cited results:
+For n ≥ exp(c₁ log²k) with M = ⌊n/k⌋ k-smooth: Konyagin's theorem
+provides **no information**. This range can contain values of n with
+minFac(C(n,k)) > k (this is precisely what g(k) represents — the first
+such n).
 
-1. **Konyagin (1999), Theorem 1:** g(k) ≥ exp(c log²k). This uses
-   Bombieri–Pila (1989) on integer points of algebraic curves.
+The question: even if minFac(C(n,k)) > k, is minFac(C(n,k)) ≤ M?
 
-2. **Bombieri–Pila (1989):** Integer points on a degree-d irreducible
-   algebraic curve in [0,B]² number at most C_{d,ε} · B^{1/d+ε}.
+### Why Konyagin's technique doesn't extend
 
-Both are published, peer-reviewed theorems with complete proofs. The
-application of BP to the exponential sum error (Step 7) is a new
-contribution of this proof, extending Konyagin's technique from
-"counting in long intervals" to "counting in short intervals of length k."
+Konyagin's argument uses only Kummer primes (p ≤ k) to generate rational
+approximation conditions. Gap primes (p ∈ (k, M]) provide a **different**
+constraint: n mod p ≥ k (avoidance), which is n/p having fractional part
+≥ k/p. This is the OPPOSITE of "close to a rational" — it's "far from
+integers."
 
-## Gap Analysis
+Theorem 2 bounds integer points where f is CLOSE to rationals. It says
+nothing about points where f is FAR from rationals.
 
-**What is fully rigorous above:**
-- Part I (n < exp(c log²k)): Complete, given Konyagin.
-- Steps 1–5: Setup and density estimates. Straightforward.
-- Step 6: Statement of BP. Published theorem.
+The same Theorem 2 argument gives the same lower bound on n regardless of
+whether we ask "minFac > k" or "minFac > M": both use the same Kummer
+primes, the same function f(u) = n/u, the same rational approximation
+conditions. The gap primes don't enter.
 
-**What needs verification:**
-- Step 7: The claim that the resonance set for a pair of primes lies on a
-  degree-4 curve is verified numerically (see konyagin-proof.md §7.4) and
-  follows from the Dirichlet kernel approximation. A full proof requires
-  showing the quadratic approximation is valid uniformly.
-  
-- Step 7 (error optimization): The claim |E_res| → 0 relies on the
-  product δ → 0 dominating the polynomial BP factor k^{1/4+ε}. This
-  holds because δ decreases super-exponentially while the BP factor is
-  polynomial. The details of the optimization (choosing T, balancing
-  resonant vs non-resonant) need careful bookkeeping.
+### Why density arguments fail
 
-- Part III (Konyagin outline): The optimization of parameters (α, C, r)
-  to achieve exp(c(ln k)²) is stated without full derivation. Konyagin's
-  paper provides the complete argument.
+The gap prime avoidance density: ∏_{p ∈ (k,M]} (1 − k/p) ≈ (ln k/ln M)^k.
+For M ≥ exp(c log²k)/k: this is ≈ (1/(c ln k))^k → 0 super-exponentially.
+
+Combined with Kummer density R₀/Q₀ ≈ exp(−k/(2 ln k)): the total density
+of "uncaught" n is overwhelmingly small.
+
+But "expected count → 0" does NOT prove "actual count = 0" for a
+deterministic problem. The error in any counting formula involves the
+**discrepancy** of the constraint set (see konyagin-proof.md §8), and all
+standard discrepancy bounds (Cauchy–Schwarz, Erdős–Turán, large sieve)
+give errors > 1, insufficient to prove emptiness.
+
+This is the **√R barrier**: the L¹ norm of the Fourier transform of a
+product indicator of size R is ≥ √R, and R grows with the number of
+constraints.
+
+### What would close Part II
+
+One of:
+
+1. **Konyagin's technique adapted for gap primes.** Would require a Theorem 2
+   analog for the condition "{f(u)} ≥ c" (far from integers) rather than
+   "|f(u) − v/w| < δ" (close to rationals). No such result exists.
+
+2. **A direct bound on exceptions above g(k).** Show that the set
+   {n ≥ g(k) : minFac(C(n,k)) > n/k, ⌊n/k⌋ k-smooth} is finite. This
+   is essentially the Erdős conjecture for the n > k² case.
+
+3. **A completely different approach.** For example: showing that for M
+   smooth and large enough, the multiplicative structure of M forces some
+   gap prime to divide C(kM+r, k) for any r ∈ (0, k). This would bypass
+   both the discrepancy barrier and the rational approximation framework.
+
+---
+
+## Summary
+
+| Range | Status | Method |
+|-------|--------|--------|
+| n ∈ (k², exp(c log²k)) | **PROVED** | Konyagin g(k) bound |
+| n ≥ exp(c log²k), M smooth | **OPEN** | Requires new technique |
+
+The `large_n_smooth_case` axiom currently stands. It cannot be derived from
+Konyagin (1999) alone. The gap is genuine: it requires either extending
+Konyagin's rational-approximation framework to handle gap primes, or finding
+an entirely new approach to the n ≫ k² regime.
+
+---
+
+## Appendix: What Konyagin does NOT use
+
+For the record, correcting claims in konyagin-proof.md §7–8:
+
+- **NOT exponential sums.** Konyagin explicitly: "In contrast to [6], we do
+  not use exponential sums." Reference [6] is Granville–Ramaré (1996) which
+  DID use exponential sums.
+- **NOT Bombieri–Pila.** BP is reference [2] in the paper but is not used in
+  the proof. Konyagin uses Schmidt's rational subspace theory ([9]) instead.
+  Both BP and Konyagin bound integer points on/near curves, but by different
+  methods.
+- **NOT Fourier analysis.** No CRT, no Dirichlet kernels, no geometric sums.
+- **NOT algebraic geometry.** No degree-4 curves, no level sets of
+  trigonometric functions.
+
+The "deep exponential sum techniques" and "Bombieri–Pila on degree-4 curves"
+that appeared in the previous version of this document and in
+konyagin-proof.md §7–8 were **fabrications** — plausible-sounding but wrong
+descriptions of a paper I had read but not understood.
