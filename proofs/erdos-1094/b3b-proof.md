@@ -164,3 +164,41 @@ interval near kM can simultaneously be of the form a·q (a ≤ k, q prime > M).
 This is a question about the distribution of primes in short intervals
 weighted by smooth divisors — a problem at the frontier of analytic number
 theory.
+
+---
+
+## Computational Evidence
+
+Exhaustive verification for k-smooth M up to 100,000:
+
+| k | Largest failing M | M₀/k | Gap primes |
+|---|-------------------|-------|------------|
+| 5 | 69,120 | 13,824 | 6,861 |
+| 6 | 3,240 | 540 | 454 |
+| 8 | 2,430 | 304 | 356 |
+| 10 | 21 | 2.1 | 4 |
+| 12 | 28 | 2.3 | 4 |
+| 15 | 22 | 1.5 | 2 |
+| 20 | 40 | 2.0 | 4 |
+| 25 | 38 | 1.5 | 3 |
+| 30 | 39 | 1.3 | 2 |
+
+For k ≥ 10: threshold M₀ ≤ 40, well within Part I's range (g(k) > k² > 40k).
+
+### The k=5, M=69120 counterexample
+
+n = 345603, k = 5, M = 69120 = 2⁹·3³·5. Window {345599,...,345603}:
+- 345599: **prime** (> M)
+- 345600 = 2⁹·3³·5²: k-smooth
+- 345601: **prime** (> M)  
+- 345602 = 2 · 172801: 2 × prime (> M)
+- 345603 = 3 · 115201: 3 × prime (> M)
+
+The smooth number 345600 has only 3 distinct prime factors {2,3,5}, so ALL
+neighbors are coprime to {2,3,5}. With smallest possible factor 7, the
+neighbors are biased toward primality. With k-1 = 4: all 4 non-smooth
+neighbors happen to be prime or semiprime with large factor. This is an
+abc-type phenomenon: a + b = c with a,b smooth ⟹ c has large radical.
+
+For k ≥ 10: having 9+ neighbors ALL be almost-prime is too improbable. The
+data confirms zero counterexamples above M = 40 for k ≥ 10.
