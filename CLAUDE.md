@@ -46,8 +46,9 @@ Two main components:
   - `botlib/NumberTheory/CarryInfra.lean` — Decidable carry check
   - `problems/NumberTheory/Erdos1094/Konyagin.lean` — Citation of Konyagin (1999)
   - `problems/NumberTheory/Erdos1094/KGe29.lean` — Main large-n case
-- **Architecture:** Case split on n ≤ k² (closed via Konyagin) vs. n > k² (relies on `large_n_smooth_case` axiom)
+- **Architecture:** Case split on n ≤ k² (closed via Konyagin) vs. n > k² (relies on `large_n_smooth_case` axiom, guarded by k ≥ 7 after (62,6) counterexample)
 - **Strategy:** Kummer's theorem + CRT product sets + asymptotic density + small-case verification
+- **Recent:** `large_n_smooth_case` axiom found to be FALSE for (62,6); k ≥ 7 guard added. 3-layer hybrid proof strategy with zero failures for k ≥ 7. See `proofs/erdos-1094/tool-characterization.md` and `proofs/erdos-1094/proof-strategy.md`.
 
 ## Architecture & Design Patterns
 
@@ -106,7 +107,9 @@ proofs/                    # Natural-language proof sketches (markdown)
 ├── cook-levin-*/         # Blueprint documents for reduction
 └── ... (16+ files)
 
-artifacts/                 # Analysis and research outputs
+exploration/              # Computational verification scripts (Python)
+archive/                  # Stale/abandoned formalizations (not active)
+artifacts/                # Analysis and research outputs
 annals/                   # Historical documentation
 roles/, skills/           # Agent coordination files
 ```

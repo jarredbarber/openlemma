@@ -10,6 +10,8 @@ The library is organized into two parts:
 
 - **`botlib/`** — Compiler-verified lemmas (0 sorrys, 0 axioms). Safe to import as dependencies.
 - **`problems/`** — Problem-specific results that may contain citation axioms for well-known theorems not yet in Mathlib (e.g., Zsygmondy's theorem).
+- **`exploration/`** — Computational verification scripts (Python) used to generate evidence for proof strategies.
+- **`archive/`** — Stale or abandoned formalizations preserved for reference (not part of active proof chains).
 
 ## Current Projects
 
@@ -35,9 +37,9 @@ A full formalization of the **Cook-Levin Theorem** (SAT is NP-complete) in Lean 
 
 **Axioms: 2** (down from 3)
 1. `konyagin_1999`: Faithful citation of *Mathematika* 46 (1999) proving $g(k) \ge \exp(c \log^2 k)$.
-2. `large_n_smooth_case`: For $n > k^2$ where $n/k$ is $k$-smooth, there exists a prime $p \le n/k$ dividing $\binom{n}{k}$.
+2. `large_n_smooth_case`: For $k \ge 7$ and $n > k^2$ where $n/k$ is $k$-smooth, there exists a prime $p \le n/k$ dividing $\binom{n}{k}$. (The $k \ge 7$ guard was added after discovering the axiom is false for $(n,k) = (62,6)$; see `proofs/erdos-1094/tool-characterization.md`.)
 
-**Research output:** `konyagin-proof.md` (~400 lines) — Deep analysis of why elementary methods fail and the transition to analytic techniques.
+**Research output:** `konyagin-proof.md` (~400 lines) — Deep analysis of why elementary methods fail and the transition to analytic techniques. Recent work in `proofs/erdos-1094/proof-strategy.md` documents a 3-layer hybrid approach with zero failures for $k \ge 7$.
 
 **Build Status:** **GREEN** (0 sorrys, 2 axioms). `native_decide` and ad-hoc density bridges have been eliminated.
 
