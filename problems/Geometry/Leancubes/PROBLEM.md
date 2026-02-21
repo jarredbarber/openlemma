@@ -22,4 +22,3 @@ As we increase the distance between cubes, a hole in the center of mass eventual
 - n > 2 is essential (the conjecture is about dimension 3+)
 - The cubes are axis-aligned and solid
 - The parallelepiped vertices are determined by the ray lengths l_i
-- Source: ~/code/leancubes/
