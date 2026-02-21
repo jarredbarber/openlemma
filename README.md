@@ -155,6 +155,65 @@ The core reduction is **mathematically complete** - only engineering work remain
 
 **Research integrity:** The strategic research includes honest documentation of errors (e.g., an initially claimed "elementary proof" that incorrectly dropped a factor of M in the Cauchy-Schwarz bound). All corrections are documented in git history with clear commit messages.
 
+## Getting Started
+
+### Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed (`npm install -g @anthropic-ai/claude-code`)
+- Lean 4.27.0 + Mathlib 4.27.0 (for building formal proofs)
+
+### Running a workflow
+
+From the `openlemma/` directory:
+
+```bash
+# Code-as-proof workflow (Python → Lean pipeline)
+claude --agent code-as-proof --dangerously-skip-permissions
+
+# Then tell it which problem to work on:
+#   "Work on problems/Geometry/Leancubes/PROBLEM.md"
+```
+
+That's it. The orchestrator reads the problem file, spawns researcher/reviewer/coder subagents, and manages the pipeline automatically.
+
+### Available workflows
+
+| Workflow | Agent | Pipeline | Description |
+|----------|-------|----------|-------------|
+| `code-as-proof` | `claude --agent code-as-proof` | researcher → reviewer → coder | Write Python "code proofs", refactor until structurally obvious, then translate to Lean |
+| `nl-proof` | *(not yet wired)* | explorer → verifier → formalizer | Natural language proofs first, then formalize in Lean |
+
+### Adding a new problem
+
+Create a `PROBLEM.md` in `problems/<Area>/<Name>/`:
+
+```markdown
+# Problem Name
+
+## Statement
+[Precise mathematical statement]
+
+## Goal
+1. A Lean 4 proof with no sorrys
+2. A natural language proof of journal quality
+```
+
+Then point a workflow agent at it.
+
+### Agent configuration
+
+Subagent prompts live in `.claude/agents/`. Each has YAML frontmatter controlling model, tools, and turn limits:
+
+```
+.claude/agents/
+├── code-as-proof.md   # Orchestrator (opus, 100 turns)
+├── researcher.md      # Python code proofs (sonnet, 50 turns)
+├── reviewer.md        # Adversarial review (opus, 30 turns)
+└── coder.md           # Lean formalization (sonnet, 40 turns)
+```
+
+Workflow documentation (conventions, pipeline design) lives in `workflows/`.
+
 ## Building
 
 ```bash
