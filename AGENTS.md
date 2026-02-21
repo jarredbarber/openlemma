@@ -1,75 +1,41 @@
-# OpenLemma Social — Shared Workspace
+# OpenLemma — Agent Workflow
 
-You are an agent working on the OpenLemma project. All agents share **this single directory**. There are no separate clones.
+This project uses Claude Code subagents orchestrated through the code-as-proof workflow.
 
-## How This Works
+## How It Works
 
-- **Your role** is in `roles/<your-name>.md` — your name matches your agent name (check `echo $PI_AGENT_NAME` or the name others use to DM you)
-- **The codebase** is the repo you're in — read it to understand current state
-- **Other agents** are discoverable via `list_remote_agents`
-- **Communication** is via `remote_prompt` (direct messages to named agents)
-- **Read `roles/<your-name>.md` first** to understand your responsibilities
+A single **orchestrator** agent manages the proof pipeline by spawning subagents with curated context. Each subagent sees only what it needs — information barriers are structural, not disciplinary.
 
-## File Ownership
+```
+orchestrator (persistent, manages pipeline)
+  ├── researcher subagent  (Python code proofs)
+  ├── reviewer subagent    (adversarial, breaks proofs)
+  └── coder subagent       (Lean 4 formalization)
+```
 
-Since we all share one directory, **announce before editing**. Respect these ownership zones:
+## Workflow Documentation
 
-| Role | Owns | May read |
-|------|------|----------|
-| **explore** | `proofs/*.md` | everything |
-| **formalize** | `botlib/Complexity/*.lean` | proofs/, ROADMAP.md |
-| **verify** | (reviews, no owned files) | everything |
-| **planner** | `botlib/Complexity/ROADMAP.md`, tm tasks | everything |
-| **advisor** | strategic guidance (no owned files) | everything |
-| **librarian** | `artifacts/*.md` | everything |
+All workflow details are in `workflows/code-as-proof/`:
 
-**Rules:**
-- DM the owner before editing their files
-- If you need a change in someone else's file, ask them to make it
-- The only exception: fixing a typo or obvious build error — commit with a clear message
+| File | Purpose |
+|------|---------|
+| `README.md` | Overview and pipeline diagram |
+| `conventions.md` | Structural proof notation rules |
+| `orchestrator.md` | System prompt for the orchestrator |
+| `agents/researcher.md` | Researcher subagent prompt |
+| `agents/reviewer.md` | Reviewer subagent prompt |
+| `agents/coder.md` | Coder subagent prompt |
 
-## Git
+## Key Rules
 
-**Only the planner handles git.** Everyone else: just edit files directly.
+- **Theorem statements are immutable.** Never modify them.
+- **Never run `lake clean`.** It corrupts the shared Mathlib cache.
+- **Never add axioms without maintainer approval.** Citation axioms only with verification.
+- **`lake build` must pass on every commit.** Sorrys are OK, errors are not.
+- **Check `annals/dead-ends/` before starting work.** Don't repeat known failures.
 
-- **planner** periodically does `git add -A && git commit && git push`
-- If you finished something, DM the planner: "I updated X, ready to commit"
-- **Never run git commands yourself** (add, commit, push, pull, rebase). The planner handles all of it.
-- **Never run `lake update` or `lake clean`.** The `.lake` directory is a shared cache symlink.
+## Building
 
-## Communication
-
-### Discovering agents
-Use `list_remote_agents` to see who's online.
-
-### Sending messages
-Use `remote_prompt` to DM another agent:
-- **advisor** — strategic guidance, proof strategy
-- **librarian** — verify citations, search literature
-- **planner** — decompose problems, coordinate work, git operations
-- **verify** — review your natural language proof
-- **explore/formalize** — collaborate on proof ↔ Lean translation
-
-### Coordination norms
-- **Announce what file you're touching** — DM relevant agents
-- **Ask before you assume** — need a fact? DM the librarian
-- **Report results** — DM the planner when you finish something
-- **Flag blockers** — if you're stuck, say so
-
-## Project: Computational Complexity in Lean 4
-
-Goal: formalize complexity foundations and prove Cook-Levin (SAT is NP-complete) in Lean 4.
-
-### Current state
-See `botlib/Complexity/ROADMAP.md` for full status. Key files:
-- `botlib/Complexity/Defs.lean` — P, NP, NP-complete, poly-time reductions
-- `botlib/Complexity/SAT.lean` — CNF formulas, SAT/3-SAT
-- `botlib/Complexity/CookLevin.lean` — Tableau-based reduction (WIP)
-- `botlib/Complexity/PolyTimeFst.lean` — Poly-time projection (complete)
-- `botlib/Complexity/TM2PolyTimeComp.lean` — Poly-time composition (ported)
-- `proofs/*.md` — Natural language proofs
-
-### Building
 ```bash
 lake build                           # Full build
 lake build botlib.Complexity.Defs    # Single file
@@ -77,6 +43,6 @@ lake build botlib.Complexity.Defs    # Single file
 
 ## Axiom Policy
 
-- **Citation axioms** (citing known results): Allowed, but MUST be verified by librarian first
-- **Crux axioms** (conclusion matches the theorem): NOT allowed — DM the advisor
-- **Sorry**: Temporary only. Comment explaining what's needed. Flag to planner
+- **Citation axioms** (citing known results): Allowed with source citation
+- **Crux axioms** (conclusion matches the theorem): NOT allowed — escalate to human
+- **Sorry**: Temporary only. Comment explaining what's needed.

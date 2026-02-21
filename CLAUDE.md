@@ -52,19 +52,19 @@ Two main components:
 
 ## Architecture & Design Patterns
 
-### Multi-Agent Coordination
+### Agent Workflow
 
-This is a **shared workspace** where multiple agents work simultaneously:
+This project uses the **code-as-proof** workflow with Claude Code subagents. See `workflows/code-as-proof/README.md` for the full pipeline.
 
-- **File Ownership:** Defined in `AGENTS.md`. Announce before editing shared files via direct agent messages.
-- **Git:** Only the **planner** agent handles git operations. Other agents edit directly and message the planner when ready to commit.
-- **Communication:** Use `remote_prompt` to DM other agents; `list_remote_agents` to discover who's online.
+- **Orchestrator** manages the pipeline, spawning researcher/reviewer/coder subagents
+- **Context control** is the key design dimension — each subagent sees only what it needs
+- See `AGENTS.md` for the current setup
 
 ### Axiom Policy
 
-- **Citation axioms** (citing well-known results): Allowed. Verify with librarian first.
-- **Crux axioms** (where the conclusion matches the theorem): NOT allowed. Escalate to advisor.
-- **Sorrys**: Temporary only. Comment explaining what's needed. Flag to planner when done.
+- **Citation axioms** (citing well-known results): Allowed with source citation.
+- **Crux axioms** (where the conclusion matches the theorem): NOT allowed. Escalate to human.
+- **Sorrys**: Temporary only. Comment explaining what's needed.
 
 Current axioms are documented in README.md and individual ROADMAP files.
 
@@ -111,7 +111,7 @@ exploration/              # Computational verification scripts (Python)
 archive/                  # Stale/abandoned formalizations (not active)
 artifacts/                # Analysis and research outputs
 annals/                   # Historical documentation
-roles/, skills/           # Agent coordination files
+workflows/                # Agent workflow definitions (code-as-proof, etc.)
 ```
 
 ## Development Workflow
@@ -128,24 +128,11 @@ roles/, skills/           # Agent coordination files
 2. Check the corresponding ROADMAP for dependencies
 3. Edit the `.lean` file in `botlib/` or `problems/`
 4. Run `lake build` to check for compilation errors
-5. Once complete, message the **planner** agent: "I updated X, ready to commit"
 
 ### Handling Sorrys
 
 - Add an explanatory comment above the sorry describing what's needed
 - Track it in the ROADMAP file or commit message
-- Notify the planner when a sorry is resolved
-
-### Using Lean 4 Skills
-
-When editing Lean files and encountering:
-- Type mismatches, failed instance synthesis, axiom warnings → use `/lean4:lean4` skill
-- Proof optimization or golfing → use `/lean4:golf` skill
-- Need to review existing proof → use `/lean4:review` skill
-- Automated multi-cycle proving → use `/lean4:autoprove` skill
-- Step-by-step guided proving → use `/lean4:prove` skill
-- Safe checkpoint/progress saving → use `/lean4:checkpoint` skill
-- Diagnostics/cleanup → use `/lean4:doctor` skill
 
 ## Key Mathematical Insights
 
@@ -187,7 +174,6 @@ git show <commit-hash>
 ## Important Notes
 
 - **`.lake` symlink:** Points to a shared cache. Never run `lake update` or `lake clean`.
-- **Git responsibility:** Only the planner handles git operations (commit, push, pull). Edit files directly.
 - **Mathlib version:** Fixed at v4.27.0 in `lakefile.toml`. Changes require explicit update.
 - **Relaxed auto-implicits:** Disabled in `lakefile.toml` (set to false). Use explicit binders.
 - **Citation axioms:** Documented in individual files. Search for `noncomputable axiom` to find them.
@@ -204,6 +190,6 @@ git show <commit-hash>
 - **Project vision & architecture:** README.md
 - **Cook-Levin status:** `botlib/Complexity/ROADMAP.md`
 - **Erdős 1094 status:** `problems/NumberTheory/Erdos1094/ROADMAP.md`
-- **Agent coordination:** AGENTS.md (responsibilities and communication)
+- **Agent coordination:** AGENTS.md (workflow overview)
 - **Strategic research:** `proofs/erdos-1094/*.md` (deep analysis of approaches)
-- **Test infrastructure:** Check `roles/` and `skills/` for agent-specific workflows
+- **Workflow definitions:** `workflows/` (code-as-proof pipeline, agent prompts)
