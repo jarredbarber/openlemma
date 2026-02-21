@@ -181,7 +181,7 @@ That's it. The orchestrator reads the problem file, spawns researcher/reviewer/c
 | Workflow | Agent | Pipeline | Description |
 |----------|-------|----------|-------------|
 | `code-as-proof` | `claude --agent code-as-proof` | researcher → reviewer → coder | Write Python "code proofs", refactor until structurally obvious, then translate to Lean |
-| `nl-proof` | *(not yet wired)* | explorer → verifier → formalizer | Natural language proofs first, then formalize in Lean |
+| `nl-proof` | `claude --agent nl-proof` | explorer → verifier → formalizer | Natural language proofs first, then formalize in Lean |
 
 ### Adding a new problem
 
@@ -206,13 +206,18 @@ Subagent prompts live in `.claude/agents/`. Each has YAML frontmatter controllin
 
 ```
 .claude/agents/
-├── code-as-proof.md   # Orchestrator (opus, 100 turns)
-├── researcher.md      # Python code proofs (sonnet, 50 turns)
-├── reviewer.md        # Adversarial review (opus, 30 turns)
-└── coder.md           # Lean formalization (sonnet, 40 turns)
+├── code-as-proof.md   # Orchestrator: code-as-proof (opus)
+├── researcher.md      #   Python code proofs (sonnet)
+├── reviewer.md        #   Adversarial review (opus)
+├── coder.md           #   Lean formalization (sonnet)
+├── nl-proof.md        # Orchestrator: nl-proof (opus)
+├── explorer.md        #   NL proof drafting (sonnet)
+├── verifier.md        #   Proof review (opus)
+├── formalizer.md      #   Lean formalization (sonnet)
+└── advisor.md         #   Strategy & decomposition (opus)
 ```
 
-Workflow documentation (conventions, pipeline design) lives in `workflows/`.
+Workflow documentation (conventions, READMEs) lives in `workflows/`. Agent prompts are only in `.claude/agents/`.
 
 ## Building
 

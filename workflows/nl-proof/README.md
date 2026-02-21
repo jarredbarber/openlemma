@@ -28,11 +28,13 @@ An **orchestrator** manages the pipeline and maintains the ROADMAP.
 
 | File | Purpose |
 |------|---------|
-| `orchestrator.md` | System prompt for the orchestrating agent |
-| `agents/explorer.md` | NL proof development |
-| `agents/verifier.md` | Proof review and verification |
-| `agents/formalizer.md` | Lean 4 formalization |
-| `agents/advisor.md` | Problem decomposition and strategy |
+| `.claude/agents/nl-proof.md` | Orchestrator agent |
+| `.claude/agents/explorer.md` | Explorer subagent |
+| `.claude/agents/verifier.md` | Verifier subagent |
+| `.claude/agents/formalizer.md` | Formalizer subagent |
+| `.claude/agents/advisor.md` | Advisor subagent |
+
+All agent prompts live in `.claude/agents/` (project root).
 
 ## Key Principles
 

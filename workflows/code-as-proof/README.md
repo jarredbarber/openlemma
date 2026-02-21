@@ -34,10 +34,12 @@ An **orchestrator** manages the pipeline, curating what context each agent sees.
 | File | Purpose |
 |------|---------|
 | `conventions.md` | The structural proof notation rules |
-| `orchestrator.md` | System prompt for the orchestrating agent |
-| `agents/researcher.md` | Subagent prompt for the researcher |
-| `agents/reviewer.md` | Subagent prompt for the reviewer |
-| `agents/coder.md` | Subagent prompt for the coder |
+| `.claude/agents/code-as-proof.md` | Orchestrator agent |
+| `.claude/agents/researcher.md` | Researcher subagent |
+| `.claude/agents/reviewer.md` | Reviewer subagent |
+| `.claude/agents/coder.md` | Coder subagent |
+
+All agent prompts live in `.claude/agents/` (project root). This directory just has `conventions.md`.
 
 ## Key Principles
 
