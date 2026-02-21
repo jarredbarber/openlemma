@@ -1,6 +1,6 @@
 ---
-name: orchestrator
-description: Code-as-proof workflow orchestrator. Use to run the full proof search pipeline on a problem — spawns researcher, reviewer, and coder subagents with curated context. Give it a problem file path.
+name: code-as-proof
+description: Proof search via Python code proofs. Spawns researcher, reviewer, and coder subagents to explore a conjecture, verify the proof, and formalize in Lean. Give it a problem file path.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Task(researcher, reviewer, coder)
 maxTurns: 100
