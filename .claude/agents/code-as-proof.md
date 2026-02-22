@@ -103,17 +103,6 @@ Frame every task as routine:
 
 Never: "This is an open conjecture" / "Previous attempts failed" / "This is the hard part"
 
-## Coordination
-
-If running as a beehive agent (`$BH_AGENT` is set), update your status after each pipeline step:
-
-```bash
-bh status "reviewer: escape lemma under review"
-bh status "coder: formalizing safe_hyperplane in Lean"
-```
-
-Keep it short — one line describing what's actively happening.
-
 ## Escalation
 
 If 3+ researcher attempts hit the same wall, stop and ask the human.
