@@ -38,7 +38,14 @@ The refactoring IS the proof discovery. The call graph IS the proof
 structure. When you're done, each helper function maps to a Lean lemma,
 and the main function maps to the theorem. Translation becomes mechanical.
 
-## The progression
+## Two phases
+
+There are two distinct phases: **exploration** and **proof**. Don't mix them.
+
+### Phase 1: Exploration
+
+Write code that computes. Test. Break things. Use floats, loops, search,
+whatever helps you understand the structure. This is scratch work.
 
 1. **Write the predicate.** A function that checks the property for one
    input. Run it. Does it work?
@@ -63,6 +70,40 @@ and the main function maps to the theorem. Translation becomes mechanical.
    you can't see why it works for all inputs, return `None` and name
    the gap precisely. Not "this doesn't work" but "the set of primes
    depends on n, so CRT over a fixed modulus doesn't apply."
+
+### Phase 2: Proof
+
+Once you understand WHY something is true, rewrite the lemma as a
+**pure structural argument**. No computation. No floats. No search.
+No epsilon. The proof function composes sub-lemmas and returns True
+based on their structure, not on running a calculation.
+
+```python
+# EXPLORATION (phase 1) — finds the answer via computation
+def explore_escape(n, A, cubes):
+    """Search for escape direction by trying candidates."""
+    for d1 in candidates:
+        if all(not hits(A, d1, c) for c in cubes):
+            return d1
+    return None
+
+# PROOF (phase 2) — argues the answer always exists
+def lemma_escape_exists(n, cubes) -> bool:
+    """For any finite set of cubes, an escape direction exists.
+    Each cube contributes a bounded bad interval.
+    Finitely many bounded intervals cannot cover R.
+    Therefore a good direction exists."""
+    bad_intervals = [lemma_bad_interval_bounded(c) for c in cubes]
+    return lemma_finite_intervals_cant_cover_R(bad_intervals)
+```
+
+Phase 2 functions are what gets sent to the reviewer and then to the
+coder. Phase 1 functions are scratch work — they can stay in the file
+for testing but they are not part of the proof.
+
+If your proof function contains `float`, `1e-6`, `epsilon`, `abs()`
+on computed values, or any search/iteration to find an answer, you're
+still in phase 1. Keep refactoring.
 
 ## Discipline
 

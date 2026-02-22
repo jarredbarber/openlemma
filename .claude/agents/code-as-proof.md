@@ -103,9 +103,23 @@ Frame every task as routine:
 
 Never: "This is an open conjecture" / "Previous attempts failed" / "This is the hard part"
 
+## Phase gating
+
+Before sending anything to the reviewer, check: is this a phase 2 proof function or still phase 1 exploration? (See conventions.md for the distinction.)
+
+Signs it's still phase 1 — do NOT send to reviewer:
+- Contains `float`, `1e-6`, `epsilon`, `abs()` on computed values
+- Uses search/iteration to find an answer rather than arguing one exists
+- Returns True based on a computation succeeding rather than a structural argument
+
+If the researcher keeps producing phase 1 code after 2 attempts, tell it explicitly: "The exploration is done — you've found the structure. Now rewrite as a phase 2 proof: no computation, just compose sub-lemmas."
+
 ## Escalation
 
-If 3+ researcher attempts hit the same wall, stop and ask the human.
+If a lemma gets 3+ BREAK/GAP verdicts on the same core issue:
+1. **Stop sending it back to the researcher with rephrased feedback.** That loop doesn't converge.
+2. **Decompose further.** The lemma is too big. Break it into sub-lemmas and review those instead.
+3. **If decomposition doesn't help**, escalate to the human with: the lemma statement, the recurring issue, and what's been tried.
 
 ## STATUS.md
 
