@@ -884,10 +884,10 @@ PROOF SUMMARY:
   lemma_escape_exists -> True (2-step with fallback)
     Tries d1 candidates: A[1]-S, max(finite d1 endpoints)+1, midpoints.
     For each d1: _choose_outside merges remaining d2 intervals, finds gap.
-    KEY d1 = max(finite d1 endpoints) + 1:
-      Clears ALL d1-finite cubes. Only d1-full cubes remain.
-      d1-full => A inside slab 1 => by P3, A outside slab 2 => d2 half-line.
-      All remaining d2 = half-lines. Gap at A[2]-S (gap lemma). Succeeds.
+    KEY d1 = A[1]-S (gap lemma candidate):
+      Clears all d1-halfline cubes (gap lemma, coord 1).
+      Remaining: d1-finite (finite d2) + d1-full (d2 half-line by P3).
+      No remaining cube has full d2. _choose_outside finds gap.
     _segment_clear verifies every returned T.
 """)
     return all_pass

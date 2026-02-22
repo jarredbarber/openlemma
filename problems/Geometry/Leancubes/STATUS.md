@@ -1,44 +1,54 @@
 # Status: Leancubes (Connectedness of Cube Complement)
 
 ## Current State
-Safe hyperplane APPROVED + Lean (0 sorrys). Escape v2: P3+gap lemma sound, interval merging correct, numerical guard added (1e-6). Reviewer round 6 found epsilon issue (fixed). Round 7 pending.
+**ESCALATION: Structural gap in escape lemma (3+ attempts, same wall).**
 
-## Proof Strategy
-- Union C of 2^n+1 axis-aligned unit cubes is bounded
-- For n>=3: escape from A to hyperplane {x_0=S} via segment avoiding all cubes
-- 2-parameter target T = (S, S+d1, S+d2, S, ..., S): coords 3+ fixed at S
-- Each cube's bad (d1,d2) set bounded in at least one direction -> 2-step sweep always finds good (d1,d2)
-- Connect A->T_A->T_B->B via 3 clear segments
+Safe hyperplane: APPROVED + Lean (0 sorrys).
+Escape lemma: Phase 2 rewrite (v3) has same gap as all previous versions.
+
+## The Gap
+
+The 2-parameter escape (d1, d2) approach has a structural gap at the final step:
+
+1. d1 = A[1]-S clears all d1-halfline cubes (gap lemma, coord 1). ✅
+2. d1-full remaining cubes have d2 half-lines with gap at A[2]-S (gap lemma, coord 2). ✅
+3. d1-finite remaining cubes have finite d2 intervals. ✅
+4. **GAP: Can the finite d2 intervals completely fill the d2-gap?** No structural argument rules this out.
+
+Concretely: the d2-gap is (max(hi2), min(lo2)), an open interval. Finite d2 intervals [c_i, d_i] could cover it entirely (e.g., one interval [c, d] with c ≤ max(hi2) and d ≥ min(lo2)). No algebraic constraint prevents this.
+
+The gap has persisted through 10+ review rounds across v1-v3. Computational testing shows escape always works (never returns None), but the structural proof is incomplete.
+
+## Possible Resolutions
+
+1. **Multi-segment path**: A→P→T with intermediate point P. More freedom but harder.
+2. **Different parameterization**: Single free parameter along a well-chosen direction.
+3. **Measure argument**: Bad regions have finite total measure in R^2, so complement is non-empty. But needs care: the feasible region (d1 ∈ G1, d2 ∈ G2) might also have finite measure.
+4. **Topological argument**: The complement of finitely many cubes in R^n (n≥3) is connected by a direct topological argument (e.g., Alexander duality, higher connectivity of S^{n-2}).
+5. **Constructive escape via n-1 free parameters**: Instead of 2 free params, use all n-1 transverse coords. More parameters → easier to avoid cubes.
+
+## Lemma Pipeline
+| Lemma | Python | Review | Lean | Notes |
+|-------|--------|--------|------|-------|
+| lemma_one_coord_safe | ✅ | APPROVED | ✅ | SafeHyperplane.lean, 0 sorrys |
+| lemma_t_range_independent | ✅ | APPROVED | — | leaf lemma |
+| lemma_d_interval_bounded | ✅ | APPROVED | — | leaf lemma |
+| lemma_gap | ✅ | APPROVED | — | leaf lemma |
+| lemma_P3 | ✅ | APPROVED (after fix) | — | t_lo invariant added |
+| lemma_escape_exists | ✅ | GAP | — | **step 4 gap: finite intervals filling d2-gap** |
+| theorem_complement_connected | — | — | — | depends on escape |
 
 ## Code Proofs
-| File | True | None | Reviewer | Lean |
-|------|------|------|----------|------|
-| lemma_safe_hyperplane.py | lemma_one_coord_safe | - | APPROVED | SafeHyperplane.lean (0 sorrys) |
-| lemma_escape.py | escape_to_safe | - | GAP (general claim too broad) | - |
-| lemma_composition.py | theorem_complement_connected | - | pending | - |
-| proof_v4.py | all tests | _bad_d_interval loose | GAP | - |
-| proof_v5.py | lemma chain | search radius too small | BREAK | - |
+| File | Status | Notes |
+|------|--------|-------|
+| lemma_safe_hyperplane.py | APPROVED + Lean | 0 sorrys |
+| lemma_escape_v3.py | Phase 2, GAP at main theorem | Sub-lemmas approved |
+| lemma_escape_v2.py | Phase 1, GAP | Computational, tests pass |
+| lemma_composition.py | Pending | Depends on escape |
 
 ## Activity Log
-- 2026-02-21 researcher-1: geometry understood, BFS verification for n=3,4, fiber argument
-- 2026-02-21 researcher-2: constructive path via perturbation, tests pass
-- 2026-02-21 reviewer-1: GAP — 5 issues (sampling, derivation error, universality)
-- 2026-02-21 researcher-3: fixed issues, exact intersection, 2D escape lemma
-- 2026-02-21 reviewer-2: GAP — proof hygiene (wrong lemma, half-line gap, float)
-- 2026-02-21 orchestrator: fixed 4 issues directly
-- 2026-02-21 reviewer-3: BREAK — single-segment 2D escape fails for many squares
-- 2026-02-21 researcher-4: multi-segment 2D escape (escape_2d.py, proof_v3.py)
-- 2026-02-21 reviewer-4: BREAK — cross pattern defeats axis-aligned routing
-- 2026-02-21 orchestrator: wrote proof_v4.py (direct R^n diagonal escape, no 2D)
-- 2026-02-21 reviewer-5: GAP — testing not proving, infinite fallback, 1D unjustified
-- 2026-02-21 researcher-5: proof_v5.py with lemma chain (one-sided bounds)
-- 2026-02-21 reviewer-6: BREAK — search radius too small, circular reasoning, 1D bad-d unbounded
-- 2026-02-21 orchestrator: designing v6 with 2-parameter sweep (d1 for coord 1, d2 for coord 2)
-- 2026-02-22 orchestrator: broke into independent lemmas for incremental pipeline
-- 2026-02-22 lemma_safe_hyperplane: APPROVED after 3 review rounds, Lean formalized (0 sorrys)
-- 2026-02-22 lemma_escape: submitted to reviewer (2-param sweep, all tests pass)
-- 2026-02-22 escape v2 reviewer-5: GAP — _choose_outside used boundary candidates, not interval merging
-- 2026-02-22 escape v2: replaced with interval merging, fixed existence argument
-- 2026-02-22 escape v2 reviewer-6: GAP — completeness of d1 sweep not proved (code correct)
-- 2026-02-22 escape v2 reviewer-7: GAP — epsilon issue (A within 1e-15 of cube face)
-- 2026-02-22 escape v2: added GUARD=1e-6, fixed P3 quick-check, EPS=0 in d_interval
+- 2026-02-21 researcher-1..6, reviewer-1..6: iterations on escape (see git history)
+- 2026-02-22 lemma_safe_hyperplane: APPROVED + Lean (0 sorrys)
+- 2026-02-22 escape v2 reviewer-7: GAP — epsilon, fixed with GUARD
+- 2026-02-22 escape v3 (phase 2 rewrite): sub-lemmas APPROVED, main theorem GAP
+- 2026-02-22 **ESCALATION**: same gap after 3+ researcher attempts. Needs human input on proof strategy.
