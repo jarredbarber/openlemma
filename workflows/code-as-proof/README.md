@@ -17,15 +17,18 @@ The function signature is the lemma statement. The call graph is the dependency 
 ## Pipeline
 
 ```
-researcher  →  reviewer  →  coder
-(Python)       (verdicts)    (Lean 4)
-    ↑              |
-    └──────────────┘  on BREAK or GAP
+researcher → reviewer ──APPROVED──→ coder (Lean 4)
+    ↑            |                      |
+    ↑          BREAK/GAP                |
+    └────────────┘                      |
+    └───────────────────────────────────┘  (Lean gap)
 ```
+
+The pipeline is **incremental** — individual lemmas flow through review and formalization independently. Approved lemmas go to the coder while the researcher continues working on the next piece.
 
 1. **Researcher** writes Python code proofs following the conventions in `conventions.md`
 2. **Reviewer** tries to break them — adversarial, sees only the code, no context
-3. **Coder** translates approved code proofs to Lean 4
+3. **Coder** translates approved lemmas to Lean 4 (doesn't wait for the full proof)
 
 An **orchestrator** manages the pipeline, curating what context each agent sees. Information barriers are enforced structurally — each subagent only receives what's in its prompt.
 
@@ -54,8 +57,9 @@ All agent prompts live in `.claude/agents/` (project root). This directory just 
 1. Create a problem directory under `problems/` with a `PROBLEM.md`
 2. The orchestrator reads the workspace, spawns a researcher subagent
 3. Researcher writes code proofs to `exploration/`
-4. Orchestrator routes to reviewer, then coder
-5. `STATUS.md` tracks progress
+4. Orchestrator reviews individual lemmas — approved ones go to coder immediately
+5. Researcher continues on next subtask in parallel with formalization
+6. `STATUS.md` tracks per-lemma status through the pipeline
 
 ## Origins
 
