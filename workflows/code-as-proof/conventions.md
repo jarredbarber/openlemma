@@ -85,3 +85,23 @@ and the main function maps to the theorem. Translation becomes mechanical.
 - **Don't hand-wave past gaps.** A function returning `None` with a
   precise comment is more honest than one returning `True` with a
   hand-wave. Name the gap or admit you can't close it.
+
+## Verified lemmas
+
+Once a lemma has been formalized in Lean and compiles, it's **verified**.
+Replace the Python body with a direct `return True` and a reference:
+
+```python
+def lemma_one_coord_safe(seg_A, seg_B, M, cube_centers, h) -> bool:
+    """If A is outside all cubes and |A_k| > M+h, segment A→B avoids
+    all cubes in coordinate k."""
+    # VERIFIED: Leancubes.OneCoordSafe
+    return True
+```
+
+Verified lemmas are building blocks. The researcher can call them freely
+without re-deriving. The call graph stays accurate — downstream functions
+compose on top of `True`-returning verified lemmas.
+
+Never modify a verified lemma's signature or semantics without going
+back through the full pipeline (researcher → reviewer → coder).

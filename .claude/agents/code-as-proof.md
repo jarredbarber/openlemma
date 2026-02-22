@@ -81,8 +81,9 @@ Include in the prompt:
 4. **Spawn reviewer** for each reviewable unit
 5. **On APPROVED** → spawn coder for that lemma. Simultaneously spawn researcher for the next subtask if there is one.
 6. **On BREAK or GAP** → spawn researcher again with the specific feedback (rephrased as technical observation, not rejection)
-7. **On Lean gap from coder** → back to researcher with the gap description
-8. **Update STATUS.md** after each step — track per-lemma status
+7. **On Lean success from coder** → mark the lemma as verified: replace its Python body with `return True` and a `# VERIFIED: Leancubes.LemmaName` comment. Update STATUS.md.
+8. **On Lean gap from coder** → back to researcher with the gap description
+9. **Update STATUS.md** after each step — track per-lemma status
 
 ## Context control
 
