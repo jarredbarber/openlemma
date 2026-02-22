@@ -62,9 +62,11 @@ Do NOT include: difficulty assessments, failure history, reviewer feedback verba
 
 ### Reviewer
 Include in the prompt:
-- ONLY the specific code proof file/function to review (read it, paste the content)
+- The specific function(s) to review, extracted from the proof file
+- Any helper functions they call (so the reviewer can check the composition)
 - Nothing else. No problem statement, no exploration history, no difficulty context.
-- Can review individual lemmas — doesn't need the full proof file.
+
+Review in **topological order** — leaves first (functions with no unverified dependencies), then their callers. This way each review builds on already-approved pieces. Don't send the whole file.
 
 ### Coder
 Include in the prompt:
@@ -77,8 +79,8 @@ Include in the prompt:
 
 1. **Spawn researcher** with the problem + a specific task
 2. **Read the result.** Look at what was written to `exploration/`
-3. **Identify reviewable units** — individual lemmas or small groups that can be reviewed independently
-4. **Spawn reviewer** for each reviewable unit
+3. **Identify reviewable units** — individual functions or small groups. Review in topological order (leaves first). The researcher keeps everything in one file for refactoring context; you extract the relevant functions for the reviewer.
+4. **Spawn reviewer** for each unit — include the function + any helpers it calls
 5. **On APPROVED** → spawn coder for that lemma. Simultaneously spawn researcher for the next subtask if there is one.
 6. **On BREAK or GAP** → spawn researcher again with the specific feedback (rephrased as technical observation, not rejection)
 7. **On Lean success from coder** → mark the lemma as verified: replace its Python body with `return True` and a `# VERIFIED: Leancubes.LemmaName` comment. Update STATUS.md.
