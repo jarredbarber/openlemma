@@ -1,7 +1,7 @@
 # Status: Leancubes (Connectedness of Cube Complement)
 
 ## Current State
-Incremental pipeline: safe_hyperplane APPROVED + Lean formalized (0 sorrys). Escape lemma under review.
+Safe hyperplane APPROVED + Lean (0 sorrys). Escape v2: P3+gap lemma sound, interval merging correct, numerical guard added (1e-6). Reviewer round 6 found epsilon issue (fixed). Round 7 pending.
 
 ## Proof Strategy
 - Union C of 2^n+1 axis-aligned unit cubes is bounded
@@ -14,7 +14,8 @@ Incremental pipeline: safe_hyperplane APPROVED + Lean formalized (0 sorrys). Esc
 | File | True | None | Reviewer | Lean |
 |------|------|------|----------|------|
 | lemma_safe_hyperplane.py | lemma_one_coord_safe | - | APPROVED | SafeHyperplane.lean (0 sorrys) |
-| lemma_escape.py | escape_to_safe | - | UNDER REVIEW | - |
+| lemma_escape.py | escape_to_safe | - | GAP (general claim too broad) | - |
+| lemma_composition.py | theorem_complement_connected | - | pending | - |
 | proof_v4.py | all tests | _bad_d_interval loose | GAP | - |
 | proof_v5.py | lemma chain | search radius too small | BREAK | - |
 
@@ -36,3 +37,8 @@ Incremental pipeline: safe_hyperplane APPROVED + Lean formalized (0 sorrys). Esc
 - 2026-02-22 orchestrator: broke into independent lemmas for incremental pipeline
 - 2026-02-22 lemma_safe_hyperplane: APPROVED after 3 review rounds, Lean formalized (0 sorrys)
 - 2026-02-22 lemma_escape: submitted to reviewer (2-param sweep, all tests pass)
+- 2026-02-22 escape v2 reviewer-5: GAP — _choose_outside used boundary candidates, not interval merging
+- 2026-02-22 escape v2: replaced with interval merging, fixed existence argument
+- 2026-02-22 escape v2 reviewer-6: GAP — completeness of d1 sweep not proved (code correct)
+- 2026-02-22 escape v2 reviewer-7: GAP — epsilon issue (A within 1e-15 of cube face)
+- 2026-02-22 escape v2: added GUARD=1e-6, fixed P3 quick-check, EPS=0 in d_interval
