@@ -37,20 +37,24 @@ def InP {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
 
 /-! ## The Class NP -/
 
-/-- A checking relation R is polynomial-time if the associated language
-    { (w, y) | R(w, y) } is in P. -/
-def PolyTimeCheckingRelation {α β : Type} (ea : FinEncoding α) (eb : FinEncoding β)
-    (R : α → β → Prop) : Prop :=
-  InP (pairEncoding ea eb) (fun p => R p.1 p.2)
+/-- A language L is in NP if there exists a polynomial-time verifier `g` taking
+    the input `a` and a **raw-bit certificate** `cert : List Bool`, and a bound `k`,
+    such that `x ∈ L ↔ ∃ cert, |cert| = |enc(x)|^k ∧ R(x, cert)` where `R(x, cert)`
+    holds iff `g (x, cert) = true`.
 
-/-- A language L is in NP if there exist a polynomial k and a polynomial-time
-    checking relation R such that:
-    x ∈ L ↔ ∃ y, |y| ≤ |x|^k ∧ R(x, y)
-    (Cook's Clay problem description) -/
+The certificate uses the identity encoding `finEncodingBoolList` (every bit-string is
+    a valid encoding of itself). This is the standard verifier/NDTM characterization of
+    NP: the certificate is a raw bit-string read directly from the tape, so that in the
+    Cook-Levin tableau the certificate bits can be left as free propositional variables
+    with no encoding-validity gap. (A general `FinEncoding` for the certificate would
+    permit non-computable encodings and make Cook-Levin false; the raw-bit form is the
+    correct, standard one.) -/
 def InNP {α : Type} (ea : FinEncoding α) (L : Language α) : Prop :=
-  ∃ (β : Type) (eb : FinEncoding β) (R : α → β → Prop) (k : ℕ),
-    PolyTimeCheckingRelation ea eb R ∧
-      ∀ a, L a ↔ ∃ b, (eb.encode b).length ≤ (ea.encode a).length ^ k ∧ R a b
+  ∃ (R : α → List Bool → Prop) (k : ℕ) (g : α × List Bool → Bool)
+    (g_comp : Nonempty (_root_.Turing.TM2ComputableInPolyTime
+               (pairEncoding ea finEncodingBoolList) finEncodingBoolBool g)),
+    (∀ a cert, R a cert ↔ g (a, cert) = true) ∧
+      ∀ a, L a ↔ ∃ cert, cert.length = (ea.encode a).length ^ k ∧ R a cert
 
 /-! ## Reductions -/
 
@@ -136,30 +140,32 @@ theorem NPComplete.reducible {α β : Type} {ea : FinEncoding α} {eb : FinEncod
 
 /-! ## P ⊆ NP -/
 
-/-- P is a subset of NP. -/
+/-- P is a subset of NP.
+    A P-decider ignores the (raw-bit) certificate; we use a certificate of length
+    `|enc(x)|^0 = 1` and a relation `R x cert = (f x = true)` independent of `cert`.
+    The verifier `g (x, cert) = f x` is poly-time as `f ∘ Prod.fst`. -/
 theorem P_subset_NP {α : Type} (ea : FinEncoding α) (L : Language α) :
     InP ea L → InNP ea L := by
-  intro h
-  rcases h with ⟨f, hf, hL⟩
-  use Unit, finEncodingUnit
-  -- checking relation R(x, y) = f(x)
-  let R := fun (x : α) (_ : Unit) => f x = true
-  use R, 0
-  constructor
-  · -- R is poly-time checking
-    unfold PolyTimeCheckingRelation InP
-    rcases PolyTimeComp PolyTimeFst hf with ⟨h_comp⟩
-    exact ⟨fun p => f p.1, h_comp, fun ⟨a, u⟩ => by simp [R]⟩
-  · -- witness bound
-    intro x
+  intro ⟨f, hf, hL⟩
+  let R := fun (x : α) (_ : List Bool) => f x = true
+  have hfst :
+      _root_.Turing.TM2ComputableInPolyTime
+        (pairEncoding ea finEncodingBoolList) ea Prod.fst := PolyTimeFst
+  have hg_comp : Nonempty
+      (_root_.Turing.TM2ComputableInPolyTime
+        (pairEncoding ea finEncodingBoolList) finEncodingBoolBool (fun p => f p.1)) :=
+    PolyTimeComp hfst hf
+  refine ⟨R, 0, (fun p => f p.1), hg_comp, ?_, ?_⟩
+  · intro a cert; simp [R]
+  · intro a
     constructor
-    · intro lx
-      use ()
-      simp [finEncodingUnit]
-      rw [hL] at lx
-      exact lx
-    · intro ⟨y, _, ry⟩
+    · intro ha
+      refine ⟨[false], ?_, ?_⟩
+      · rfl
+      · show f a = true; exact (hL a).mp ha
+    · rintro ⟨cert, hlen, hR⟩
       rw [hL]
-      exact ry
+      simp [R] at hR
+      exact hR
 
 end OpenLemma.Complexity

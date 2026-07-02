@@ -17,6 +17,17 @@ def finEncodingOfEncodable (α : Type) [Encodable α] : FinEncoding α where
     simp [finEncodingNatBool.decode_encode, Encodable.encodek]
   ΓFin := Bool.fintype
 
+/-- Identity encoding for `List Bool`: every list is a valid encoding of itself.
+    Used for raw-bit NP certificates, so that every certificate bit-string is valid
+    and the Cook-Levin tableau's free certificate region needs no encoding-validity
+    constraints (only a tag constraint forcing certificate cells to be `inr` bools). -/
+def finEncodingBoolList : FinEncoding (List Bool) where
+  Γ := Bool
+  encode l := l
+  decode l := some l
+  decode_encode l := rfl
+  ΓFin := inferInstance
+
 /-- Helper to flatten a list of options into an option of list. -/
 def Option.sequence {α : Type} : List (Option α) → Option (List α)
   | [] => some []

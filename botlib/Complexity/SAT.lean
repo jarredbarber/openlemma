@@ -127,16 +127,15 @@ def SAT_Language : CNF → Prop := Satisfiable
 
 We define standard finite encodings for SAT-related types.
 We ensure these encodings are polynomial-time efficient (linear in value/structure).
-
-NOTE: sumEncoding is not available in this Mathlib version. The FinEncoding
-definitions below are scaffolded with sorry until a compatible implementation
-is provided. These are NOT used by the Cook-Levin proofs (which use Encodable).
 -/
 
-/-- Raw encoding for Sum ℕ ℕ. -/
-abbrev literalSumEncoding : FinEncoding (Sum ℕ ℕ) := sorry -- sumEncoding not in this Mathlib
+/-- Raw encoding for `Sum ℕ ℕ` via tagged concatenation of binary `ℕ` encodings.
+    Built from `sumEncoding` over `finEncodingNatBool`. -/
+abbrev literalSumEncoding : FinEncoding (Sum ℕ ℕ) :=
+  sumEncoding (ea := finEncodingNatBool) (eb := finEncodingNatBool)
 
-instance : DecidableEq literalSumEncoding.Γ := sorry
+instance : DecidableEq literalSumEncoding.Γ :=
+  inferInstanceAs (DecidableEq (Sum Bool (Sum Bool Bool)))
 
 /-- FinEncoding for Literals (isomorphic to Sum ℕ ℕ). -/
 abbrev finEncodingLiteral : FinEncoding Literal :=
@@ -241,25 +240,23 @@ def SAT_Verifier (φ : CNF) (y : SAT_Certificate) : Prop :=
 def SAT_Verifier_Bool (p : CNF × SAT_Certificate) : Bool :=
   evalCNF (assignmentOfCertificate p.2) p.1
 
-/-- Citation axiom: evaluating a CNF formula under a given assignment is polynomial-time
-    computable on a TM2. Standard result; see `artifacts/sat-polytime-citation.md` for
-    verified citations (Arora-Barak, Sipser, Garey-Johnson). -/
-axiom SAT_Verifier_polytime :
-  _root_.Turing.TM2ComputableInPolyTime
-    (Complexity.pairEncoding finEncodingCNF finEncodingSATCertificate)
-    Computability.finEncodingBoolBool
-    SAT_Verifier_Bool
+/-- First index of `a` in `l`, or `l.length` if absent. DecidableEq-based (no BEq). -/
+def findPos [DecidableEq α] (a : α) (l : List α) : ℕ :=
+  match l with
+  | [] => 0
+  | b :: l' => if a = b then 0 else findPos a l' + 1
 
-/-! ## Bound Lemmas
+/-- Build an assignment from a raw-bit certificate `cert` and a formula `φ`:
+    variable `v` is looked up by its **position** in `φ.vars.dedup`, defaulting to `false`.
+    Position-based (not index-based) so sparse high-index variables are handled by a
+    certificate whose length is polynomial in `|enc(φ)|`, not in the max variable index. -/
+def assignmentFromBits (cert : List Bool) (φ : CNF) : Assignment :=
+  fun v => cert[findPos v φ.vars.dedup]? |>.getD false
 
-These lemmas relate formula and certificate sizes using standard bit-counting arithmetic results.
-Verified citations for these bounds are documented in `artifacts/nat-encoding-length.md`.
--/
-
-/-- Citation axiom: the certificate encoding is bounded by a linear factor of the formula encoding. -/
-axiom cert_encoding_le_cube (φ : CNF) (σ : Assignment) :
-    let y := (φ.vars.dedup).map (fun v => (v, σ v))
-    (finEncodingSATCertificate.encode y).length ≤ (finEncodingCNF.encode φ).length ^ 3
+/-- The SAT verifier on a raw-bit certificate: evaluate `φ` under the position-indexed
+    assignment extracted from `cert`. -/
+def SAT_VerifierBits (p : CNF × List Bool) : Bool :=
+  evalCNF (assignmentFromBits p.2 p.1) p.1
 
 /-! ## Basic Properties -/
 
@@ -275,33 +272,17 @@ theorem empty_clause_unsat (φ : CNF) (h : [] ∈ φ) : ¬Satisfiable φ := by
   simp [evalClause] at this
 
 /-- SAT is in NP.
-    Uses a certificate mapping each appearing variable to its value. -/
+    Certificate: a raw bit-string `cert` of length `|enc(φ)|` (bound `k = 1`), interpreted as
+    the satisfying assignment indexed by position in `φ.vars.dedup`. The verifier evaluates
+    `φ` under this assignment in polynomial time. -/
 theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
-  use SAT_Certificate, finEncodingSATCertificate, SAT_Verifier, 3
-  constructor
-  · -- Verifier complexity
-    unfold PolyTimeCheckingRelation InP
-    use SAT_Verifier_Bool, SAT_Verifier_polytime
-    intro a; rfl
-  · -- Satisfiability is equivalent to existence of certificate
-    intro φ
-    constructor
-    · -- Satisfiable => exists certificate
-      intro ⟨σ, hsat⟩
-      let y := (φ.vars.dedup).map (fun v => (v, σ v))
-      use y
-      constructor
-      · -- Size bound
-        apply cert_encoding_le_cube
-      · -- Correctness
-        unfold SAT_Verifier
-        rw [← hsat]
-        apply evalCNF_eq_of_vars_eq
-        intro v hv
-        apply assignmentOfCertificate_eq_of_mem hv
-    · -- exists certificate => Satisfiable
-      rintro ⟨y, _, ry⟩
-      use (assignmentOfCertificate y)
-      exact ry
+  let R := fun (φ : CNF) (cert : List Bool) => evalCNF (assignmentFromBits cert φ) φ = true
+  have hg_comp : Nonempty
+      (_root_.Turing.TM2ComputableInPolyTime
+        (pairEncoding finEncodingCNF finEncodingBoolList) finEncodingBoolBool SAT_VerifierBits) := sorry
+  refine ⟨R, 1, SAT_VerifierBits, hg_comp, ?_⟩
+  refine ⟨?_, ?_⟩
+  · intro φ cert; rfl
+  · sorry
 
 end OpenLemma.Complexity.SAT
