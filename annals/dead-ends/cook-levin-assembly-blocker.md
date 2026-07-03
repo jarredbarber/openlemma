@@ -1,118 +1,117 @@
-# Dead-End / Blocker: "Mechanical assembly" of `SAT_is_NP_hard` is NOT possible from current pieces
+# Dead-End / Blocker: `SAT_is_NP_hard` assembly — status after cert-aware tableau work
 
-**Date:** 2026-07-02
+**Date:** 2026-07-02 (updated)
 **Discovered during:** Step 1 of `handoff.md` (eliminate crux axiom `SAT_is_NP_hard_citation`).
-**Status:** ESCALATION — requires maintainer decision on scope. Not a dead-end for the overall
-Cook-Levin goal, but a dead-end for the *assumption* that Step 1 is "mostly mechanical gluing."
+**Status:** Gap 1 **CLOSED** (axiom-free). Remaining assembly = trace/semantics bridges + polytime parameterization + `∀a L'(a)↔SAT(f a)` wrap. This is substantial, creative Cook-Levin content — proper code-as-proof (researcher→reviewer→coder) territory, not single-session gluing.
 
-## Summary
+## What changed since the original blocker (Gap 1 CLOSED)
 
-The handoff claims the pieces for `NPHard finEncodingCNF SAT_Language` are "all in place"
-(reduction fn `tableauFormula`, `reduction_sound`, `completeness`, `tableauFormula_is_polytime`)
-and that assembly is "mostly mechanical gluing." **This is not accurate.** Two structural gaps
-prevent assembly. Both were verified by reading the actual theorem statements and constraint
-definitions, not just the docs.
+The original blocker was that the certificate was not wired into the tableau. That is now done,
+axiom-free, in two new files (statements are ADDITIONS; no existing theorem was modified):
 
-## Gap 1 — The certificate is not wired into the tableau (the hard blocker)
+- `botlib/Complexity/CookLevin/CertTableau.lean`:
+  - `tableauFormulaCert params aInput certBound boolSyms` — cert-aware tableau formula. The
+    `a`-region (stack `k₀` cells `certBound ..` from the bottom) is fixed by `aInput.reverse.zipIdx`;
+    the cert-region (cells `0 ..< certBound`) is left free, constrained only by a per-cell
+    disjunction clause `[pos (stkElem 0 k₀ j b₀), pos (stkElem 0 k₀ j b₁)]` over the two bool
+    symbols `boolSyms` (a free bit per cert cell = a certificate bit).
+  - `satisfies_initial_cert` (all 6 parts, incl. the hard a-region `p4` and cert-region `p5`).
+  - `reduction_sound_cert` — from a real computation trace `c` (with `h_init`/`h_step`/
+    `h_depth`/`h_halt` on `aInput ++ certMapped`), `tableauFormulaCert` is satisfiable.
+    0 axioms, 0 sorries. Reuses `satisfies_{consistency,transition,frame,acceptance}` verbatim.
+- `botlib/Complexity/CookLevin/CompletenessCert.lean`:
+  - helpers `exactlyOne_exists`, `consistency_stkElem_exists`, `sat_components_cert`,
+    `cert_not_bool_false` (axiom-free).
+  - `completeness_cert`: `Satisfiable (tableauFormulaCert params aInput certBound boolSyms) →
+    ∃ cert, cert.length = certBound ∧ (∀ γ ∈ cert, γ ∈ boolSyms) ∧
+      Satisfiable (tableauFormula params (aInput ++ cert))`.
+    **Fully proven, 0 sorries, 0 crux axioms** (depends only on `propext`, `Classical.choice`,
+    `Quot.sound`). Extracts the cert via `Classical.choose`-based total `certF`, splits the
+    cell clauses of `initialConstraints (aInput ++ cert)` into cert-region (via `certF_spec`)
+    and a-region (via the cert-aware `initialConstraintsCert`'s a-region block), using
+    `forall_mem_zipIdx'` + proof-irrelevance of `getElem` values.
 
-`NPHard finEncodingCNF SAT_Language` requires, for every `L' ∈ NP` with verifier `V` on
-`(a, b)` (input `a`, certificate `b`, `|b| ≤ |a|^k`), a **poly-time function `f(a)`** with
+So the hard *structural* blocker is gone. `lake build botlib.Complexity.CookLevin` is green.
 
-  `L'(a) ↔ Satisfiable (f a)   ↔   ∃ b (|b| ≤ |a|^k), V accepts (a, b) within poly time`.
-
-The certificate `b` must appear as **free variables** of the single output formula `f(a)` so the
-SAT solver "guesses" it. The design doc (`proofs/cook-levin-correctness.md` §"Verifier Tableau")
-describes exactly this intent: "variables corresponding to `y` are free (unconstrained)."
-
-**The implementation does not realize this intent:**
-
-- `TableauVar.cert (j : ℕ)` exists (`Tableau.lean:53`) but is referenced **nowhere** except:
-  - the inductive definition,
-  - its `toSum`/`fromSum` encodings (lines 62, 71),
-  - `traceValuation (.cert _) => false` (`Soundness.lean:62`).
-- No constraint (`consistencyConstraints`, `initialConstraints`, `transitionConstraints`,
-  `framePreservation`, `acceptanceConstraints`) references any `cert` variable.
-- `initialConstraints` (`Tableau.lean:116`) fixes **all** stacks: stack `k₀ = inputContents`
-  and every other stack `k ≠ k₀` to length 0. So the entire tape is fixed constants; there is
-  no free region for a certificate.
-
-Consequence: `reduction_sound` / `completeness` prove a **fixed-input (P-style)** equivalence
-
-  `V halts on the fixed list inputContents within bound ↔ Satisfiable (tableauFormula params inputContents)`
-
-with `BoundedReadDepth` + stack-depth-adequacy side conditions. There is **no existential
-certificate quantifier**. This yields a formula `F(input)` satisfiable iff `V` halts on that
-specific `input` — i.e. it decides membership for a language in **P**, not NP. Feeding
-`inputContents = encode (a, b)` would give `F(a, b)` with `b` *fixed*, not `F(a)` with `b` free.
-And feeding `inputContents = encode a` gives `F(a)` satisfiable iff `V` halts on `a` alone —
-which is not `L'(a)` (the verifier needs the certificate `b` to run).
-
-To get NP-hardness, the tableau construction must be extended so that:
-- the `a` part of the verifier's input tape is fixed (constant literals), and
-- the `b` (certificate) part is represented by the free `cert j` variables, with
-  `transitionConstraints` referencing `cert (j - |encode a|)` when `V` reads the certificate
-  region of its tape,
-- plus new soundness/completeness theorems: `Satisfiable (tableauFormulaCert params a) ↔ ∃ b, V accepts (a, b)`.
-
-The existing `reduction_sound` / `completeness` statements are **immutable** (AGENTS.md), so
-this must be done by **adding** new definitions and theorems (e.g. `tableauFormulaCert`,
-`reduction_sound_cert`, `completeness_cert`), reusing the existing sub-lemmas
-(`satisfies_{consistency,initial,transition,frame,acceptance}`) where the cert-aware analog
-permits. This is a substantial proof-engineering effort comparable to the existing
-soundness/completeness work (~2000 lines), not mechanical gluing.
-
-## Gap 2 — `tableauFormula_is_polytime` is stated for a degenerate constant function
+## Gap 2 — `tableauFormula_is_polytime` still degenerate (unchanged)
 
 `PolyTime.lean:24`:
 ```
-axiom tableauFormula_is_polytime (V : FinTM2) [...] (params : Params V) :
+axiom tableauFormula_is_polytime [...] (params : Params V) :
     TM2ComputableInPolyTime (listEncoding finEncodingNatBool) finEncodingCNF
       (fun (_ : List ℕ) => tableauFormula params [])
 ```
-The function is `fun (_ : List ℕ) => tableauFormula params []` — it **ignores its argument**
-and uses **empty input** `[]`. This says "the constant function returning
-`tableauFormula params []` is poly-time." It does **not** establish that the actual reduction
-map `fun a => tableauFormula params (encode a)` is poly-time. So even Gap 1 aside, this axiom
-cannot witness the `TM2ComputableInPolyTime` component of `PolyTimeReducible` for the real
-reduction. (It is also a citation axiom, policy-allowed, but useless for assembly as stated.)
+The function ignores its argument and uses empty input `[]`. This is a *citation* axiom
+(Arora-Barak 2.10, Sipser 7.37) — **policy-allowed** as a citation, but its **statement** must be
+fixed to cover the real reduction map `fun a => tableauFormulaCert params (encode a) …` before it
+can witness `PolyTimeReducible`'s polytime component. Fixing the statement (keeping it a citation
+axiom) is in-scope and mechanical once the reduction `f` is pinned down (see below).
 
-## What still holds (no regression)
+## Remaining assembly pieces (the real Cook-Levin glue)
 
-- `reduction_sound` (`Soundness.lean:898`) and `completeness` (`Completeness.lean:1149`)
-  are genuine, 0-axiom, 0-sorry proofs of the **fixed-input** equivalence. The hard invariant
-  work (`trace_tracks_full`, `step_tracks_stacks'`, `satisfies_*`) is real and reusable.
-- `lake build botlib.Complexity.CookLevin` passes cleanly (1175 jobs, only linter warnings).
-- Axiom/sorry inventory matches `handoff.md` exactly; no new regressions.
+To turn the cert-aware pieces into `NPHard finEncodingCNF SAT_Language` (eliminating
+`SAT_is_NP_hard_citation`), one must construct, for every `L' ∈ NP` with verifier
+`g : α × List Bool → Bool` (with `g_comp : TM2ComputableInPolyTime (pairEncoding ea finEncodingBoolList)
+finEncodingBoolBool g`, bound `k`, relation `R`, and `L'(a) ↔ ∃ cert (|cert|=|enc a|^k), R a cert`),
+a polytime `f : α → CNF` with `∀ a, L'(a) ↔ Satisfiable (f a)`. Concretely `f a` should be the
+cert-aware tableau for the machine computing `g`, on input `(a, cert)`, with `a`-region fixed and
+cert-region free. The non-mechanical bridges required:
 
-## Environmental notes (not blockers for Cook-Levin work)
+1. **Verifier semantics bridge.** `TM2ComputableInPolyTime` (Mathlib `TMComputable.lean:210`)
+   gives `outputsFun : ∀ a, TM2OutputsInTime tm (map invFun (encode a)) (some (map invFun (encode
+   (f a)))) (time.eval |encode a|)`. Need: `g (a, cert) = true ↔ ∃ i ≤ timeBound,
+   (cfgAt tm (encode (a,cert)) i).l = none` (the machine halts with output encoding `true`) — i.e.
+   connect `TM2OutputsInTime` / `haltList` / `cfgAt` to the Bool output. This is the central
+   "V accepts within bound" lemma and is the bulk of the remaining work.
 
-- `lake build botlib` reports failure on two **transitive Mathlib** modules
-  (`Mathlib.CategoryTheory.Square`, `Mathlib.Geometry.Euclidean.Angle.Unoriented.TriangleInequality`)
-  due to `permission denied` writing read-only hash files during Lake replay. These are not
-  code errors and are not Complexity dependencies. They are a pre-existing artifact of the
-  read-only prebuilt-Mathlib setup (AGENTS.md forbids `chmod`-ing it back). The Complexity
-  subtree builds independently and cleanly.
-- `botlib/Complexity/Utils.lean:24` has a real unsolved goal but is an **orphan** module
-  (imported nowhere), so it does not affect the `botlib` lib build.
+2. **Input decomposition bridge.** `pairEncoding ea finEncodingBoolList` encodes `(a, cert)` as a
+   single tape. The cert-aware tableau needs `aInput = encode a` and a cert-region of raw bool
+   symbols. Need a lemma decomposing `map invFun (encode (a, cert))` (or `cfgAt`'s initial tape)
+   into the `a`-part and the cert-bits part, matching `initialConstraintsCert`'s layout. This
+   interacts with how the verifier machine reads its input.
 
-## Recommended path forward (needs maintainer input)
+3. **Adequacy / depth preconditions.** `reduction_sound_cert` needs `h_depth` and `completeness`
+   needs `h_adequate` (stack depth ≤ `maxStackDepth`), plus `BoundedReadDepth V`. These must be
+   discharged from the verifier's polytime bound (the `time` polynomial ⇒ a `maxStackDepth` and
+   `timeBound` for which the computation stays within depth). Non-trivial but standard.
 
-This is an escalation per AGENTS.md (crux axiom must be eliminated; cannot add a new crux axiom
-to paper over). Options:
+4. **Polytime parameterization of `f`.** Fix `tableauFormula_is_polytime`'s statement to the real
+   `f` (parameterized over the verifier machine `tm`, its `time` polynomial, and `certBound =
+   |encode a|^k`, `boolSyms`). Keep as a citation axiom (allowed) or prove for real (Step 2).
+   The `f` must type-check as `TM2ComputableInPolyTime eb finEncodingCNF`.
 
-1. **Full certificate-aware tableau extension (correct, large).** Implement
-   `tableauFormulaCert` + cert-aware soundness/completeness + a real poly-time bound for
-   `a ↦ tableauFormulaCert params a`. Use the code-as-proof workflow
-   (researcher drafts → reviewer adversarially checks → coder formalizes). Multi-session.
-2. **Re-scope the immediate win.** Keep `SAT_is_NP_hard_citation` as an explicit placeholder
-   (clearly labeled, not hidden), and instead pursue the *unconditional* sub-pieces that are
-   actually reachable now: e.g. fix `tableauFormula_is_polytime`'s statement to cover real
-   input (Gap 2), and close the `listEncoding.decode_encode` / `literalSumEncoding` sorrys
-   (handoff Steps 2–4). This shrinks the axiom surface without falsely claiming Cook-Levin.
-3. **Re-characterize the existing theorem.** Reframe `reduction_sound`/`completeness` as a
-   proven "P-completeness / fixed-input tableau" lemma and document honestly that the NP
-   certificate step remains, rather than leaving a crux axiom masquerading as assembly.
+5. **The `∀ a, L'(a) ↔ Satisfiable (f a)` wrap**, using `reduction_sound_cert` (→) and
+   `completeness_cert` + `completeness` (←) plus the bridges above, plus the `cfgAt` trace
+   construction (`cfgAt V (aInput ++ certMapped)` with `cfgAt_succ`/`initList` matching
+   `reduction_sound_cert`'s `h_init`/`h_step`).
 
-Do **not** attempt to "assemble" by introducing a new axiom that is the conclusion
-`NPHard finEncodingCNF SAT_Language` under another name — that is a crux axiom and is
-policy-forbidden.
+### Mechanical parts already in place (reusable)
+- `cfgAt V input t = (stepOrHalt V)^[t] (Turing.initList V input)`, `cfgAt_succ`, `cfgAt_halted_succ`.
+- `Turing.initList V input` matches `reduction_sound_cert`'s `h_init` shape
+  (`l = some main`, `var = initialState`, `stk k = if k = k₀ then input else []`).
+- `stepOrHalt V cfg = (V.step cfg).getD cfg` gives `h_step` from `cfgAt_succ`.
+- `finEncodingBoolList` (identity encoding for `List Bool`) ensures every cert bit-string is valid.
+
+## Why this is not "mechanical gluing"
+
+Bridges 1–3 are genuine Cook-Levin content (verifier computation ↔ tableau trace ↔ accept
+semantics), comparable in size to the existing soundness/completeness work. Per `AGENTS.md`, this
+creative proof work should go through the **code-as-proof workflow**
+(researcher drafts → reviewer adversarially checks → coder formalizes), multi-session. The
+orchestrator should dispatch the researcher with the context: cert-aware pieces (above),
+`InNP`/`NPHard`/`PolyTimeReducible`/`TM2ComputableInPolyTime` definitions, and the five bridges.
+
+## Do NOT
+- Introduce a new axiom whose conclusion is `NPHard finEncodingCNF SAT_Language` (crux axiom,
+  policy-forbidden).
+- Modify existing theorem statements (`reduction_sound`, `completeness`, etc. are immutable).
+- `lake clean` / rebuild Mathlib.
+
+## Other remaining items (independent of the crux axiom; lower priority)
+- `listEncoding.decode_encode` (`Encodings.lean:76`) — one sorry in the cons case. The key lemma
+  `List.splitOnP_first` is available, but `FinEncoding` projection elaboration
+  (`(listEncoding ea).Γ` not reducing to `Option ea.Γ` in `cons` positions) makes the cons case
+  brittle. Deferred; self-contained; not on the Cook-Levin critical path.
+- `SAT_in_NP` — 2 sorries (poly-time verifier + Satisfiable↔∃cert equivalence). Step 6.
+- `polyTimeFst_empty_alphabet` (`PolyTimeFst.lean:284`) — axiom for the empty-alphabet edge case.
+- `botlib/Complexity/Utils.lean:24` — unsolved goal in an orphan module (imported nowhere).

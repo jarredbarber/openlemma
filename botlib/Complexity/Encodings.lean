@@ -83,7 +83,10 @@ def listEncoding (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List �
       simp [List.splitOn, List.splitOnP, List.splitOnP.go, Option.sequence]
     | cons x xs ih =>
       -- Induction following from splitOn properties and ea.decode_encode.
-      -- Implementation deferred due to brittle list-splitting lemmas in this environment.
+      -- The key lemma is `List.splitOnP_first` (splits the leading chunk off when
+      -- `encode x` has no `none`), but the `FinEncoding` projection elaboration
+      -- (`(listEncoding ea).Γ` not reducing to `Option ea.Γ` in cons positions)
+      -- makes the cons case brittle. Deferred.
       sorry
   ΓFin := inferInstance
 
