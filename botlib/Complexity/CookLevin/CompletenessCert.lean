@@ -234,7 +234,42 @@ theorem completeness_cert (params : Params V) (aInput : List (V.Γ V.k₀))
           rw [List.length_append, hcertlen]]
       exact hb3
     · -- c4: cell clauses over (aInput ++ cert).reverse.zipIdx
-      sorry
+      have hrev : (aInput ++ cert).reverse = certCells ++ aInput.reverse := by
+        rw [List.reverse_append, hcert_def, List.reverse_reverse]
+      have hclen : certCells.length = certBound := by
+        simp [certCells, List.length_map, List.length_range]
+      have hlen : (certCells ++ aInput.reverse).length = certBound + aInput.length := by
+        rw [List.length_append, hclen, List.length_reverse]
+      have hb4' : ∀ (j' : ℕ) (hj' : j' < aInput.reverse.length),
+          evalClause σ
+            [tLit V (TableauVar.stkElem 0 V.k₀ (certBound + j') (aInput.reverse[j'])) true] = true := by
+        have := hb4
+        rw [evalCNF, List.all_eq_true, List.forall_mem_map, forall_mem_zipIdx'] at this
+        exact this
+      rw [hrev, List.all_eq_true, List.forall_mem_map, forall_mem_zipIdx']
+      intro i hi
+      -- hi : i < (certCells ++ aInput.reverse).length
+      have hcl : certCells.length = certBound := hclen
+      by_cases hi' : i < certBound
+      · -- cert region: cell = certF i
+        have hcell : (certCells ++ aInput.reverse)[i] = certF i := by
+          rw [List.getElem_append_left (hcl.symm ▸ hi')]
+          simp only [certCells, List.getElem_map, List.getElem_range]
+        have hvt : varTrue σ (TableauVar.stkElem (V := V) 0 V.k₀ i (certF i)) := (certF_spec i hi').2
+        rw [hcell]
+        simp only [varTrue] at hvt
+        simp only [evalClause, evalLiteral, tLit, List.any_cons, List.any_nil,
+          Bool.or_false, if_true, hvt]
+      · -- a region: i ≥ certBound, j' = i - certBound
+        have hige : certBound ≤ i := by omega
+        have hj' : i - certBound < aInput.reverse.length := by rw [List.length_reverse]; omega
+        have h := hb4' (i - certBound) hj'
+        rw [← show i = certBound + (i - certBound) from by omega] at h
+        have hcell : (certCells ++ aInput.reverse)[i] = aInput.reverse[i - certBound] := by
+          have hige' : certCells.length ≤ i := hcl.symm ▸ hige
+          simp only [List.getElem_append_right hige', hcl]
+        rw [hcell]
+        exact h
     · exact hb6
   have hfull : evalCNF σ (tableauFormula params (aInput ++ cert)) = true := by
     unfold tableauFormula
