@@ -203,7 +203,39 @@ theorem completeness_cert (params : Params V) (aInput : List (V.Γ V.k₀))
     obtain ⟨j, hj_mem, rfl⟩ := List.mem_map.mp hγ
     exact (certF_spec j (List.mem_range.mp hj_mem)).1
   have hinit : evalCNF σ (initialConstraints params (aInput ++ cert)) = true := by
-    sorry  -- TODO: prove `initialConstraints (aInput ++ cert)` from hIC + certF_spec
+    unfold initialConstraints
+    -- Extract the matching blocks of `initialConstraintsCert` from hIC.
+    -- initialConstraintsCert = b1++b2++b3++b4++b5++b6 (left-assoc, 6 blocks).
+    have hb1 : evalCNF σ [[tLit V (TableauVar.label 0 (some V.main)) true]] = true :=
+      evalCNF_append_left (evalCNF_append_left (evalCNF_append_left
+        (evalCNF_append_left (evalCNF_append_left hIC))))
+    have hb2 : evalCNF σ [[tLit V (TableauVar.state 0 V.initialState) true]] = true :=
+      evalCNF_append_right (evalCNF_append_left (evalCNF_append_left
+        (evalCNF_append_left (evalCNF_append_left hIC))))
+    have hb3 : evalCNF σ
+        [[tLit V (TableauVar.stkLen 0 V.k₀ (aInput.length + certBound)) true]] = true :=
+      evalCNF_append_right (evalCNF_append_left (evalCNF_append_left (evalCNF_append_left hIC)))
+    have hb4 : evalCNF σ
+        (aInput.reverse.zipIdx.map (fun ⟨γ, j⟩ =>
+          [tLit V (TableauVar.stkElem 0 V.k₀ (certBound + j) γ) true])) = true :=
+      evalCNF_append_right (evalCNF_append_left (evalCNF_append_left hIC))
+    have hb6 : evalCNF σ
+        (Finset.univ.toList.flatMap (fun k =>
+          if k = V.k₀ then [] else [[tLit V (TableauVar.stkLen 0 k 0) true]])) = true :=
+      evalCNF_append_right hIC
+    -- Reassemble `initialConstraints (aInput ++ cert)`:
+    -- c1=label c2=state c3=stkLen(=(aInput++cert).length) c4=cells c5=other-stacks.
+    simp only [evalCNF, List.all_append, Bool.and_eq_true]
+    refine ⟨⟨⟨⟨?_, ?_⟩, ?_⟩, ?_⟩, ?_⟩
+    · exact hb1
+    · exact hb2
+    · -- c3: rewrite (aInput ++ cert).length to aInput.length + certBound, then reuse hb3
+      rw [show (aInput ++ cert).length = aInput.length + certBound from by
+          rw [List.length_append, hcertlen]]
+      exact hb3
+    · -- c4: cell clauses over (aInput ++ cert).reverse.zipIdx
+      sorry
+    · exact hb6
   have hfull : evalCNF σ (tableauFormula params (aInput ++ cert)) = true := by
     unfold tableauFormula
     simp only [evalCNF, List.all_append, Bool.and_eq_true]
