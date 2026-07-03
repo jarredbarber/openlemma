@@ -156,4 +156,58 @@ theorem cert_not_bool_false (params : Params V) (aInput : List (V.Γ V.k₀))
   rw [varTrue] at hvt
   simp [hvt] at hClauseEval
 
+/-! ## Main completeness direction -/
+
+/-- Completeness of the cert-aware reduction: a satisfying assignment of
+    `tableauFormulaCert` yields a certificate `cert` (boolean symbols) such that
+    the fixed-input `tableauFormula params (aInput ++ cert)` is satisfiable.
+    (The `hdepth` precondition `certBound ≤ maxStackDepth` guarantees the cert
+    cells lie in the range covered by consistency's `exactlyOne`.) -/
+theorem completeness_cert (params : Params V) (aInput : List (V.Γ V.k₀))
+    (certBound : ℕ) (boolSyms : Finset (V.Γ V.k₀))
+    (hdepth : certBound ≤ params.maxStackDepth)
+    (h_sat : Satisfiable (tableauFormulaCert params aInput certBound boolSyms)) :
+    ∃ cert : List (V.Γ V.k₀),
+      cert.length = certBound ∧
+      (∀ γ ∈ cert, γ ∈ boolSyms) ∧
+      Satisfiable (tableauFormula params (aInput ++ cert)) := by
+  obtain ⟨σ, hσ⟩ := h_sat
+  have ⟨hC, hIC, hT, hF, hA⟩ := sat_components_cert params aInput certBound boolSyms σ hσ
+  have hnotbool := cert_not_bool_false params aInput certBound boolSyms σ hIC
+  have hcell : ∀ j < certBound, ∃ γ : V.Γ V.k₀,
+      γ ∈ boolSyms ∧ varTrue σ (TableauVar.stkElem (V := V) 0 V.k₀ j γ) := by
+    intro j hj
+    obtain ⟨γ, hγtrue⟩ :=
+      consistency_stkElem_exists hC (Nat.zero_le _) V.k₀ j (hj.trans_le hdepth)
+    refine ⟨γ, ?_, hγtrue⟩
+    by_contra hgb
+    exact hnotbool j hj γ hgb hγtrue
+  choose certF0 certF0_spec using hcell
+  -- `certF0 : (j : ℕ) → j < certBound → V.Γ V.k₀` is dependent; wrap into a total
+  -- function so it can be `List.map`'d.
+  let certF : ℕ → V.Γ V.k₀ := fun j =>
+    if hj : j < certBound then certF0 j hj
+    else Classical.choice (inferInstance : Nonempty (V.Γ V.k₀))
+  have certF_spec (j : ℕ) (hj : j < certBound) :
+      certF j ∈ boolSyms ∧
+      varTrue σ (TableauVar.stkElem (V := V) 0 V.k₀ j (certF j)) := by
+    have : certF j = certF0 j hj := by simp only [certF, dif_pos hj]
+    rw [this]; exact certF0_spec j hj
+  set certCells : List (V.Γ V.k₀) := (List.range certBound).map certF
+  set cert : List (V.Γ V.k₀) := certCells.reverse with hcert_def
+  have hcertlen : cert.length = certBound := by
+    simp [cert, certCells, List.length_reverse, List.length_map, List.length_range]
+  have hcertelem : ∀ γ ∈ cert, γ ∈ boolSyms := by
+    intro γ hγ
+    rw [hcert_def, List.mem_reverse] at hγ
+    obtain ⟨j, hj_mem, rfl⟩ := List.mem_map.mp hγ
+    exact (certF_spec j (List.mem_range.mp hj_mem)).1
+  have hinit : evalCNF σ (initialConstraints params (aInput ++ cert)) = true := by
+    sorry  -- TODO: prove `initialConstraints (aInput ++ cert)` from hIC + certF_spec
+  have hfull : evalCNF σ (tableauFormula params (aInput ++ cert)) = true := by
+    unfold tableauFormula
+    simp only [evalCNF, List.all_append, Bool.and_eq_true]
+    exact ⟨⟨⟨⟨hC, hinit⟩, hT⟩, hF⟩, hA⟩
+  exact ⟨cert, hcertlen, hcertelem, ⟨σ, hfull⟩⟩
+
 end CookLevinTableau
