@@ -246,6 +246,18 @@ def findPos [DecidableEq α] (a : α) (l : List α) : ℕ :=
   | [] => 0
   | b :: l' => if a = b then 0 else findPos a l' + 1
 
+/-- `findPos a l` returns a valid index holding `a`, whenever `a ∈ l`. -/
+theorem findPos_mem [DecidableEq α] {a : α} {l : List α} (h : a ∈ l) :
+    l[findPos a l]? = some a := by
+  induction l with
+  | nil => simp at h
+  | cons b l' ih =>
+    by_cases heq : a = b
+    · simp [findPos, heq, List.getElem?_cons]
+    · have ha' : a ∈ l' := by simpa [heq] using h
+      have hih := ih ha'
+      simp [findPos, heq, List.getElem?_cons, hih, Nat.add_sub_cancel]
+
 /-- Build an assignment from a raw-bit certificate `cert` and a formula `φ`:
     variable `v` is looked up by its **position** in `φ.vars.dedup`, defaulting to `false`.
     Position-based (not index-based) so sparse high-index variables are handled by a
@@ -283,6 +295,45 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
   refine ⟨R, 1, SAT_VerifierBits, hg_comp, ?_⟩
   refine ⟨?_, ?_⟩
   · intro φ cert; rfl
-  · sorry
+  · -- `∀ φ, SAT_Language φ ↔ ∃ cert, |cert| = |enc φ| ∧ R φ cert`
+    intro φ
+    rw [show (finEncodingCNF.encode φ).length ^ 1 = (finEncodingCNF.encode φ).length from Nat.pow_one _]
+    refine ⟨?_, ?_⟩
+    · -- (→): from a satisfying assignment σ, build a cert (the σ-bits over φ.vars.dedup,
+      --       padded to |enc φ|) and show `assignmentFromBits cert φ` agrees with σ on φ.vars.
+      rintro ⟨σ, hσ⟩
+      -- Narrowly-scoped sorry: encoding-length lower bound `|φ.vars.dedup| ≤ |enc φ|`.
+      -- Needed to pad the cert to exactly |enc φ|. The bound holds (each literal encodes to
+      -- ≥1 symbol, so |enc φ| ≥ #literals = |φ.vars| ≥ |dedup|) but the proof requires
+      -- unwinding the nested `listEncoding` length formula and is deferred.
+      have hdedup_len : φ.vars.dedup.length ≤ (finEncodingCNF.encode φ).length := by sorry
+      set cert : List Bool :=
+          φ.vars.dedup.map σ ++
+            List.replicate ((finEncodingCNF.encode φ).length - φ.vars.dedup.length) false
+        with hcert
+      refine ⟨cert, ?_, ?_⟩
+      · -- |cert| = |enc φ|
+        rw [hcert, List.length_append, List.length_map, List.length_replicate]; omega
+      · -- evalCNF (assignmentFromBits cert φ) φ = true  (cert reproduces σ on φ.vars)
+        have heq : evalCNF (assignmentFromBits cert φ) φ = evalCNF σ φ :=
+          evalCNF_eq_of_vars_eq (by
+            intro v hv
+            have hvD : v ∈ φ.vars.dedup := List.mem_dedup.mpr hv
+            have hfp : φ.vars.dedup[findPos v φ.vars.dedup]? = some v := findPos_mem hvD
+            have hfp_lt : findPos v φ.vars.dedup < φ.vars.dedup.length := by
+              by_contra hC
+              rw [List.getElem?_eq_none_iff.mpr (by omega)] at hfp
+              simp at hfp
+            have hfp_lt' : findPos v φ.vars.dedup < (φ.vars.dedup.map σ).length := by
+              rw [List.length_map]; exact hfp_lt
+            show assignmentFromBits cert φ v = σ v
+            unfold assignmentFromBits
+            rw [hcert, List.getElem?_append_left hfp_lt', List.getElem?_map, hfp]
+            simp)
+        show evalCNF (assignmentFromBits cert φ) φ = true
+        rw [heq]; exact hσ
+    · -- (←): the cert itself is the witness assignment.
+      rintro ⟨cert, hlen, hR⟩
+      exact ⟨assignmentFromBits cert φ, hR⟩
 
 end OpenLemma.Complexity.SAT
