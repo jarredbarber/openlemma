@@ -82,12 +82,16 @@ def listEncoding (ea : FinEncoding α) [DecidableEq ea.Γ] : FinEncoding (List �
     | nil =>
       simp [List.splitOn, List.splitOnP, List.splitOnP.go, Option.sequence]
     | cons x xs ih =>
-      -- Induction following from splitOn properties and ea.decode_encode.
-      -- The key lemma is `List.splitOnP_first` (splits the leading chunk off when
-      -- `encode x` has no `none`), but the `FinEncoding` projection elaboration
-      -- (`(listEncoding ea).Γ` not reducing to `Option ea.Γ` in cons positions)
-      -- makes the cons case brittle. Deferred.
+      -- encode (x::xs) = (ea.encode x).map some ++ [none] ++ encode xs, and
+      -- splitOn none of that = (ea.encode x).map some :: splitOn none (encode xs)
+      -- (each element block has no `none`; `List.splitOnP_first`).
+      -- BLOCKER: `(listEncoding ea).Γ` is a field projection that does not reduce to
+      -- `Option ea.Γ` in the elaborator, so `BEq (listEncoding ea).Γ` is not synthesized
+      -- and `none`/`some` fail to unify. The proof needs a `change`/`show` that coerces
+      -- the whole `decode`/`encode` expression to `Option ea.Γ` up to defeq — fiddly and
+      -- deferred. This lemma is latent (no consumer references `listEncoding.decode_encode`).
       sorry
+
   ΓFin := inferInstance
 
 theorem listEncoding_length {α : Type} (ea : FinEncoding α) [DecidableEq ea.Γ] (l : List α) :
