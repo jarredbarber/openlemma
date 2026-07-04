@@ -2,3 +2,6 @@
 .env
 ROLE.md
 PREAMBLE.md
+.pi-subagents/
+__pycache__/
+*.pyc

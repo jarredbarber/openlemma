@@ -10,6 +10,7 @@ This file re-exports the modular Cook-Levin development:
 import botlib.Complexity.CookLevin.Tableau
 import botlib.Complexity.CookLevin.Correctness
 import botlib.Complexity.CookLevin.Completeness
+import botlib.Complexity.CookLevin.Bridge1
 import botlib.Complexity.CookLevin.Soundness
 import botlib.Complexity.CookLevin.PolyTime
 import botlib.Complexity.SAT
