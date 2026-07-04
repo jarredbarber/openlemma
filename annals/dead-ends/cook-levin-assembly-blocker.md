@@ -112,6 +112,10 @@ orchestrator should dispatch the researcher with the context: cert-aware pieces 
   `List.splitOnP_first` is available, but `FinEncoding` projection elaboration
   (`(listEncoding ea).Γ` not reducing to `Option ea.Γ` in `cons` positions) makes the cons case
   brittle. Deferred; self-contained; not on the Cook-Levin critical path.
-- `SAT_in_NP` — 2 sorries (poly-time verifier + Satisfiable↔∃cert equivalence). Step 6.
+- `SAT_in_NP` — 1 sorry remains: the poly-time verifier (`hg_comp`). The
+  Satisfiable↔∃cert equivalence is FULLY PROVEN (cert construction via `findPos_mem` +
+  `evalCNF_eq_of_vars_eq`; encoding-length bound `|dedup| ≤ |enc φ|` via `sum_map_le` +
+  `length_le_sum_of_one_le`). Only the polytime verifier (`TM2ComputableInPolyTime ...
+  SAT_VerifierBits`) is still sorry'd — citation-axiom territory. Step 6 (mostly done).
 - `polyTimeFst_empty_alphabet` (`PolyTimeFst.lean:284`) — axiom for the empty-alphabet edge case.
 - `botlib/Complexity/Utils.lean:24` — unsolved goal in an orphan module (imported nowhere).
