@@ -258,6 +258,16 @@ theorem findPos_mem [DecidableEq α] {a : α} {l : List α} (h : a ∈ l) :
       have hih := ih ha'
       simp [findPos, heq, List.getElem?_cons, hih, Nat.add_sub_cancel]
 
+/-- Pointwise `f a ≤ g a` lifts to sums (by induction on the list). -/
+lemma sum_map_le {α : Type*} (l : List α) (f g : α → ℕ) (h : ∀ a ∈ l, f a ≤ g a) :
+    (l.map f).sum ≤ (l.map g).sum := by
+  induction l with
+  | nil => rfl
+  | cons a l' ih =>
+    have ha : f a ≤ g a := h a (by simp)
+    have hI : (l'.map f).sum ≤ (l'.map g).sum := ih (fun b hb => h b (List.mem_cons_of_mem _ hb))
+    simp only [List.map_cons, List.sum_cons]; omega
+
 /-- Build an assignment from a raw-bit certificate `cert` and a formula `φ`:
     variable `v` is looked up by its **position** in `φ.vars.dedup`, defaulting to `false`.
     Position-based (not index-based) so sparse high-index variables are handled by a
@@ -306,7 +316,41 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
       -- Needed to pad the cert to exactly |enc φ|. The bound holds (each literal encodes to
       -- ≥1 symbol, so |enc φ| ≥ #literals = |φ.vars| ≥ |dedup|) but the proof requires
       -- unwinding the nested `listEncoding` length formula and is deferred.
-      have hdedup_len : φ.vars.dedup.length ≤ (finEncodingCNF.encode φ).length := by sorry
+      have hdedup_len : φ.vars.dedup.length ≤ (finEncodingCNF.encode φ).length := by
+        -- |dedup| ≤ |φ.vars| ≤ Σ|c| ≤ Σ(|enc clause c| + 1) = |enc φ|.
+        -- Each clause encodes to ≥1 symbol per literal, so |enc clause c| ≥ |c|.
+        have hd : φ.vars.dedup.length ≤ φ.vars.length :=
+          List.Sublist.length_le (List.dedup_sublist φ.vars)
+        have hvars : φ.vars.length = (φ.map (fun c => c.length)).sum := by
+          show (φ.flatMap (fun c => c.map Literal.var)).length = (φ.map (fun c => c.length)).sum
+          rw [List.length_flatMap]
+          simp only [List.length_map]
+        have hclause : ∀ c ∈ φ, c.length ≤ (finEncodingClause.encode c).length := by
+          intro c _
+          show c.length ≤ ((listEncoding finEncodingLiteral).encode c).length
+          rw [listEncoding_length]
+          have hL : (c.map (fun l => (finEncodingLiteral.encode l).length + 1)).length = c.length := by
+            rw [List.length_map]
+          rw [← hL]
+          apply List.length_le_sum_of_one_le
+          intro n hn
+          obtain ⟨l, _, rfl⟩ := List.mem_map.mp hn
+          omega
+        have h2 : (φ.map (fun c => c.length)).sum
+            ≤ (φ.map (fun c => (finEncodingClause.encode c).length + 1)).sum := by
+          apply sum_map_le
+          intro c hc
+          have := hclause c hc
+          omega
+        have henc : (φ.map (fun c => (finEncodingClause.encode c).length + 1)).sum
+            = (finEncodingCNF.encode φ).length := by
+          show (φ.map (fun c => (finEncodingClause.encode c).length + 1)).sum
+              = ((listEncoding finEncodingClause).encode φ).length
+          rw [listEncoding_length]
+        calc φ.vars.dedup.length ≤ φ.vars.length := hd
+          _ = (φ.map (fun c => c.length)).sum := hvars
+          _ ≤ (φ.map (fun c => (finEncodingClause.encode c).length + 1)).sum := h2
+          _ = (finEncodingCNF.encode φ).length := henc
       set cert : List Bool :=
           φ.vars.dedup.map σ ++
             List.replicate ((finEncodingCNF.encode φ).length - φ.vars.dedup.length) false
