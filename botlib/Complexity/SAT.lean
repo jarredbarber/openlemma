@@ -312,10 +312,7 @@ theorem SAT_in_NP : InNP finEncodingCNF SAT_Language := by
     · -- (→): from a satisfying assignment σ, build a cert (the σ-bits over φ.vars.dedup,
       --       padded to |enc φ|) and show `assignmentFromBits cert φ` agrees with σ on φ.vars.
       rintro ⟨σ, hσ⟩
-      -- Narrowly-scoped sorry: encoding-length lower bound `|φ.vars.dedup| ≤ |enc φ|`.
-      -- Needed to pad the cert to exactly |enc φ|. The bound holds (each literal encodes to
-      -- ≥1 symbol, so |enc φ| ≥ #literals = |φ.vars| ≥ |dedup|) but the proof requires
-      -- unwinding the nested `listEncoding` length formula and is deferred.
+      -- |dedup| ≤ |enc φ| (each literal encodes to ≥1 symbol; see hdedup_len below).
       have hdedup_len : φ.vars.dedup.length ≤ (finEncodingCNF.encode φ).length := by
         -- |dedup| ≤ |φ.vars| ≤ Σ|c| ≤ Σ(|enc clause c| + 1) = |enc φ|.
         -- Each clause encodes to ≥1 symbol per literal, so |enc clause c| ≥ |c|.
