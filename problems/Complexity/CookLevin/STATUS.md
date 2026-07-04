@@ -13,7 +13,11 @@ Build green (`lake build botlib.Complexity.CookLevin`, only linter warnings). St
 | bridge2_certMapped_length | ✅ | APPROVED | ✅ | `certMapped_length` |
 | bridge2_certMapped_bool | ✅ | APPROVED | ✅ | `certMapped_bool` + `boolSyms` def |
 | bridge2_h_init_connection | ✅ | APPROVED | ✅ | `cfgAt_zero` + `initList_h_init_shape` |
-| bridge3_adequacy_depth | pending | — | — | not started |
+| bridge3 halting_time_bound | ✅ | APPROVED | ✅ | `stmtTouchDepth`/`NormalForm` defs (Bridge3.lean) |
+| bridge3 stack_depth_bound (induction) | ✅ | APPROVED | ✅ | `stack_depth_bound` (Lemma C), 0 sorries |
+| bridge3 h_adequate (maxStackDepth := n+T) | ✅ | APPROVED | ✅ | `h_adequate_of_normal_form` (Lemma D) |
+| bridge3 bounded_read_depth_from_NormalForm | ✅ | APPROVED | ✅ | `bounded_read_depth_of_normal_form` (Lemma E) |
+| bridge3 normal_form_normalization (GAP) | ✅ (None) | APPROVED (gap) | ⛔ sorry | `normal_form_normalization` (Lemma F) — one `sorry`, future sub-lemma |
 | bridge4_f_polytime | pending | — | — | not started |
 | bridge5_L_iff_satisfiable | pending | — | — | depends on 1–4 |
 | theorem SAT_is_NP_hard_real | pending | — | — | depends on all bridges |
@@ -35,3 +39,6 @@ Build green (`lake build botlib.Complexity.CookLevin`, only linter warnings). St
 - 2026-07-04 reviewer B2 (r2): all 4 units APPROVED.
 - 2026-07-04 coder: formalized Bridge 2 in `Bridge2.lean` (5 lemmas A-E), 0 axioms, 0 sorries, builds green.
 - 2026-07-04 orchestrator: verified builds green + inventory unchanged; committing Bridge 2. (Noted residual: `V.kDecidableEq` vs context `[DecidableEq V.K]` instance agreement - Bridge 5 concern.)
+- 2026-07-04 researcher (B3): wrote `bridge3_adequacy_depth.py` (10 adversarial tests PASS; reviewer approved all 7 units). Key insight: `BoundedReadDepth`/per-step growth are STRUCTURAL (`NormalForm`), not from polytime bound.
+- 2026-07-04 coder attempts for Bridge 3 Lean failed (budget/interrupted); orchestrator wrote `Bridge3.lean` directly (Python proof already vetted; `lake build` is independent verifier).
+- 2026-07-04 orchestrator: `Bridge3.lean` builds green — ZERO axioms, exactly ONE sorry (`normal_form_normalization` Lemma F scaffold). Lemmas A–E sorry-free: `stmtTouchDepth`/`NormalForm` defs, `stepAux_stkLength_bound` (A, Stmt induction with dependent `Function.update_self`/`update_of_ne`), `step_length_change_bounded` (B), `stack_depth_bound` (C), `h_adequate_of_normal_form` (D), `bounded_read_depth_of_normal_form` (E). Key Lean hurdles: `FinTM2.step` unfold via `Turing.TM2.step.eq_2` with explicit `V.decidableEqK` instance (Bridge-2 residual); dependent `update` needs `update_self`/`update_of_ne` (not non-dependent `update_apply`); `subst` direction on case-binder vs theorem-param nondeterministic — used `by_cases h : k = k'` + `subst k'` to force survivor. Committing Bridge 3.

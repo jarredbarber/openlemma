@@ -12,6 +12,7 @@ import botlib.Complexity.CookLevin.Correctness
 import botlib.Complexity.CookLevin.Completeness
 import botlib.Complexity.CookLevin.Bridge1
 import botlib.Complexity.CookLevin.Bridge2
+import botlib.Complexity.CookLevin.Bridge3
 import botlib.Complexity.CookLevin.Soundness
 import botlib.Complexity.CookLevin.PolyTime
 import botlib.Complexity.SAT
