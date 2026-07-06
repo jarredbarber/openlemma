@@ -229,7 +229,7 @@ theorem cfgAt_halted_succ (input : List (V.Γ V.k₀)) (t : ℕ)
 
 /-! ### stepOrHalt for running configs -/
 
-private theorem stepOrHalt_running {cfg : V.Cfg} {lbl : V.Λ} (h : cfg.l = some lbl) :
+theorem stepOrHalt_running {cfg : V.Cfg} {lbl : V.Λ} (h : cfg.l = some lbl) :
     stepOrHalt V cfg = TM2.stepAux (V.m lbl) cfg.var cfg.stk := by
   show (match V.step cfg with | some cfg' => cfg' | none => cfg) = _
   have hstep : V.step cfg = some (TM2.stepAux (V.m lbl) cfg.var cfg.stk) := by

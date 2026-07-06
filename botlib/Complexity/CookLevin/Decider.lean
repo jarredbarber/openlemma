@@ -66,7 +66,7 @@ structure DeciderSpec {β : Type} (eb : FinEncoding β) (g : β × List Bool →
 inductive CheckLoop : Type
   | check : CheckLoop
   | loop : CheckLoop
-  deriving DecidableEq, Fintype
+  deriving DecidableEq, Fintype, Encodable
 
 /-- Lift a verifier statement (state `σ`, labels `Λ`) to a decider statement
     (state `σ × σ'`, labels `Λ ⊕ CheckLoop`), preserving the second state
@@ -184,6 +184,88 @@ theorem stepAux_liftStmt {K : Type*} {Γ : K → Type*} {Λ : Type*} {σ : Type*
     | false => simp only [h', Bool.cond_false]; rw [ih₂]
   | goto l => simp only [liftStmt, Turing.TM2.stepAux.eq_6]
   | halt => simp only [liftStmt, Turing.TM2.stepAux.eq_6, Turing.TM2.stepAux.eq_7]
+
+/-- The decider's statement at a verifier label `lbl` is the lifted verifier
+    statement. (Needed because `(decider V outEquiv).m (Sum.inl lbl)` does not reduce
+    under `rw`/`rfl` auto-closing — `decider` is not `reducible`.) -/
+theorem decider_m_inl (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
+    [Fintype (V.Γ V.k₁)] (lbl : V.Λ) :
+    (decider V outEquiv).m (Sum.inl lbl) = liftStmt (V.m lbl) := by
+  simp only [decider]
+
+/-- D2 lifting (SORRY-FREE): while `V` is still running at step `t`, the decider
+    `V'` at step `t` is exactly the V-configuration with the label wrapped `Sum.inl`,
+    the state paired with `none`, and the same stacks. Proved by induction on `t`,
+    using `stepOrHalt_running` + `stepAux_liftStmt`; the "once halted, stays halted"
+    fact (`cfgAt_halted_succ`) supplies the predecessor-running hypothesis.
+
+    This is the `cfgAt`-level simulation lemma; combined with the halting-step
+    analysis and the output-head convention it closes `decider_halts_iff`. -/
+theorem cfgAt_decider_while_running (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
+    [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+    [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
+    [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
+    [DecidableEq V.Λ] [DecidableEq V.σ]
+    [Fintype (V.Γ V.k₁)] (input : List (V.Γ V.k₀)) (t : ℕ) :
+    (cfgAt V input t).l ≠ none →
+    cfgAt (decider V outEquiv) input t =
+      ⟨(cfgAt V input t).l.map Sum.inl, ((cfgAt V input t).var, none), (cfgAt V input t).stk⟩ := by
+  haveI : Encodable (decider V outEquiv).Λ := inferInstanceAs (Encodable (V.Λ ⊕ CheckLoop))
+  haveI : Encodable (decider V outEquiv).σ :=
+    inferInstanceAs (Encodable (V.σ × Option (V.Γ V.k₁)))
+  haveI : Encodable (decider V outEquiv).K := inferInstanceAs (Encodable V.K)
+  haveI : ∀ k, Encodable ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, Encodable (V.Γ k))
+  haveI : Fintype (decider V outEquiv).Λ := inferInstanceAs (Fintype (V.Λ ⊕ CheckLoop))
+  haveI : Fintype (decider V outEquiv).σ :=
+    inferInstanceAs (Fintype (V.σ × Option (V.Γ V.k₁)))
+  haveI : Fintype (decider V outEquiv).K := inferInstanceAs (Fintype V.K)
+  haveI : ∀ k, Fintype ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, Fintype (V.Γ k))
+  haveI : DecidableEq (decider V outEquiv).Λ := inferInstanceAs (DecidableEq (V.Λ ⊕ CheckLoop))
+  haveI : DecidableEq (decider V outEquiv).σ :=
+    inferInstanceAs (DecidableEq (V.σ × Option (V.Γ V.k₁)))
+  haveI : DecidableEq (decider V outEquiv).K := inferInstanceAs (DecidableEq V.K)
+  haveI : ∀ k, DecidableEq ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, DecidableEq (V.Γ k))
+  induction t with
+  | zero =>
+    intro _
+    simp only [cfgAt, Function.iterate_zero]
+    rfl
+  | succ t ih =>
+    intro h
+    have h0' : (cfgAt V input t).l ≠ none := by
+      intro hc
+      rw [cfgAt_halted_succ input t hc] at h
+      exact h hc
+    cases hl : (cfgAt V input t).l with
+    | none => exact absurd hl h0'
+    | some lbl =>
+      have hsuccV : cfgAt V input (t + 1) =
+          Turing.TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk := by
+        rw [cfgAt_succ, stepOrHalt_running hl]
+      have ih' := ih h0'
+      rw [hl] at ih'
+      simp only [Option.map_some] at ih'
+      have hsuccV' : cfgAt (decider V outEquiv) input (t + 1) =
+          Turing.TM2.stepAux (liftStmt (V.m lbl)) ((cfgAt V input t).var, none)
+            (cfgAt V input t).stk := by
+        rw [cfgAt_succ, ih',
+          stepOrHalt_running (rfl :
+            (⟨some (Sum.inl lbl), ((cfgAt V input t).var, none), (cfgAt V input t).stk⟩ :
+              (decider V outEquiv).Cfg).l = some (Sum.inl lbl)),
+          decider_m_inl V outEquiv lbl]
+      rw [stepAux_liftStmt (V.m lbl) (cfgAt V input t).var (none : Option (V.Γ V.k₁))
+          (cfgAt V input t).stk] at hsuccV'
+      rw [hsuccV] at h
+      cases hstep : Turing.TM2.stepAux (V.m lbl) (cfgAt V input t).var (cfgAt V input t).stk with
+      | mk l' v' S' =>
+        cases l' with
+        | none => rw [hstep] at h; exact absurd rfl h
+        | some l'' =>
+          rw [hstep] at hsuccV hsuccV'
+          have key : cfgAt (decider V outEquiv) input (t + 1) =
+              ⟨some (Sum.inl l''), (v', none), S'⟩ := by rw [hsuccV']
+          rw [key, hsuccV]
+          rfl
 
 /-- D2 (SORRY): the decider halts on `(a, cert)` within `comp.time + 2` iff
     `g (a, cert) = true`.
