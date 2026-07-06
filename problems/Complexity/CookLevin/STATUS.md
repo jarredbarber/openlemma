@@ -54,3 +54,17 @@ Build green (`lake build botlib.Complexity.CookLevin`, only linter warnings). St
   - Assembly.lean trimmed: decider_exists (sorry, assembles decider+decider_halts_iff into DeciderSpec), bridge5_iff (sorry), SAT_is_NP_hard_real (sorry). Assembly's redundant decider_normal_form removed (concrete sorry-free one is in Decider.lean).
   - Debugging note: botlib uses `⊕` for Sum (not `⊎`); `⊎` is unparseable → "expected token" cascade. `FinTM2` does not bundle Fintype (Γ k₁) — added `[Fintype (V.Γ V.k₁)]` param to decider. Instance fields via `by have := V.ΛFin; exact inferInstance`.
   - Build green. Sorry inventory: Decider.lean=1 (D2), Assembly.lean=3 (decider_exists/bridge5_iff/SAT_is_NP_hard_real), Bridge3.lean=1 (Lemma F), +2 pre-existing.
+
+## Reviewer meta-review (d952fb30) — verdicts
+- Gap diagnosis CORRECT (verified vs actual Lean: acceptanceConstraints=HALTING, g total via outputsFun ∀a, backward breaks, forward OK).
+- Decider strategy CORRECT in principle.
+- D3 (decider_normal_form) valid & sorry-free but PROCRASTINATION: trivially easy (12 lines), offloads all difficulty to NormalForm V (the hard unresolved Lemma F). Orchestrator chose easiest piece.
+- **BREAK (fixed this commit)**: decider_halts_iff/decider_exists took arbitrary V/outEquiv + Nonempty hComp with NO connection between V and g's machine. V could compute a different function → iff fails. FIXED: both now take comp : TM2ComputableInPolyTime ... g and use comp.tm/comp.outputAlphabet/comp.inputAlphabet/comp.time directly.
+- D2 simulation lemma FEASIBLE (~50-100 lines, clean Stmt structural induction); spec OVERSTATED difficulty. The actual blocker.
+- Lemma F (normal_form_normalization) HARD, independent, untouched.
+- Verdict: orchestrator was polishing easy lemmas + docs while D2/Lemma F/BREAK untouched. FIX applied (BREAK). Next: PROVE D2 (the real blocker), then Lemma F.
+
+### This commit: BREAK fix
+- decider_halts_iff (Decider.lean): rewired to comp : TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList) finEncodingBoolBool g; uses comp.tm, comp.outputAlphabet, comp.inputAlphabet, comp.time. Time bound = comp.time.eval (encode (a,cert)).length + 2 (V's time + check phase).
+- decider_exists (Assembly.lean): rewired to comp + hNF : NormalForm comp.tm. Produces Nonempty (DeciderSpec eb g) from the concrete decider comp.tm comp.outputAlphabet.
+- Build green. Sorry inventory unchanged (D2 + assembly sorries still sorry; BREAK was a statement-correctness fix, not a proof).

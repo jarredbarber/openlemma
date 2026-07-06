@@ -156,19 +156,28 @@ theorem decider_normal_form (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool
     · show stmtTouchDepth k (loopStmt V) ≤ 1
       simp only [loopStmt, stmtTouchDepth]; omega
 
-/-- D2 (SORRY): the decider halts on `(a, cert)` within `timeBound'` iff
-    `g (a, cert) = true`. Needs the step-by-step simulation `cfgAt V' = cfgAt V`
-    on the V-portion + the output-head convention. See `DECIDER_SPEC.md` §D2. -/
-theorem decider_halts_iff {β : Type} (eb : FinEncoding β) (V : Turing.FinTM2)
-    (outEquiv : V.Γ V.k₁ ≃ Bool) [Fintype (V.Γ V.k₁)] (g : β × List Bool → Bool)
-    (hGamma : V.Γ V.k₀ ≃ Sum eb.Γ Bool)
-    (hGamma' : (decider V outEquiv).Γ (decider V outEquiv).k₀ ≃ Sum eb.Γ Bool)
-    (timeBound' : ℕ → ℕ)
-    (hComp : Nonempty (Turing.TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList)
-        finEncodingBoolBool g)) :
+/-- D2 (SORRY): the decider halts on `(a, cert)` within `comp.time + 2` iff
+    `g (a, cert) = true`.
+
+    WIRED TO THE WITNESS: `comp : TM2ComputableInPolyTime ... g` supplies the machine
+    computing `g` (`comp.tm`), the output alphabet equiv (`comp.outputAlphabet`),
+    the input alphabet equiv (`comp.inputAlphabet`), and the time bound (`comp.time`).
+    This fixes the prior BREAK where an arbitrary `V`/`outEquiv`/`Nonempty hComp` were
+    disconnected — V could have computed a different function than `g`.
+
+    Proof sketch (see `DECIDER_SPEC.md` §D2): step-by-step simulation
+    `cfgAt (decider comp.tm comp.outputAlphabet) = cfgAt comp.tm` on the V-portion
+    (structural induction on `Stmt` via `liftStmt` semantics + `cfgAt_succ`), then
+    `comp.outputsFun` gives the output-head convention `head k₁ = g(a,cert)`, and
+    `checkStmt` branches `true → halt`, `false → loop`. -/
+theorem decider_halts_iff {β : Type} (eb : FinEncoding β) (g : β × List Bool → Bool)
+    (comp : Turing.TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList)
+        finEncodingBoolBool g)
+    [Fintype (comp.tm.Γ comp.tm.k₁)] :
     ∀ a cert,
-      (∃ i, i ≤ timeBound' ((eb.encode a).length + cert.length) ∧
-        (cfgAt (decider V outEquiv) (encodedPairTape eb hGamma' a cert) i).l = none) ↔
+      (∃ i, i ≤ comp.time.eval ((pairEncoding eb finEncodingBoolList).encode (a, cert)).length + 2 ∧
+        (cfgAt (decider comp.tm comp.outputAlphabet)
+          (encodedPairTape eb comp.inputAlphabet a cert) i).l = none) ↔
       g (a, cert) = true := by
   sorry
 

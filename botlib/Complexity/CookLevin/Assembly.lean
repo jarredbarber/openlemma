@@ -48,25 +48,21 @@ namespace OpenLemma.Complexity.CookLevinAssembly
 
 open Turing OpenLemma.Complexity OpenLemma.Complexity.SAT Computability CookLevinTableau
 
-/-- D1+D2: every polytime verifier `g` (computed by a `NormalForm` machine `V`
-    with input alphabet `Sum eb.Γ Bool`) admits a decider `V'`.
-    The decider runs `V`, peeks the output stack `k₁`, branches:
-    `true → halt`, `false → goto loop`. Construction + halts-iff.
-    SORRY: needs the halts-iff proof (`decider_halts_iff` in `Decider.lean`, D2)
-    plus the input-alphabet equiv `hGamma'` for the concrete `decider` machine.
-    The concrete `decider` machine and sorry-free D3 (`decider_normal_form`) are
-    in `Decider.lean`; this theorem assembles them into a `DeciderSpec`. -/
-theorem decider_exists {β : Type} (eb : FinEncoding β) (V : Turing.FinTM2)
-    [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
-    [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
-    [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
-    [Fintype (V.Γ V.k₁)]
-    (g : β × List Bool → Bool)
-    (outEquiv : V.Γ V.k₁ ≃ Bool)
-    (hGamma : V.Γ V.k₀ ≃ Sum eb.Γ Bool)
-    (hNF : NormalForm V)
-    (hComp : Nonempty (Turing.TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList)
-        finEncodingBoolBool g)) :
+/-- D1+D2: every polytime verifier `g` admits a decider `V'`. The witness
+    `comp : TM2ComputableInPolyTime ... g` supplies the machine computing `g`
+    (`comp.tm`), the output alphabet equiv (`comp.outputAlphabet`), the input
+    alphabet equiv (`comp.inputAlphabet`), and the time bound (`comp.time`).
+    This fixes the prior BREAK where an arbitrary `V`/`outEquiv`/`Nonempty hComp`
+    were disconnected (V could compute a different function than `g`).
+
+    The concrete `decider comp.tm comp.outputAlphabet` machine and sorry-free D3
+    (`decider_normal_form`) are in `Decider.lean`; this theorem assembles them into
+    a `DeciderSpec` (SORRY: needs `decider_halts_iff` (D2) closed first). -/
+theorem decider_exists {β : Type} (eb : FinEncoding β) (g : β × List Bool → Bool)
+    (comp : Turing.TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList)
+        finEncodingBoolBool g)
+    [Fintype (comp.tm.Γ comp.tm.k₁)]
+    (hNF : NormalForm comp.tm) :
     Nonempty (DeciderSpec eb g) := by
   sorry
 
