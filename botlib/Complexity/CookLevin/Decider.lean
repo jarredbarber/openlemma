@@ -156,6 +156,35 @@ theorem decider_normal_form (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool
     · show stmtTouchDepth k (loopStmt V) ≤ 1
       simp only [loopStmt, stmtTouchDepth]; omega
 
+/-- D2 core (SORRY-FREE): one `stepAux` of the lifted statement simulates one
+    `stepAux` of the original statement, threading the second state component `h`
+    and redirecting `halt → goto check`. This is the structural-induction heart of
+    `decider_halts_iff`; the `cfgAt`-level lifting and output-head convention
+    assemble it into the full iff (see `DECIDER_SPEC.md` §D2).
+
+    Concretely: `stepAux (liftStmt s) (v, h) S` equals `stepAux s v S` with the
+    label wrapped `Sum.inl` (running) or sent to `inr check` (V halted), and the
+    state paired with the unchanged `h`. -/
+theorem stepAux_liftStmt {K : Type*} {Γ : K → Type*} {Λ : Type*} {σ : Type*}
+    {σ' : Type*} [DecidableEq K] (s : Turing.TM2.Stmt Γ Λ σ) (v : σ) (h : σ')
+    (S : ∀ k, List (Γ k)) :
+    Turing.TM2.stepAux (liftStmt s) (v, h) S =
+      match Turing.TM2.stepAux s v S with
+      | ⟨some l, v', S'⟩ => ⟨some (Sum.inl l), (v', h), S'⟩
+      | ⟨none, v', S'⟩ => ⟨some (Sum.inr CheckLoop.check), (v', h), S'⟩ := by
+  induction s generalizing v h S with
+  | push k' f q ih => simp only [liftStmt, Turing.TM2.stepAux.eq_1]; rw [ih]
+  | peek k' f q ih => simp only [liftStmt, Turing.TM2.stepAux.eq_2]; rw [ih]
+  | pop k' f q ih => simp only [liftStmt, Turing.TM2.stepAux.eq_3]; rw [ih]
+  | load a q ih => simp only [liftStmt, Turing.TM2.stepAux.eq_4]; rw [ih]
+  | branch f q₁ q₂ ih₁ ih₂ =>
+    simp only [liftStmt, Turing.TM2.stepAux.eq_5]
+    cases h' : f v with
+    | true => simp only [h', Bool.cond_true]; rw [ih₁]
+    | false => simp only [h', Bool.cond_false]; rw [ih₂]
+  | goto l => simp only [liftStmt, Turing.TM2.stepAux.eq_6]
+  | halt => simp only [liftStmt, Turing.TM2.stepAux.eq_6, Turing.TM2.stepAux.eq_7]
+
 /-- D2 (SORRY): the decider halts on `(a, cert)` within `comp.time + 2` iff
     `g (a, cert) = true`.
 
