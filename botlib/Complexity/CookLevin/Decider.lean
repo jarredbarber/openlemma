@@ -267,6 +267,69 @@ theorem cfgAt_decider_while_running (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ 
           rw [key, hsuccV]
           rfl
 
+/-! ### D2 halting-step: the decider reaches `check` when `V` halts
+
+If `V` is running at step `T-1` and halts at step `T` with output `out` (i.e.
+`cfgAt V input T = haltList V out`), then the decider `V'` at step `T` is at the `check`
+label, carrying `haltList V out`'s variable and stacks — so the decider's `k₁` stack
+is exactly `out`, and the next step (`checkStmt`) peeks `out.head?` and branches.
+
+This consumes `cfgAt_reaches_halt_first` (which supplies `hrun` and `hhalt` from
+`TM2OutputsInTime`); combined with `stepAux_checkStmt` (the `T+1` transition) it
+closes `decider_halts_iff`.
+-/
+theorem cfgAt_decider_at_check (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
+    [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+    [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
+    [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
+    [DecidableEq V.Λ] [DecidableEq V.σ]
+    [Fintype (V.Γ V.k₁)] (input : List (V.Γ V.k₀)) (out : List (V.Γ V.k₁)) (T : ℕ)
+    (hTpos : 1 ≤ T)
+    (hrun : (cfgAt V input (T-1)).l ≠ none)
+    (hhalt : cfgAt V input T = Turing.haltList V out) :
+    cfgAt (decider V outEquiv) input T =
+      ⟨some (Sum.inr CheckLoop.check), ((Turing.haltList V out).var, none), (Turing.haltList V out).stk⟩ := by
+  -- 12 instance shims for the decider's projection fields (decider is not reducible).
+  haveI : Encodable (decider V outEquiv).Λ := inferInstanceAs (Encodable (V.Λ ⊕ CheckLoop))
+  haveI : Encodable (decider V outEquiv).σ := inferInstanceAs (Encodable (V.σ × Option (V.Γ V.k₁)))
+  haveI : Encodable (decider V outEquiv).K := inferInstanceAs (Encodable V.K)
+  haveI : ∀ k, Encodable ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, Encodable (V.Γ k))
+  haveI : Fintype (decider V outEquiv).Λ := inferInstanceAs (Fintype (V.Λ ⊕ CheckLoop))
+  haveI : Fintype (decider V outEquiv).σ := inferInstanceAs (Fintype (V.σ × Option (V.Γ V.k₁)))
+  haveI : Fintype (decider V outEquiv).K := inferInstanceAs (Fintype V.K)
+  haveI : ∀ k, Fintype ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, Fintype (V.Γ k))
+  haveI : DecidableEq (decider V outEquiv).Λ := inferInstanceAs (DecidableEq (V.Λ ⊕ CheckLoop))
+  haveI : DecidableEq (decider V outEquiv).σ := inferInstanceAs (DecidableEq (V.σ × Option (V.Γ V.k₁)))
+  haveI : DecidableEq (decider V outEquiv).K := inferInstanceAs (DecidableEq V.K)
+  haveI : ∀ k, DecidableEq ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, DecidableEq (V.Γ k))
+  -- V' at T-1 = running config (V's label wrapped inl, V's var/stk, no cert-head).
+  have hVTm1 := cfgAt_decider_while_running V outEquiv input (T-1) hrun
+  cases hl : (cfgAt V input (T-1)).l with
+  | none => exact absurd hl hrun
+  | some lbl =>
+    -- V' at T = stepAux (liftStmt (V.m lbl)) (V.var, none) V.stk
+    --   (via cfgAt_succ [T = (T-1)+1] + stepOrHalt_running + decider_m_inl)
+    have hVT : cfgAt (decider V outEquiv) input T =
+        Turing.TM2.stepAux (liftStmt (V.m lbl)) ((cfgAt V input (T-1)).var, none) (cfgAt V input (T-1)).stk := by
+      conv_lhs => rw [show T = (T - 1) + 1 from by omega]
+      rw [cfgAt_succ, hVTm1, hl, Option.map_some,
+        stepOrHalt_running (rfl :
+          (⟨some (Sum.inl lbl), ((cfgAt V input (T-1)).var, none), (cfgAt V input (T-1)).stk⟩ :
+            (decider V outEquiv).Cfg).l = some (Sum.inl lbl)),
+        decider_m_inl V outEquiv lbl]
+    -- V at T = stepAux (V.m lbl) (V.var) (V.stk) = haltList V out  (via cfgAt_succ + stepOrHalt_running)
+    have hVTstep : Turing.TM2.stepAux (V.m lbl) (cfgAt V input (T-1)).var (cfgAt V input (T-1)).stk =
+        Turing.haltList V out := by
+      have hVT' : cfgAt V input T =
+          Turing.TM2.stepAux (V.m lbl) (cfgAt V input (T-1)).var (cfgAt V input (T-1)).stk := by
+        conv_lhs => rw [show T = (T - 1) + 1 from by omega]
+        rw [cfgAt_succ, stepOrHalt_running hl]
+      rw [← hVT', hhalt]
+    -- stepAux_liftStmt: the decider redirects V's halt → goto check (the `none` branch).
+    rw [hVT, stepAux_liftStmt (V.m lbl) (cfgAt V input (T-1)).var (none : Option (V.Γ V.k₁))
+        (cfgAt V input (T-1)).stk, hVTstep]
+    rfl
+
 /-- D2 (SORRY): the decider halts on `(a, cert)` within `comp.time + 2` iff
     `g (a, cert) = true`.
 
