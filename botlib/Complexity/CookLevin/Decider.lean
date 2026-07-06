@@ -193,6 +193,21 @@ theorem decider_m_inl (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
     (decider V outEquiv).m (Sum.inl lbl) = liftStmt (V.m lbl) := by
   simp only [decider]
 
+/-- D2 check-branch transition (SORRY-FREE): the `checkStmt` peeks `k₁`, loads the
+    head into the state, then branches on `head.map outEquiv |>.getD false`:
+      `true`  → `halt`           (l = none)
+      `false` → `goto loop` trap   (l = some (inr loop))
+    so the result label is `none` iff the output head maps to `true`.
+    This is the `T+1` transition consumed by `decider_halts_iff`. -/
+theorem stepAux_checkStmt (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool) [DecidableEq V.K]
+    (v : V.σ) (S : ∀ k, List (V.Γ k)) :
+    Turing.TM2.stepAux (checkStmt V outEquiv) (v, none) S =
+      cond ((S V.k₁).head?.map outEquiv |>.getD false)
+        ⟨none, (v, (S V.k₁).head?), S⟩
+        ⟨some (Sum.inr CheckLoop.loop), (v, (S V.k₁).head?), S⟩ := by
+  simp only [checkStmt, Turing.TM2.stepAux.eq_2, Turing.TM2.stepAux.eq_5]
+  rfl
+
 /-- D2 lifting (SORRY-FREE): while `V` is still running at step `t`, the decider
     `V'` at step `t` is exactly the V-configuration with the label wrapped `Sum.inl`,
     the state paired with `none`, and the same stacks. Proved by induction on `t`,
