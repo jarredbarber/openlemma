@@ -149,4 +149,90 @@ theorem cfgAt_reaches_halt
   show (stepOrHalt V)^[h.steps] (Turing.initList V input) = haltList V out
   exact h_inv
 
+/-! ### Strengthening: the witness is the first halting step
+
+`cfgAt_reaches_halt` produces a step `T = h.steps` with `cfgAt V input T = haltList V out`,`
+but the decider halting-step argument (`cfgAt_decider_while_running`) needs the stronger
+fact that `V` is still *running* at every earlier step `t < T`.
+
+This follows from the Kleene trace structure `K_t := (flip bind V.step)^[t] (some init)`:
+  * `K_t = some _` for every `t ≤ h.steps` — once `K` becomes `none` it stays `none`
+    (`(flip bind V.step) none = none`), contradicting `K_{h.steps} = some _`;
+  * the `some`-witness `c` at step `t < h.steps` satisfies `c.l = some` — if `c.l = none`
+    then `V.step c = none`, making `K_{t+1} = none`, contradicting `K_{t+1} = some _`
+    (since `t+1 ≤ h.steps`).
+Both halves use only `V.step ⟨none, _, _⟩ = none` (the TM2 halt convention).
+-/
+theorem cfgAt_reaches_halt_first
+    (input : List (V.Γ V.k₀)) (out : List (V.Γ V.k₁)) (m : ℕ)
+    (h : TM2OutputsInTime V input (some out) m) :
+    ∃ T ≤ m, cfgAt V input T = haltList V out ∧ ∀ t < T, (cfgAt V input t).l ≠ none := by
+  have h_evals := h.toEvalsTo.evals_in_steps
+  simp only [Option.map_some] at h_evals
+  -- h_evals : (flip bind V.step)^[h.steps] (some (initList V input)) = some (haltList V out)
+  have h_inv := kleene_some_implies_stepOrHalt_eq (initList V input) h.steps (haltList V out) h_evals
+  -- h_inv : (stepOrHalt V)^[h.steps] (initList V input) = haltList V out
+  set K := fun n : ℕ => (flip bind V.step)^[n] (some (initList V input))
+  have hKT : K h.steps = some (haltList V out) := h_evals
+  -- (flip bind V.step) none = none: once `K` becomes `none`, it stays `none`.
+  have hstays : ∀ n, K n = none → K n.succ = none := by
+    intro n hn
+    show (flip bind V.step)^[n.succ] (some (initList V input)) = none
+    rw [Function.iterate_succ_apply']
+    show (flip bind V.step) (K n) = none
+    rw [hn]
+    rfl
+  -- `K n = some _` for every `n ≤ h.steps`.
+  have hK_some : ∀ n ≤ h.steps, ∃ c, K n = some c := by
+    intro n _hn
+    by_contra hcon
+    push_neg at hcon
+    -- hcon : ∀ c, K n = some c → False
+    cases hKn : K n with
+    | none =>
+      have hchain : ∀ k, K (n + k) = none := by
+        intro k
+        induction k with
+        | zero => exact hKn
+        | succ k ih =>
+          rw [show (n + k.succ) = (n + k).succ from by omega]
+          exact hstays _ ih
+      have hKnone : K h.steps = none := by
+        have := hchain (h.steps - n)
+        rwa [show n + (h.steps - n) = h.steps from by omega] at this
+      rw [hKnone] at hKT
+      simp at hKT
+    | some c => exact absurd hKn (hcon c)
+  refine ⟨h.steps, h.steps_le_m, ?_, ?_⟩
+  · -- cfgAt V input h.steps = haltList V out
+    show (stepOrHalt V)^[h.steps] (Turing.initList V input) = haltList V out
+    exact h_inv
+  · -- ∀ t < h.steps, (cfgAt V input t).l ≠ none
+    intro t ht
+    obtain ⟨c, hKt⟩ := hK_some t (le_of_lt ht)
+    have hinv_t := kleene_some_implies_stepOrHalt_eq (initList V input) t c hKt
+    -- hinv_t : (stepOrHalt V)^[t] (initList V input) = c, i.e. cfgAt V input t = c
+    show ((stepOrHalt V)^[t] (Turing.initList V input)).l ≠ none
+    rw [hinv_t]
+    -- goal: c.l ≠ none
+    by_cases hcl : c.l = none
+    · -- c.l = none  ⟹  V.step c = none  (TM2 halt convention)
+      have hstep : V.step c = none := by
+        have heta : c = ⟨c.l, c.var, c.stk⟩ := rfl
+        rw [heta, hcl]
+        rfl
+      -- K (t+1) = (flip bind V.step) (K t) = (flip bind V.step) (some c) = V.step c = none
+      have hKsucc : K t.succ = none := by
+        show (flip bind V.step)^[t.succ] (some (initList V input)) = none
+        rw [Function.iterate_succ_apply']
+        show (flip bind V.step) (K t) = none
+        rw [hKt]
+        exact hstep
+      -- but K (t+1) = some _ (since t+1 ≤ h.steps): contradiction.
+      obtain ⟨c', hKsucc'⟩ := hK_some t.succ (Nat.succ_le_of_lt ht)
+      rw [hKsucc] at hKsucc'
+      simp at hKsucc'
+    · -- c.l ≠ none: the goal is exactly this.
+      exact hcl
+
 end CookLevinTableau
