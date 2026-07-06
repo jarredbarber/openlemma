@@ -193,6 +193,19 @@ theorem decider_m_inl (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
     (decider V outEquiv).m (Sum.inl lbl) = liftStmt (V.m lbl) := by
   simp only [decider]
 
+/-- D2 statement-projection helpers (SORRY-FREE): the decider's `check`/`loop`
+    labels map to `checkStmt`/`loopStmt` respectively. Consumed by the halting-step
+    and loop-stays lemmas. -/
+theorem decider_m_check (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
+    [Fintype (V.Γ V.k₁)] :
+    (decider V outEquiv).m (Sum.inr CheckLoop.check) = checkStmt V outEquiv := by
+  simp only [decider]
+
+theorem decider_m_loop (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
+    [Fintype (V.Γ V.k₁)] :
+    (decider V outEquiv).m (Sum.inr CheckLoop.loop) = loopStmt V := by
+  simp only [decider]
+
 /-- D2 check-branch transition (SORRY-FREE): the `checkStmt` peeks `k₁`, loads the
     head into the state, then branches on `head.map outEquiv |>.getD false`:
       `true`  → `halt`           (l = none)
@@ -343,6 +356,42 @@ theorem cfgAt_decider_at_check (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ B
     -- stepAux_liftStmt: the decider redirects V's halt → goto check (the `none` branch).
     rw [hVT, stepAux_liftStmt (V.m lbl) (cfgAt V input (T-1)).var (none : Option (V.Γ V.k₁))
         (cfgAt V input (T-1)).stk, hVTstep]
+    rfl
+
+/-- D2 loop-stays (SORRY-FREE): once the decider is in the `loop` trap (label
+    `some (inr loop)`), it stays there forever — `loopStmt` is `goto (fun _ => inr
+    loop)`, so `stepAux (loopStmt) v S = ⟨some (inr loop), v, S⟩`, identical to the
+    current config. Consumed by the forward direction of `decider_halts_iff`
+    (the `g = false` case: V' stays loop, so it never halts). -/
+theorem decider_loop_stays (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
+    [Encodable V.Λ] [Encodable V.σ] [Encodable V.K] [∀ k, Encodable (V.Γ k)]
+    [Fintype V.Λ] [Fintype V.σ] [Fintype V.K] [∀ k, Fintype (V.Γ k)]
+    [DecidableEq V.K] [∀ k, DecidableEq (V.Γ k)]
+    [DecidableEq V.Λ] [DecidableEq V.σ]
+    [Fintype (V.Γ V.k₁)] (input : List (V.Γ V.k₀)) (t : ℕ)
+    (h : (cfgAt (decider V outEquiv) input t).l = some (Sum.inr CheckLoop.loop)) :
+    cfgAt (decider V outEquiv) input (t + 1) = cfgAt (decider V outEquiv) input t := by
+  haveI : Encodable (decider V outEquiv).Λ := inferInstanceAs (Encodable (V.Λ ⊕ CheckLoop))
+  haveI : Encodable (decider V outEquiv).σ :=
+    inferInstanceAs (Encodable (V.σ × Option (V.Γ V.k₁)))
+  haveI : Encodable (decider V outEquiv).K := inferInstanceAs (Encodable V.K)
+  haveI : ∀ k, Encodable ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, Encodable (V.Γ k))
+  haveI : Fintype (decider V outEquiv).Λ := inferInstanceAs (Fintype (V.Λ ⊕ CheckLoop))
+  haveI : Fintype (decider V outEquiv).σ :=
+    inferInstanceAs (Fintype (V.σ × Option (V.Γ V.k₁)))
+  haveI : Fintype (decider V outEquiv).K := inferInstanceAs (Fintype V.K)
+  haveI : ∀ k, Fintype ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, Fintype (V.Γ k))
+  haveI : DecidableEq (decider V outEquiv).Λ := inferInstanceAs (DecidableEq (V.Λ ⊕ CheckLoop))
+  haveI : DecidableEq (decider V outEquiv).σ :=
+    inferInstanceAs (DecidableEq (V.σ × Option (V.Γ V.k₁)))
+  haveI : DecidableEq (decider V outEquiv).K := inferInstanceAs (DecidableEq V.K)
+  haveI : ∀ k, DecidableEq ((decider V outEquiv).Γ k) := inferInstanceAs (∀ k, DecidableEq (V.Γ k))
+  rw [cfgAt_succ, stepOrHalt_running h, decider_m_loop V outEquiv]
+  cases hcfg : cfgAt (decider V outEquiv) input t with
+  | mk l v S =>
+    rw [hcfg] at h
+    simp only at h
+    subst h
     rfl
 
 /-- D2 (SORRY): the decider halts on `(a, cert)` within `comp.time + 2` iff
