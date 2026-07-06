@@ -68,3 +68,20 @@ Build green (`lake build botlib.Complexity.CookLevin`, only linter warnings). St
 - decider_halts_iff (Decider.lean): rewired to comp : TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList) finEncodingBoolBool g; uses comp.tm, comp.outputAlphabet, comp.inputAlphabet, comp.time. Time bound = comp.time.eval (encode (a,cert)).length + 2 (V's time + check phase).
 - decider_exists (Assembly.lean): rewired to comp + hNF : NormalForm comp.tm. Produces Nonempty (DeciderSpec eb g) from the concrete decider comp.tm comp.outputAlphabet.
 - Build green. Sorry inventory unchanged (D2 + assembly sorries still sorry; BREAK was a statement-correctness fix, not a proof).
+
+## D2 progress (commits a6b1f66, 049cfb3, bedd1b0) — simulation core DONE sorry-free
+Reviewer meta-review (d952fb30) prompted pivoting from easy polish to the hard core (D2). Delivered:
+- **BREAK fix (bedd1b0)**: decider_halts_iff/decider_exists were UNPROVABLE (arbitrary V/outEquiv + Nonempty hComp disconnected V from g's machine — V could compute a different function). Rewired both to the full witness comp : TM2ComputableInPolyTime ... g (comp.tm/comp.outputAlphabet/comp.inputAlphabet/comp.time).
+- **stepAux_liftStmt (a6b1f66, SORRY-FREE)**: the structural-induction heart of D2. stepAux (liftStmt s) (v,h) S = match stepAux s v S with | ⟨some l,v',S'⟩ => ⟨some (inl l),(v',h),S'⟩ | ⟨none,v',S'⟩ => ⟨some (inr check),(v',h),S'⟩. Clean 7-case Stmt induction.
+- **cfgAt_decider_while_running (049cfb3, SORRY-FREE)**: the cfgAt-level lifting. While V runs at step t, V' at t = ⟨(cfgAt V input t).l.map Sum.inl, ((cfgAt V input t).var, none), (cfgAt V input t).stk⟩. Induction on t via cfgAt_succ + stepOrHalt_running + stepAux_liftStmt; "once halted stays halted" (cfgAt_halted_succ contrapositive) supplies predecessor-running.
+- Helpers: decider_m_inl ((decider V outEquiv).m (inl lbl) = liftStmt (V.m lbl); needed because decider isn't reducible), CheckLoop deriving Encodable, 12 haveI instance shims for the decider's projection fields, stepOrHalt_running made non-private (visibility-only).
+
+### D2 remaining (still sorry: decider_halts_iff)
+The halting-step + output-head + iff-assembly:
+1. Halting-step: V halts at T (running at T-1) => V' at T = ⟨some (inr check),(v',none),S'⟩ (stepAux_liftStmt none-branch); V' at T+1 = checkStmt (peek k1 -> branch); V' at T+2 = halt iff head maps true.
+2. Output-head: comp.outputsFun (a,cert) : TM2OutputsInTime => EvalsToInTime reaches haltList with stk k1 = [outputAlphabet.invFun (g(a,cert))]; head = invFun (g(a,cert)); outEquiv = comp.outputAlphabet so outEquiv head = g(a,cert). Needs Bridge 1 (EvalsToInTime <-> cfgAt halting).
+3. iff both directions: forward V' halts => via check (V-portion redirects halt->check, loop never halts) => branch true => g=true; backward g=true => V halts at T<=time with output [invFun true] => V' halts at T+2 <= time+2.
+Estimated ~60-100 lines, cross-module Bridge 1 + outputsFun plumbing. This is the hardest remaining sub-piece.
+
+### Sorry inventory (CookLevin)
+Bridge1=0, Bridge2=0, Bridge3=1 (Lemma F), Decider=1 (decider_halts_iff), Assembly=3 (decider_exists/bridge5_iff/SAT_is_NP_hard_real), +2 pre-existing. Crux axiom SAT_is_NP_hard_citation KEPT until SAT_is_NP_hard_real closes.
