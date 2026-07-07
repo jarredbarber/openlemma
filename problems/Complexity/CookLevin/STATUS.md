@@ -109,23 +109,29 @@ is the identity. Added `nf' : NormalForm V'` field to `DeciderSpec` (packages D3
 `bridge5_iff`'s backward direction). Signature: 9 instance hypotheses on `comp.tm`
 (Encodable/Fintype/DecidableEq of Λ/σ/K/Γ) required by D2/D3 — see instance gap.
 
-### ⚠️ Instance gap (open blocker for SAT_is_NP_hard_real)
+### ⚠️ Instance gap (open blocker for SAT_is_NP_hard_real) — REDUCED
 `decider_halts_iff`, `decider_exists`, `bridge5_iff`, and `completeness` all require
-`[∀ k, Fintype (V.Γ k)]`, `[∀ k, Encodable (V.Γ k)]`, `[∀ k, DecidableEq (V.Γ k)]`,
-`[Encodable V.Λ/σ/K]`, `[DecidableEq V.Λ/σ]` on the verifier's `V = comp.tm`. But
-`FinTM2` (Mathlib) only guarantees `Fintype (Γ k₀)` (and `Fintype Λ/σ/K`, `DecidableEq K`);
-`TM2ComputableInPolyTime` extends `TM2ComputableAux` (no instance fields); and `InNP`
-gives `g_comp : Nonempty (TM2ComputableInPolyTime …)` with no alphabet-finiteness for
-the work stacks. So `SAT_is_NP_hard_real : NPHard …` (fixed statement, no hypotheses)
-CANNOT derive these from `InNP` alone. Resolution options (research-grade):
-  (a) strengthen `InNP` (project def in Defs.lean:52) to require all-stack finite
-      alphabets (standard Cook-Levin assumption),
-  (b) prove a normalization: any `TM2ComputableInPolyTime` machine has an equivalent
-      one with `∀ k, Fintype (Γ k)` (restrict each stack to its finitely-many reachable
-      symbols, bounded by the time polynomial),
-  (c) the `Encodable`/`DecidableEq` for finite Λ/σ/K are derivable from `Fintype`;
-`∀ k, DecidableEq (Γ k)` + `∀ k, Encodable (Γ k)` follow once `∀ k, Fintype (Γ k)` holds.
-The HARD part is (a)/(b): obtaining `∀ k, Fintype (Γ k)` for the verifier's TM.
+the 12 instances on the verifier's `V = comp.tm` (via Completeness.lean's immutable
+`variable` block, lines 24-28: Encodable/Fintype/DecidableEq of Λ/σ/K/Γ). But:
+- `FinTM2` (Mathlib) only guarantees `Fintype (Γ k₀)`, `Fintype Λ/σ/K`, `DecidableEq K`.
+- `TM2ComputableInPolyTime` extends `TM2ComputableAux` (no instance fields).
+- `InNP` (Defs.lean:52) gives `g_comp : Nonempty (...)` with no all-stack finiteness.
+**REDUCTION (verified against Mathlib):** `Fintype.toEncodable` (noncomputable, via
+`classical`/`Fintype.truncEncodable`) gives `Encodable` from `Fintype`; `classical` gives
+`DecidableEq`. So `Encodable Λ/σ/K/Γ k`, `DecidableEq Λ/σ/Γ k` are all derivable ONCE
+`Fintype` holds. `Fintype K/Λ/σ` come from FinTM2; `Fintype (Γ k₀)` from FinTM2. So the
+**ONLY genuinely missing piece is `∀ k, Fintype (V.Γ k)`** for the work stacks (k ≠ k₀).
+Resolution options (research-grade):
+  (a) strengthen `InNP` (project def, Defs.lean:52) to require `∀ k, Fintype (Γ k)` on
+      the verifier's TM (standard Cook-Levin finite-alphabet assumption) — concrete
+      verifiers like `SAT_VerifierBits` satisfy it, so `SAT_in_NP` would still hold;
+  (b) prove an alphabet-restriction normalization: any `TM2ComputableInPolyTime` machine
+      has an equivalent one with `∀ k, Fintype (Γ k)` (restrict each `Γ k` to its finite
+      reachable-symbol set: input (Γ k₀, finite) ∪ ⋃_{lbl} range(push fns) — finite since
+      Λ,σ finite). Combined with Lemma F (chain-splitting) this is "put the verifier in
+      Cook-Levin normal form".
+The HARD part is `∀ k, Fintype (Γ k)` — option (a) is a definition change (affects
+`InNP` users); option (b) is a normalization lemma (substantial, akin to Lemma F).
 
 ### Sorry inventory (CookLevin)
 Bridge1=0, Bridge2=0, Bridge3=1 (Lemma F `normal_form_normalization`), Decider=0
