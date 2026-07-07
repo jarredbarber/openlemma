@@ -22,9 +22,10 @@ existing halting-based tableau lemmas unchanged.
 ## Component dependency graph
   InNP eb L' → (R, k, g, g_comp)
     → [Lemma F] NormalForm verifier V computing g                (Bridge 3, sorry)
-    → [D1]     decider machine V' : FinTM2                        (this file, sorry)
-    → [D2]     V' halts (a,cert) within bound ↔ g(a,cert)=true   (this file, sorry)
-    → [D3]     NormalForm V → NormalForm V'                       (this file, sorry)
+    → [D1]     decider machine V' : FinTM2                        (Decider.lean, DONE)
+    → [D2]     V' halts (a,cert) within bound ↔ g(a,cert)=true   (Decider.lean, DONE sorry-free)
+    → [D3]     NormalForm V → NormalForm V'                       (Decider.lean, DONE sorry-free)
+    → [decider_exists] package D1+D2+D3 into DeciderSpec          (this file, DONE sorry-free)
     → f a = tableauFormulaCert (paramsFor a) (aInput a) (certBound a) boolSyms
     → [Bridge 4] f polytime                                      (PolyTime.lean, citation axiom)
     → [Bridge 5] ∀ a, L' a ↔ SAT_Language (f a)                  (this file, sorry)
@@ -57,14 +58,42 @@ open Turing OpenLemma.Complexity OpenLemma.Complexity.SAT Computability CookLevi
 
     The concrete `decider comp.tm comp.outputAlphabet` machine and sorry-free D3
     (`decider_normal_form`) are in `Decider.lean`; this theorem assembles them into
-    a `DeciderSpec` (SORRY: needs `decider_halts_iff` (D2) closed first). -/
+    a `DeciderSpec` (D2 via `decider_halts_iff`, D3 via `decider_normal_form`).
+    Sorry-free; zero axioms. The 9 instance hypotheses on `comp.tm` (Encodable /
+    Fintype / DecidableEq of Λ,σ,K,Γ) are required by D2/D3 — their availability at
+    the FINAL `SAT_is_NP_hard_real` assembly (from `InNP`) is the open instance gap
+    (see `STATUS.md`): `InNP`/`FinTM2` only guarantee `Fintype (Γ k₀)`. -/
 theorem decider_exists {β : Type} (eb : FinEncoding β) (g : β × List Bool → Bool)
     (comp : Turing.TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList)
         finEncodingBoolBool g)
-    [Fintype (comp.tm.Γ comp.tm.k₁)]
+    [Encodable comp.tm.Λ] [Encodable comp.tm.σ] [Encodable comp.tm.K]
+    [∀ k, Encodable (comp.tm.Γ k)]
+    [∀ k, Fintype (comp.tm.Γ k)]
+    [∀ k, DecidableEq (comp.tm.Γ k)] [DecidableEq comp.tm.Λ] [DecidableEq comp.tm.σ]
     (hNF : NormalForm comp.tm) :
     Nonempty (DeciderSpec eb g) := by
-  sorry
+  -- Package D1 (decider machine), D2 (halts_iff), D3 (NormalForm V') into a
+  -- `DeciderSpec`. The verifier's `comp` supplies the machine, the alphabet
+  -- equivalences, and the time polynomial; `decider_halts_iff` (D2, sorry-free)
+  -- gives the halting iff; `decider_normal_form` (D3, sorry-free) gives `nf'`.
+  -- The only reconciliation: `DeciderSpec.halts_iff`'s bound is a function of
+  -- `(eb.encode a).length + cert.length`, while `decider_halts_iff`'s bound uses
+  -- `((pairEncoding eb finEncodingBoolList).encode (a, cert)).length`; these agree
+  -- because `pairEncoding`'s encode concatenates the two encodings (and
+  -- `finEncodingBoolList.encode` is the identity).
+  refine ⟨DeciderSpec.mk (decider comp.tm comp.outputAlphabet) comp.inputAlphabet
+      (fun n => comp.time.eval n + 2) ?_
+      (decider_normal_form comp.tm comp.outputAlphabet hNF)⟩
+  intro a cert
+  -- `DeciderSpec.halts_iff`'s bound is a function of `(eb.encode a).length + cert.length`,
+  -- while `decider_halts_iff`'s bound uses `((pairEncoding eb finEncodingBoolList).encode (a, cert)).length`.
+  -- These agree: `pairEncoding`'s encode concatenates the two encodings, and
+  -- `finEncodingBoolList.encode` is the identity, so the length is the sum.
+  have hlen : ((pairEncoding eb finEncodingBoolList).encode (a, cert)).length =
+      (eb.encode a).length + cert.length := by
+    simp only [pairEncoding, finEncodingBoolList, List.length_append, List.length_map]
+  rw [← hlen]
+  exact decider_halts_iff eb g comp a cert
 
 /-- Bridge 5: the cert-aware tableau iff. For the decider `V'` and the
     cert-aware tableau `f a = tableauFormulaCert (paramsFor a) (aInput a)

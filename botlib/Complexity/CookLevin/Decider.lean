@@ -68,6 +68,9 @@ structure DeciderSpec {β : Type} (eb : FinEncoding β) (g : β × List Bool →
       (∃ i, i ≤ timeBound' ((eb.encode a).length + cert.length) ∧
         (cfgAt V' (encodedPairTape eb hGamma' a cert) i).l = none) ↔
       g (a, cert) = true
+  /-- D3: the decider is in `NormalForm` (packaged for the completeness
+      backward direction, which needs `BoundedReadDepth`/`NormalForm V'`). -/
+  nf' : NormalForm V'
 
 /-- Two extra labels for the decider: `check` (peek output, branch) and `loop`
     (the non-halting trap reached when `g = false`). -/
