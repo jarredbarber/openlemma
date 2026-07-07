@@ -8,7 +8,7 @@ Concrete `FinTM2` construction of the decider `V'` that halts iff the verifier
 `g` returns `true` (loops iff `g = false`), closing the halts-vs-accepts gap
 (see `Assembly.lean` / `DECIDER_SPEC.md`).
 
-## Sorry-free here
+## Sorry-free here (including D2)
 - `CheckLoop`, `liftStmt`, `checkStmt`, `loopStmt`, `decider` (definitions).
 - `liftStmt_touchDepth` : `stmtTouchDepth k (liftStmt s) = stmtTouchDepth k s`
   (clean `Stmt` induction — `liftStmt` preserves every push/peek/pop).
@@ -19,11 +19,19 @@ Concrete `FinTM2` construction of the decider `V'` that halts iff the verifier
   so the V-portion's chain keeps its touches within `V'.m (inl l)` (preserved by
   `liftStmt_touchDepth`), and the output peek lives in `V'.m (inr check)` (a
   DIFFERENT label, ≤ 1 touch). No chain-splitting required.
+- `decider_halts_iff` (D2) : V' halts on `(a, cert)` within bound ↔ `g (a, cert) = true`.
+  Step-by-step simulation via the sorry-free sub-lemmas (`stepAux_liftStmt`,
+  `cfgAt_decider_while_running`, `cfgAt_reaches_halt_first`, `cfgAt_decider_at_check`,
+  `stepAux_checkStmt`, `decider_m_check/loop`, `decider_loop_stays`) plus the
+  output-head convention. ZERO axioms, ZERO sorrys.
 
-## Remains sorry (D2 — the hard simulation lemma)
-- `decider_halts_iff` : V' halts on `(a, cert)` within bound ↔ `g (a, cert) = true`.
-  Needs the step-by-step simulation `cfgAt V' = cfgAt V` (V-portion) + the
-  output-head convention. See `DECIDER_SPEC.md` §D2.
+  KEY TRICK: `rw`/`simp` pattern-matching on `stepAux (checkStmt …)` and
+  `cfgAt (decider …)` lemmas fails due to instance-arg elaboration differences
+  between the helper conclusions and the goal (`Fintype (V.Γ V.k₁)` resolved via
+  the explicit param vs the `∀ k, Fintype` Pi-instance). The proof bypasses this
+  by (a) `exact`-ing the helper equation directly (full defeq type-checking,
+  not pattern matching), and (b) `congr_arg (·.l)` to re-state an equation with
+  the body's `decider` instance before `rw`-ing it. See `DECIDER_SPEC.md` §D2.
 -/
 import botlib.Complexity.CookLevin.Bridge3
 import botlib.Complexity.CookLevin.Completeness
@@ -411,12 +419,163 @@ theorem decider_loop_stays (V : Turing.FinTM2) (outEquiv : V.Γ V.k₁ ≃ Bool)
 theorem decider_halts_iff {β : Type} (eb : FinEncoding β) (g : β × List Bool → Bool)
     (comp : Turing.TM2ComputableInPolyTime (pairEncoding eb finEncodingBoolList)
         finEncodingBoolBool g)
-    [Fintype (comp.tm.Γ comp.tm.k₁)] :
+    [Encodable comp.tm.Λ] [Encodable comp.tm.σ] [Encodable comp.tm.K]
+    [∀ k, Encodable (comp.tm.Γ k)]
+    [∀ k, Fintype (comp.tm.Γ k)]
+    [∀ k, DecidableEq (comp.tm.Γ k)] [DecidableEq comp.tm.Λ] [DecidableEq comp.tm.σ] :
     ∀ a cert,
       (∃ i, i ≤ comp.time.eval ((pairEncoding eb finEncodingBoolList).encode (a, cert)).length + 2 ∧
         (cfgAt (decider comp.tm comp.outputAlphabet)
           (encodedPairTape eb comp.inputAlphabet a cert) i).l = none) ↔
       g (a, cert) = true := by
-  sorry
+  intro a cert
+  set timeBound := comp.time.eval ((pairEncoding eb finEncodingBoolList).encode (a, cert)).length
+  set outList := List.map comp.outputAlphabet.invFun (finEncodingBoolBool.encode (g (a, cert)))
+  -- comp.tm outputs `outList` within `timeBound` (witness relation from `comp.outputsFun`).
+  have hout : Turing.TM2OutputsInTime comp.tm (encodedPairTape eb comp.inputAlphabet a cert) (some outList) timeBound := comp.outputsFun (a, cert)
+  -- `finEncodingBoolBool.encode b = [b]` (`encodeBool = pure = [b]`), so
+  -- `outList = [comp.outputAlphabet.invFun (g(a,cert))]`.
+  have houtList : outList = [comp.outputAlphabet.invFun (g (a, cert))] := by
+    show List.map comp.outputAlphabet.invFun (finEncodingBoolBool.encode (g (a, cert))) =
+        [comp.outputAlphabet.invFun (g (a, cert))]
+    rw [show finEncodingBoolBool.encode (g (a, cert)) = [g (a, cert)] from rfl]
+    rfl
+  -- First-halt: ∃ T ≤ timeBound with `cfgAt comp.tm (encodedPairTape eb comp.inputAlphabet a cert) T = haltList comp.tm outList` and running for t < T.
+  obtain ⟨T, hTle, hThalt, hTrun⟩ := cfgAt_reaches_halt_first (encodedPairTape eb comp.inputAlphabet a cert) outList timeBound hout
+  -- T ≥ 1: at T=0 we'd have `initList.l = some main = haltList.l = none`.
+  have hTpos : 1 ≤ T := by
+    by_contra h
+    push_neg at h
+    have hT0 : T = 0 := by omega
+    subst hT0
+    rw [show cfgAt comp.tm (encodedPairTape eb comp.inputAlphabet a cert) 0 =
+          Turing.initList comp.tm (encodedPairTape eb comp.inputAlphabet a cert) from rfl] at hThalt
+    apply_fun (fun c : comp.tm.Cfg => c.l) at hThalt
+    rw [show (Turing.initList comp.tm (encodedPairTape eb comp.inputAlphabet a cert)).l = (some comp.tm.main : Option comp.tm.Λ) from rfl,
+        show (Turing.haltList comp.tm outList).l = (none : Option comp.tm.Λ) from rfl] at hThalt
+    injection hThalt
+  have hrun : (cfgAt comp.tm (encodedPairTape eb comp.inputAlphabet a cert) (T - 1)).l ≠ none := hTrun (T - 1) (by omega)
+  -- comp.tm' at T = check config (label `some (inr check)`, comp.tm's halt var/stk, no head).
+  have hVT : cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) T =
+      ⟨some (Sum.inr CheckLoop.check), ((Turing.haltList comp.tm outList).var, none),
+        (Turing.haltList comp.tm outList).stk⟩ :=
+    cfgAt_decider_at_check comp.tm comp.outputAlphabet (encodedPairTape eb comp.inputAlphabet a cert) outList T hTpos hrun hThalt
+  -- comp.tm' at T+1 = `stepAux (checkStmt) (haltList.var, none) haltList.stk`
+  --           = cond (head k₁.map comp.outputAlphabet.getD false) halt loop.
+  have hVTsucc : cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) (T + 1) =
+      cond ((((Turing.haltList comp.tm outList).stk comp.tm.k₁).head?.map comp.outputAlphabet).getD false)
+        ⟨none, ((Turing.haltList comp.tm outList).var, ((Turing.haltList comp.tm outList).stk comp.tm.k₁).head?),
+          (Turing.haltList comp.tm outList).stk⟩
+        ⟨some (Sum.inr CheckLoop.loop),
+          ((Turing.haltList comp.tm outList).var, ((Turing.haltList comp.tm outList).stk comp.tm.k₁).head?),
+          (Turing.haltList comp.tm outList).stk⟩ := by
+    haveI : Encodable (decider comp.tm comp.outputAlphabet).Λ := inferInstanceAs (Encodable (comp.tm.Λ ⊕ CheckLoop))
+    haveI : Encodable (decider comp.tm comp.outputAlphabet).σ :=
+      inferInstanceAs (Encodable (comp.tm.σ × Option (comp.tm.Γ comp.tm.k₁)))
+    haveI : Encodable (decider comp.tm comp.outputAlphabet).K := inferInstanceAs (Encodable comp.tm.K)
+    haveI : ∀ k, Encodable ((decider comp.tm comp.outputAlphabet).Γ k) := inferInstanceAs (∀ k, Encodable (comp.tm.Γ k))
+    haveI : Fintype (decider comp.tm comp.outputAlphabet).Λ := inferInstanceAs (Fintype (comp.tm.Λ ⊕ CheckLoop))
+    haveI : Fintype (decider comp.tm comp.outputAlphabet).σ :=
+      inferInstanceAs (Fintype (comp.tm.σ × Option (comp.tm.Γ comp.tm.k₁)))
+    haveI : Fintype (decider comp.tm comp.outputAlphabet).K := inferInstanceAs (Fintype comp.tm.K)
+    haveI : ∀ k, Fintype ((decider comp.tm comp.outputAlphabet).Γ k) := inferInstanceAs (∀ k, Fintype (comp.tm.Γ k))
+    haveI : DecidableEq (decider comp.tm comp.outputAlphabet).Λ := inferInstanceAs (DecidableEq (comp.tm.Λ ⊕ CheckLoop))
+    haveI : DecidableEq (decider comp.tm comp.outputAlphabet).σ :=
+      inferInstanceAs (DecidableEq (comp.tm.σ × Option (comp.tm.Γ comp.tm.k₁)))
+    haveI : DecidableEq (decider comp.tm comp.outputAlphabet).K := inferInstanceAs (DecidableEq comp.tm.K)
+    haveI : ∀ k, DecidableEq ((decider comp.tm comp.outputAlphabet).Γ k) := inferInstanceAs (∀ k, DecidableEq (comp.tm.Γ k))
+    rw [cfgAt_succ, hVT]
+    rw [show stepOrHalt (decider comp.tm comp.outputAlphabet)
+          ⟨some (Sum.inr CheckLoop.check), ((Turing.haltList comp.tm outList).var, none),
+            (Turing.haltList comp.tm outList).stk⟩ =
+        Turing.TM2.stepAux (checkStmt comp.tm comp.outputAlphabet)
+          ((Turing.haltList comp.tm outList).var, none) (Turing.haltList comp.tm outList).stk from by
+      rw [stepOrHalt_running (rfl :
+        (⟨some (Sum.inr CheckLoop.check), ((Turing.haltList comp.tm outList).var, none),
+            (Turing.haltList comp.tm outList).stk⟩ : (decider comp.tm comp.outputAlphabet).Cfg).l =
+          some (Sum.inr CheckLoop.check)),
+        decider_m_check comp.tm comp.outputAlphabet]]
+    exact stepAux_checkStmt comp.tm comp.outputAlphabet
+      ((Turing.haltList comp.tm outList).var) (Turing.haltList comp.tm outList).stk
+  -- `(haltList comp.tm outList).stk comp.tm.k₁ = outList` (haltList.stk def, `if k = k₁ then out else []`).
+  have hstk : (Turing.haltList comp.tm outList).stk comp.tm.k₁ = outList := by
+    rw [Turing.haltList]
+    exact dif_pos (rfl : comp.tm.k₁ = comp.tm.k₁)
+  -- `head = outList.head? = some (invFun (g(a,cert)))` (outList = [invFun g]).
+  have hhead : ((Turing.haltList comp.tm outList).stk comp.tm.k₁).head? = some (comp.outputAlphabet.invFun (g (a, cert))) := by
+    rw [hstk, houtList]; rfl
+  -- `cond = comp.outputAlphabet (invFun (g(a,cert))) = g(a,cert)` (`Equiv.apply_symm_apply`).
+  have hcond : (((Turing.haltList comp.tm outList).stk comp.tm.k₁).head?.map comp.outputAlphabet).getD false = g (a, cert) := by
+    rw [hhead, Option.map_some, Option.getD_some]
+    exact Equiv.apply_symm_apply comp.outputAlphabet (g (a, cert))
+  constructor
+  · -- FORWARD: (∃ i ≤ timeBound+2, comp.tm' halts at i) → g = true.
+    intro ⟨i, hi, hhalt⟩
+    -- comp.tm' at i ≤ T has `.l ≠ none` (inl running for i < T, check at i = T). So i > T.
+    have hgeT : T < i := by
+      by_contra h
+      push_neg at h
+      have hne : (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) i).l ≠ none := by
+        by_cases hc : i < T
+        · -- comp.tm running at i → comp.tm' = inl config; `.l = some (inl lbl) ≠ none`.
+          have hVi : (cfgAt comp.tm (encodedPairTape eb comp.inputAlphabet a cert) i).l ≠ none := hTrun i hc
+          have hVi' := cfgAt_decider_while_running comp.tm comp.outputAlphabet (encodedPairTape eb comp.inputAlphabet a cert) i hVi
+          -- `(cfgAt (decider comp.tm comp.outputAlphabet) ... i).l` = `(cfgAt comp.tm ... i).l.map Sum.inl`
+          -- (via `hVi'` + `.l` projection); the latter is `some (inl lbl) ≠ none`.
+          -- We re-state the equation with the body's `decider` instance (via `congr_arg`),
+          -- so `rw` pattern-matches the goal cleanly.
+          have hLeq : (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) i).l =
+              (cfgAt comp.tm (encodedPairTape eb comp.inputAlphabet a cert) i).l.map Sum.inl :=
+            congr_arg (·.l) hVi'
+          have hL : (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) i).l ≠ none := by
+            rw [hLeq]
+            cases h : (cfgAt comp.tm (encodedPairTape eb comp.inputAlphabet a cert) i).l with
+            | none => exact False.elim (absurd h hVi)
+            | some lbl => exact Option.some_ne_none (Sum.inl lbl)
+          exact hL
+        · -- i = T (since ¬ i < T and i ≤ T); comp.tm' at T = check, `.l = some (inr check) ≠ none`.
+          have hiT : i = T := by omega
+          rw [hiT, hVT]
+          exact Option.some_ne_none _
+      exact absurd hhalt hne
+    -- i ≥ T+1. comp.tm' at T+1 = cond g halt loop; for t ≥ T+1 it stays (halt or loop).
+    by_cases hg : g (a, cert) = true
+    · exact hg
+    · -- g = false: comp.tm' at T+1 = loop, stays loop forever, so comp.tm' at i has `.l = some loop`,
+      -- contradicting `hhalt : .l = none`.
+      have hgf : g (a, cert) = false := by
+        cases hgt : g (a, cert) with
+        | true => exact absurd hgt hg
+        | false => rfl
+      have hVTsuccL : (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) (T + 1)).l = some (Sum.inr CheckLoop.loop) := by
+        rw [hVTsucc, hcond, hgf]
+        rfl
+      -- comp.tm' stays loop from T+1 onward.
+      have hind : ∀ k, (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) (T + 1 + k)).l = some (Sum.inr CheckLoop.loop) := by
+        intro k
+        induction k with
+        | zero => exact hVTsuccL
+        | succ m ih =>
+          have hLeq : (cfgAt (decider comp.tm comp.outputAlphabet)
+              (encodedPairTape eb comp.inputAlphabet a cert) (T + 1 + m + 1)).l =
+              (cfgAt (decider comp.tm comp.outputAlphabet)
+              (encodedPairTape eb comp.inputAlphabet a cert) (T + 1 + m)).l :=
+            congr_arg (·.l)
+              (decider_loop_stays comp.tm comp.outputAlphabet
+                (encodedPairTape eb comp.inputAlphabet a cert) (T + 1 + m) ih)
+          rw [show T + 1 + m.succ = (T + 1 + m) + 1 from by omega, hLeq]
+          exact ih
+      have hi : i = T + 1 + (i - (T + 1)) := by omega
+      have hloop : (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) i).l = some (Sum.inr CheckLoop.loop) := by
+        rw [hi]; exact hind (i - (T + 1))
+      rw [hloop] at hhalt
+      simp at hhalt
+  · -- BACKWARD: g = true → ∃ i ≤ timeBound+2, comp.tm' halts at i (at i = T+1).
+    intro hg
+    have hVTsuccL : (cfgAt (decider comp.tm comp.outputAlphabet) (encodedPairTape eb comp.inputAlphabet a cert) (T + 1)).l = none := by
+      rw [hVTsucc, hcond, hg]
+      rfl
+    refine ⟨T + 1, ?_, hVTsuccL⟩
+    omega
 
 end OpenLemma.Complexity.CookLevinAssembly
