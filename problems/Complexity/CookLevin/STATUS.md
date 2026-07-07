@@ -182,3 +182,20 @@ instance gap resolved + `bridge5_iff` + Lemma F).
   NormalForm V'` field to `DeciderSpec`.
 - **Instance gap analyzed + REDUCED** to `∀ k, Fintype (Γ k)` only.
 - Researcher dispatched (async, resumed d300af88) for Lemma F (chain-splitting).
+  Both subagent attempts FAILED (budget exhaustion / empty response — glm-5.2
+  struggles with hard multi-file tasks). Orchestrator drafted the Lemma F Python
+  proof DIRECTLY (per the Bridge-3 precedent): `exploration/cook-levin/
+  bridge3_lemmaF_normalization.py`, **32/32 adversarial tests pass** (NormalForm-
+  by-construction, output preservation, constant-factor blowup, identity on
+  already-normal, regression on new labels, v-dependent-goto preservation,
+  empty-stack consistency, 12 random machines). Reviewer subagent ALSO exhausted
+  budget (no verdict); orchestrator self-reviewed against Mathlib source:
+  `step_aux` matches `TM2.stepAux` (TuringMachine.lean:161-168) EXACTLY for all
+  7 ctors; `touch_depth` matches `stmtTouchDepth` (Bridge3.lean) EXACTLY. **Verdict:
+  APPROVED** (sound + faithful; no counterexample found).
+- **NEXT: Lean formalization of `normal_form_normalization`** (coder). Substantial
+  multi-session: (1) `normalizeStmt` on `TM2.Stmt` (structural recursion); (2)
+  normalized machine `comp'.tm` with `Λ' = Λ ⊕ ℕ` (fresh intermediate labels);
+  (3) `NormalForm comp'.tm` by construction; (4) SIMULATION `comp'` computes the
+  same `g` (the hard part — `cfgAt comp'.tm` simulates `cfgAt comp.tm` with
+  bounded steps, like D2's `cfgAt_decider_while_running`); (5) polynomial blowup.
