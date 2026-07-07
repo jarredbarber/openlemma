@@ -507,6 +507,43 @@ def test_normal_form_regression_on_output():
               detail=f"Vp.m={Vp.m}")
 
 
+def test_vdependent_goto_preserved():
+    print("\n[7] v-dependent goto preserved through over-touching split:")
+    # Label 0: push 5, peek (v:=head=5), push v, goto (0 if v==0 else 1). touchDepth k1=3.
+    # Label 1: halt. The goto is v-dependent; after split it must still route to label 1 (v=5).
+    K = [0, 1]; k0, k1 = 0, 1
+    l0 = ("push", 1, (lambda v: 5),
+            ("peek", 1, (lambda v, oh: (oh if oh is not None else 0)),
+              ("push", 1, (lambda v: v),
+                ("goto", (lambda v: 0 if v == 0 else 1)))))
+    m = {0: l0, 1: ("halt",)}
+    V = Machine(K=K, Λ=[0, 1], main=0, σ0=0, m=m, k0=k0, k1=k1)
+    Vp = normalize_machine(V)
+    check("v-dep-goto: NormalForm", Vp.normal_form(), detail=f"Vp.m={Vp.m}")
+    rV = run_until_halt(V, [], 1000); rVp = run_until_halt(Vp, [], 1000)
+    ok = rV is not None and rVp is not None and rV[1] == rVp[1]
+    check("v-dep-goto: output preserved (both route to label 1, k1=[5,5])",
+          ok, detail=f"rV={rV} rVp={rVp}")
+    # also confirm V' took more steps (split) but same output
+    if rV and rVp:
+        check("v-dep-goto: V' slower (split) but bounded", rVp[0] > rV[0])
+
+
+def test_empty_stack_consistency():
+    print("\n[8] peek/pop on EMPTY stack (oh=None) consistent V vs V':")
+    # Label 0: peek k1 (oh=None -> v=0), pop k1 (oh=None, v=0), halt. touchDepth k1=2.
+    K = [0, 1]; k0, k1 = 0, 1
+    l0 = ("peek", 1, (lambda v, oh: 0),
+            ("pop", 1, (lambda v, oh: v), ("halt",)))
+    V = Machine(K=K, Λ=[0], main=0, σ0=0, m={0: l0}, k0=k0, k1=k1)
+    Vp = normalize_machine(V)
+    check("empty-stack: NormalForm", Vp.normal_form())
+    rV = run_until_halt(V, [], 1000); rVp = run_until_halt(Vp, [], 1000)
+    check("empty-stack: output preserved (k1=[])",
+          rV is not None and rVp is not None and rV[1] == rVp[1] == [],
+          detail=f"rV={rV} rVp={rVp}")
+
+
 def test_random_machines():
     print("\n[6] random over-touching machines: normalize->NormalForm + output preserved:")
     rng = random.Random(12345)
@@ -564,6 +601,8 @@ def main():
     test_simulation_preserves_output()
     test_blowup_bounded()
     test_normal_form_regression_on_output()
+    test_vdependent_goto_preserved()
+    test_empty_stack_consistency()
     test_random_machines()
     print("=" * 70)
     print(f"RESULTS: {len(TESTS_PASS)}/{len(TESTS_RUN)} tests passed")
