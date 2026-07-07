@@ -139,3 +139,46 @@ Bridge1=0, Bridge2=0, Bridge3=1 (Lemma F `normal_form_normalization`), Decider=0
 (Encodings:76 `listEncoding.decode_encode`, SAT:300 `SAT_in_NP` verifier). Crux axiom
 `SAT_is_NP_hard_citation` KEPT until `SAT_is_NP_hard_real` closes (which needs the
 instance gap resolved + `bridge5_iff` + Lemma F).
+
+### Roadmap to close the crux axiom (execution order)
+1. **Lemma F** (`normal_form_normalization`, Bridge3): chain-splitting — any polytime
+   verifier → equivalent `NormalForm` verifier. Researcher drafting (run d300af88).
+   → reviewer → coder (Lean). Independent.
+2. **Alphabet finiteness** (`∀ k, Fintype (Γ k)` for the verifier's TM): either (a)
+   strengthen `InNP` (Defs.lean:52) to require finite work-stack alphabets, or (b)
+   an alphabet-restriction normalization lemma. The OTHER 11 instances (Encodable/
+   DecidableEq of Λ/σ/K/Γ) are derivable via `Fintype.toEncodable`/`classical` once
+   `∀ k, Fintype (Γ k)` holds. Lemma F + this = "verifier in Cook-Levin normal form".
+3. **`bridge5_iff`** (Assembly): assemble —
+   FORWARD (`L' a → Satisfiable (f a)`): `InNP`→cert with `g(a,cert)=true`→D2 fwd
+   (`V'` halts)→Bridge1 (cfgAt reaches halt)→Bridge2 (tape=aInput++certMapped,
+   certMapped length/bool)→Bridge3 (`h_adequate`/`hBRD` from `NormalForm V'`)→
+   `reduction_sound_cert` (CertTableau:188)→Satisfiable.
+   BACKWARD (`Satisfiable (f a) → L' a`): `completeness_cert` (CompletenessCert:166,
+   needs `certBound ≤ maxStackDepth`)→∃cert, `Satisfiable (tableauFormula params
+   (aInput++cert))`→`completeness` (Completeness:1149, needs `BoundedReadDepth`/
+   `h_adequate` from `NormalForm V'`)→∃i, V' halts→D2 bwd→`g(a,cert)=true`→
+   Bridge2 boolSyms-inverse→`R a cert`→`L' a`.
+   Blocked by Lemma F (both dirs need `NormalForm V'` via `decider_exists`) + instance gap.
+4. **`SAT_is_NP_hard_real`** (Assembly): assemble `decider_exists`+`bridge5_iff`+
+   `tableauFormulaCert_is_polytime` (Bridge 4 citation) + Lemma F + alphabet
+   normalization into `PolyTimeReducible eb finEncodingCNF L' SAT_Language` for every
+   `InNP eb L'`. THEN switch `SAT_is_NP_hard` to `SAT_is_NP_hard_real`, DELETE
+   `SAT_is_NP_hard_citation` (the crux axiom) — crux ELIMINATED.
+
+### Session 2026-07-07 milestones (this session)
+- **D2 `decider_halts_iff` SORRY-FREE** (commit f1950e7): the hardest simulation lemma.
+  Forward (g=true): V halts at T→decider at T=check→T+1 check-branch cond=g=true→halt,
+  stays halted. Backward (g=false): decider at T+1=loop, stays loop via
+  `decider_loop_stays` induction→`.l=some(inr loop)≠none`, contradicting hhalt. KEY TRICK:
+  `rw`/`simp` pattern-matching on `stepAux (checkStmt …)`/`cfgAt (decider …)` fails
+  (instance-arg elaboration: `Fintype (V.Γ V.k₁)` via explicit param vs `∀k` Pi-inst);
+  bypassed by `exact` (defeq type-check) + `congr_arg (·.l)` (re-state eqns with body's
+  decider instance before `rw`).
+- **`decider_exists` (D1+D2+D3 packaging) SORRY-FREE** (commit 9e23f58):
+  `DeciderSpec.mk (decider comp.tm comp.outputAlphabet) comp.inputAlphabet
+  (fun n => comp.time.eval n+2) (decider_halts_iff …) (decider_normal_form … hNF)`;
+  time-bound reconciliation via `pairEncoding` encode = concatenation. Added `nf' :
+  NormalForm V'` field to `DeciderSpec`.
+- **Instance gap analyzed + REDUCED** to `∀ k, Fintype (Γ k)` only.
+- Researcher dispatched (async, resumed d300af88) for Lemma F (chain-splitting).
