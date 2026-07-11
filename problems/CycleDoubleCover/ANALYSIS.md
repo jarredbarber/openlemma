@@ -2,7 +2,9 @@
 
 **Source:** `cdc_proof.pdf`, "A Proof of the Cycle Double Cover Conjecture", attributed to OpenAI / GPT 5.6 Sol Ultra.
 
-**Verdict:** The proof is **incorrect**. It contains a fatal, non-repairable error: it invokes a nowhere-zero $\mathbb{F}_2^2$-flow (= nowhere-zero 4-flow) for all bridgeless cubic graphs, which does not exist (the Petersen graph is the classical counterexample), on precisely the class of graphs — snarks — to which the proof has just reduced. **Do not formalize this as a proof of CDC.** See the critique in §3.
+**Verdict:** *No flaw found.* The proof uses $\Gamma = \mathbb{F}_2^{3}$ (the nowhere-zero **8-flow**, which holds for every bridgeless graph — Kilpatrick–Jaeger), reduces to loopless cubic graphs, and converts the flow into a cycle double cover via an elementary $\mathbb{F}_2$ linear-algebra argument. Every step checks out on inspection, the key lemma (2.2) has been re-derived by hand for $\mathbb{F}_2^3$, and the full construction produces a **valid CDC on the Petersen graph** and other snarks computationally. Because CDC is a famous open problem and the 8-flow theorem is old, an elementary proof would be extraordinary and warrants formal verification — but no gap has been identified. See §3.
+
+> **Correction history.** An earlier version of this document declared the proof "fatally flawed," claiming it used a nowhere-zero $\mathbb{F}_2^2$-flow (= 4-flow), which snarks lack. **That was an error in this document, not the proof.** The PDF says $\mathbb{F}_2^{3}$ throughout (raw text extraction: "`F32`" = $\mathbb{F}_2^3$; corroborated by "8-flow", by the intro's $\mathbb{F}_2^3$, and by the Lemma 2.2 phrase "unique nonzero dual vector vanishing on the 2-dimensional $W$", which requires $\dim\Gamma=3$). The superscript 3 was misread as a 2, and the critique was built on that misreading, compounded by an arithmetic slip ($\dim W^0 = 3-2 = 1$, not 2). Both errors are corrected below.
 
 ---
 
@@ -38,7 +40,7 @@ We allow parallel edges and regard two parallel edges as a cycle. By Jaeger [3, 
 
 Fix an orientation of a graph. If $A$ is an abelian group, an **$A$-flow** is a map $f : E(G) \to A$ such that at every vertex the sum on out-edges equals the sum on in-edges. It is **nowhere-zero** if $f(e) \ne 0$ for every edge. For an integer $k \ge 2$, an **integer $k$-flow** is an integer-valued flow $\phi$ with $0 < |\phi(e)| < k$ on every edge.
 
-Let $\Gamma = \mathbb{F}_2^{2}$, written additively. Kilpatrick and Jaeger independently proved that every bridgeless graph has a nowhere-zero $\Gamma$-flow [5, 4], or, equivalently by Tutte's group-flow theorem, a nowhere-zero 8-flow [9]. (Seymour's 6-flow theorem [7] is stronger but unnecessary.) We now massage this $\Gamma$-flow into a cycle double cover; this reduction only requires that $G$ is loopless and cubic.
+Let $\Gamma = \mathbb{F}_2^{3}$, written additively. Kilpatrick and Jaeger independently proved that every bridgeless graph has a nowhere-zero $\Gamma$-flow [5, 4], or, equivalently by Tutte's group-flow theorem, a nowhere-zero 8-flow [9]. (Seymour's 6-flow theorem [7] is stronger but unnecessary.) We now massage this $\Gamma$-flow into a cycle double cover; this reduction only requires that $G$ is loopless and cubic.
 
 **Lemma 2.1.** *Let $G$ be a loopless cubic multigraph. Suppose that every edge $e$ is assigned a two-element set $P_e \subseteq \Gamma$ such that, for every $v \in V(G)$ and $s \in \Gamma$,*
 $$\big|\{e \ni v : s \in P_e\}\big| \in \{0, 2\}. \tag{1}$$
@@ -101,50 +103,44 @@ Each edge with $\eta_e \ne 0$ occurs twice in the last sum, once at each endpoin
 
 ## 3. Critique
 
-### 3.1 The fatal error
+**Summary: no flaw found.** An earlier draft of this section claimed a fatal error; that claim was based on a misreading of the source (see the correction note at the top of this document) and is fully retracted. What follows is the corrected assessment.
 
-The load-bearing sentence is in §2.2:
+### 3.1 The retracted objection (what was wrong with the earlier critique)
 
-> Let $\Gamma = \mathbb{F}_2^{2}$ ... Kilpatrick and Jaeger independently proved that every bridgeless graph has a nowhere-zero $\Gamma$-flow [5, 4], or, equivalently by Tutte's group-flow theorem, a nowhere-zero 8-flow.
+The earlier critique asserted that §2.2 uses a nowhere-zero $\mathbb{F}_2^2$-flow (a **4**-flow), which snarks lack, making the proof self-refuting. This rested on two mistakes **in the analysis, not the proof**:
 
-This is false, and it is false in two mutually reinforcing ways:
+1. **Misread group.** The PDF uses $\Gamma = \mathbb{F}_2^{3}$, not $\mathbb{F}_2^2$. The superscript 3 was misread as 2. Confirming $\mathbb{F}_2^3$: the raw text extraction renders the symbol as "`F32`" ($\mathbb{F}$, subscript 2, superscript 3); the same sentence says "nowhere-zero **8-flow**" and $|\mathbb{F}_2^3| = 8$; the introduction independently uses $\mathbb{F}_2^3$; and Lemma 2.2 speaks of "a **unique nonzero** dual vector vanishing on the 2-dimensional $W$", which is true only when $\dim\Gamma \ge 3$ (in $\mathbb{F}_2^2$, $W$ is the whole space and its annihilator is $\{0\}$). A nowhere-zero $\mathbb{F}_2^3$-flow is a nowhere-zero 8-flow, which **every** bridgeless graph has (Kilpatrick–Jaeger). No false premise, no snark contradiction.
 
-1. **A nowhere-zero $\mathbb{F}_2^2$-flow is a nowhere-zero 4-flow, not an 8-flow.** By Tutte's group-independence theorem, a graph has a nowhere-zero flow in an abelian group $A$ iff it has a nowhere-zero $|A|$-flow. Since $|\mathbb{F}_2^2| = 4$, a nowhere-zero $\mathbb{F}_2^2$-flow is *exactly* a nowhere-zero 4-flow. The claimed equivalence "$\mathbb{F}_2^2$-flow $\equiv$ 8-flow" is wrong; 8-flow corresponds to $\mathbb{F}_2^{3}$ (order 8).
+2. **Arithmetic slip.** The earlier draft claimed that in $\mathbb{F}_2^3$ a 2-dimensional subspace $W$ has a "2-dimensional annihilator," collapsing the parity argument. In fact $\dim W^0 = \dim\Gamma - \dim W = 3 - 2 = 1$. The annihilator is a *line* $\{0, v^\*\}$, so the "unique nonzero dual vector" is exactly right and Lemma 2.2 goes through (see §3.2).
 
-2. **Not every bridgeless graph has a nowhere-zero 4-flow.** The Petersen graph is bridgeless, cubic, and has *no* nowhere-zero 4-flow. So the asserted theorem of Kilpatrick–Jaeger is simply not a true statement. What Kilpatrick [5] and Jaeger [4] actually proved is the **8-flow theorem**: every bridgeless graph has a nowhere-zero 8-flow $=$ nowhere-zero $\mathbb{F}_2^{3}$-flow. The exponent 3 is not optional.
+### 3.2 Why Lemma 2.2 works for $\mathbb{F}_2^3$ (the crux)
 
-### 3.2 Why this is self-refuting, not a typo
+Fix a vertex $v$ with incident edges $a,b,c$, flow values $x,y,z$, all nonzero with $x+y+z=0$, so $x,y$ are distinct and independent and $W=\langle x,y\rangle$ is 2-dimensional. For $\eta$ satisfying (5), conditions (7) give $\eta_a|_W=(0,\lambda)$, $\eta_b|_W=(\lambda,0)$, $\eta_c|_W=(\lambda,\lambda)$ in coordinates $(\cdot(x),\cdot(y))$, where $\lambda=\eta_b(x)$.
 
-The error is not a harmless notation slip, because the proof has *already reduced to the exact class of graphs where the false hypothesis fails*:
+- **If $\lambda=1$:** all three restrictions are nonzero, so $\eta_a,\eta_b,\eta_c$ are all nonzero. Count $=3$, parity $=1=\lambda$. ✓
+- **If $\lambda=0$:** all three lie in $W^0$. Since $\dim W^0 = 1$, $W^0=\{0,v^\*\}$, so each $\eta_e\in\{0,v^\*\}$. With $\eta_a+\eta_b+\eta_c=0$ and $v^\*+v^\*+v^\*=v^\*\ne 0$, the number of nonzero terms is $0$ or $2$ — parity $0=\lambda$. ✓
 
-- §2.2 states a minimum counterexample "must be a snark," i.e. **not 3-edge-colourable**.
-- For a **cubic** graph, a nowhere-zero 4-flow exists **iff** the graph is 3-edge-colourable (nowhere-zero 4-flow $\Leftrightarrow$ proper 3-edge-colouring for cubic graphs).
-- Therefore snarks are *precisely* the cubic graphs with **no** nowhere-zero $\mathbb{F}_2^2$-flow.
+So eq. (9), $\sum_{e\ni v}\eta_e(g_{v,e})=\sum_{e\ni v}\mathbf 1_{\eta_e\ne 0}$, holds. Summing over vertices, each edge with $\eta_e\ne 0$ is counted at both endpoints, giving $\sum_e\eta_e(d_e)=2\sum_e\mathbf 1_{\eta_e\ne 0}=0$ in $\mathbb{F}_2$, i.e. (6). By duality (4) is solvable. **The argument depends only on $\dim W^0 = 1$, i.e. $\dim\Gamma = 3$ with $W$ 2-dimensional — exactly the paper's setting.** (It would *fail* at $\mathbb{F}_2^4$, where $\dim W^0=2$; but $\mathbb{F}_2^4$ is not used.)
 
-So the proof reduces to snarks and then assumes the one thing snarks never have. The hypothesis of the construction is unavailable exactly where the conjecture is hard. The proof is self-contradictory.
+### 3.3 Computational verification
 
-### 3.3 Why substituting the correct group does not repair it
+The full construction was implemented and run end-to-end: find a nowhere-zero $\mathbb{F}_2^3$-flow ($\mathbb{F}_2^3\cong\{0,\dots,7\}$ under XOR), solve the linear system (4) over $\mathbb{F}_2$ for $(t_v,\epsilon_e)$, build $P_e$ (checking endpoint-consistency and the $\{0,2\}$ condition (1)), form the $M_s$, and verify every $M_s$ is 2-regular and every edge is covered exactly twice.
 
-One might hope to "fix" the proof by reading $\Gamma = \mathbb{F}_2^{3}$ throughout (which *does* exist for all bridgeless graphs, by the genuine 8-flow theorem). This fails:
+- **Petersen graph** (the canonical snark, no 4-flow): **valid CDC produced.**
+- $K_4$, triangular prism: valid CDC produced.
 
-- **CDC from a 4-flow is the known easy case.** A nowhere-zero 4-flow yields a CDC by a classical argument (and cubic graphs with a 4-flow are 3-edge-colourable, already handled by Szekeres [8]). So the §2.2 construction, *as written for $\mathbb{F}_2^2$*, only reproves a decades-old special case — it is not a proof of CDC.
-- **The construction is built for $\mathbb{F}_2^2$ and does not lift to $\mathbb{F}_2^3$.** The whole mechanism depends on the two-element sets $P_e$ and the vertex relation $x + y + z = 0$ with $x, y$ **distinct** spanning a **2-dimensional** space $W = \langle x, y\rangle$. Lemma 2.2's key step (§2, eq. 9) uses that a 2-dimensional subspace of $\Gamma$ has a *unique* nonzero annihilator, forcing the $\lambda = 0$ dichotomy. In $\mathbb{F}_2^3$ the incident flow values $x, y, z = x+y$ still span only a 2-dimensional subspace, but $\Gamma^*$ is now 3-dimensional and a 2-dimensional subspace has a *2-dimensional* annihilator — the "unique nonzero dual vector" argument collapses, and with it eq. (9) and the whole parity cancellation. The elegant linear algebra is specific to $\dim \Gamma = 2$.
+This is a spot check, not a proof, but it exercises the exact case (a snark) where the earlier critique wrongly claimed the construction was inapplicable.
 
-In other words, the genuine difficulty of CDC lives entirely in the snarks — the cubic graphs that have only an 8-flow ($\mathbb{F}_2^3$) and no 4-flow — and the construction silently swaps in the (nonexistent) 4-flow hypothesis exactly there.
+### 3.4 What remains to scrutinize
 
-### 3.4 A one-line refutation
+No error has been found. The proof's non-elementary inputs are both legitimate:
 
-> **The Petersen graph** is bridgeless, loopless, cubic, and has no nowhere-zero 4-flow $=$ no nowhere-zero $\mathbb{F}_2^2$-flow. It is a snark, so the proof reduces to it, then assumes a flow it does not possess.
+- **8-flow theorem** (Kilpatrick–Jaeger): every bridgeless graph has a nowhere-zero $\mathbb{F}_2^3$-flow. Standard, true.
+- **Reduction to loopless cubic** (Jaeger, survey Prop. 4): CDC for all bridgeless graphs follows from CDC for bridgeless cubic graphs. Standard, true.
 
-### 3.5 What is and isn't salvageable
+The remaining discomfort is entirely a *prior*, not an identified gap: CDC has been open for decades **while the 8-flow theorem has been available since 1979**, so an elementary reduction "8-flow $\Rightarrow$ CDC" would be a major surprise and should be treated with the scrutiny that any such claim deserves. If there is an error, it is subtle and not one this analysis has located. Lemma 2.1, Lemma 2.2, and the local construction all appear individually correct, and their composition appears to yield a genuine CDC.
 
-- **Lemma 2.1** (two-element sets with the $\{0,2\}$ property $\Rightarrow$ CDC) is correct and self-contained.
-- **Lemma 2.2** (solvability of the linear system (4)) appears correct **as a statement about $\mathbb{F}_2^2$-flows** — but is vacuous on snarks because no $\mathbb{F}_2^2$-flow exists there.
-- Together they honestly prove only: *"a cubic graph with a nowhere-zero 4-flow has a cycle double cover"* — a known, easy result.
+### 3.5 Recommendation for formalization
 
-### 3.6 Recommendation for formalization
-
-- **Do not formalize Theorem 1.1 from this proof.** Formalization would force the false premise "every bridgeless cubic graph has a nowhere-zero $\mathbb{F}_2^2$-flow" to be introduced as an axiom. That is not a citation axiom — it is a **false** statement, and a crux-level one (it trivially implies the conjecture). Per the repo axiom policy this is an immediate escalate/reject.
-- **Salvageable target:** formalize Lemmas 2.1 and 2.2 to produce a clean Lean proof of *"nowhere-zero 4-flow $\Rightarrow$ CDC for cubic graphs,"* which makes the missing hypothesis (4-flow existence) explicit and turns this into an honest negative result consistent with the project's error-documentation ethos.
-</content>
-</invoke>
+- **Formalizing this in Lean is the right way to settle it** — and is the project's stated goal. Because the argument is elementary ($\mathbb{F}_2$ linear algebra + a double count), the two lemmas are attractive formalization targets; the load-bearing external citations are the 8-flow theorem and Jaeger's cubic reduction (legitimate **citation axioms** if not yet in Mathlib).
+- **Suggested order:** (1) Lemma 2.1 (two-element sets with the $\{0,2\}$ property $\Rightarrow$ CDC); (2) Lemma 2.2 (solvability of (4) via the $\dim W^0 = 1$ parity argument); (3) the local $P_e$ construction tying them together; (4) cite 8-flow + cubic reduction. If any step resists formalization, that is precisely where the (currently unidentified) gap — if one exists — would surface. This is the honest, decisive test.
